@@ -151,27 +151,22 @@ export function useGameState() {
     const hour = 60 * 60 * 1000
     const twelveHours = 12 * hour
     
-    const newPacks: Pack[] = []
-    
     if (now - state.lastPackClaim >= twelveHours) {
       const packsToAdd = Math.floor((now - state.lastPackClaim) / twelveHours)
       for (let i = 0; i < packsToAdd; i++) {
-        newPacks.push(addPack(`pack_${Date.now() + i}`))
+        addPack(`pack_${Date.now() + i}`)
       }
-      const newState = { ...state, lastPackClaim: now }
-      saveState(newState)
+      saveState({ ...state, lastPackClaim: now })
     }
     
-    if (state.packs.length < 2) {
-      const packCount = Math.min(1, 2 - state.packs.length)
+    const unopenedPacks = state.packs.filter(p => !p.opened)
+    if (unopenedPacks.length < 2) {
+      const packCount = Math.min(2, 2 - unopenedPacks.length)
       for (let i = 0; i < packCount; i++) {
-        newPacks.push(addPack(`pack_app_${Date.now() + i}`))
+        addPack(`pack_app_${Date.now() + i}`)
       }
-      const newState = { ...state, lastAppOpenPack: now }
-      saveState(newState)
+      saveState({ ...state, lastAppOpenPack: now })
     }
-    
-    return newPacks
   }, [state, saveState, addPack])
 
   return {
