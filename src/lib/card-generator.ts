@@ -20,13 +20,15 @@ export function getRandomVariant(): CardVariant {
   return 'normal'
 }
 
-export function generateRandomCard(collectionCount: (cardId: string) => number): Card {
-  const rarity = weightedRarity()
+export function generateRandomCard(collectionCount: (cardId: string) => number, forcedRarity?: Rarity): Card {
+  const rarity = forcedRarity || weightedRarity()
   const variant = getRandomVariant()
   const duck = DUCK_TYPES[Math.floor(Math.random() * DUCK_TYPES.length)]
   
-  const matchingCards = Object.values(CARD_DATA).filter(c => c.duckType === duck.id)
-  const cardData = matchingCards[Math.floor(Math.random() * matchingCards.length)] || CARD_DATA['card_common_001']
+  const matchingCards = Object.values(CARD_DATA).filter(c => c.duckType === duck.id && c.evolution.startsWith(`card_${rarity}`))
+  const cardData = matchingCards[Math.floor(Math.random() * matchingCards.length)] || 
+                   Object.values(CARD_DATA).find(c => c.id.startsWith(`card_${rarity}`)) || 
+                   CARD_DATA['card_common_001']
   
   const id = `card_${rarity}_${Math.floor(Math.random() * 1000)}`
   
@@ -42,12 +44,16 @@ export function generateRandomCard(collectionCount: (cardId: string) => number):
     hp: baseCardData.hp,
     attack: baseCardData.attack,
     defense: baseCardData.defense,
+    speed: baseCardData.speed || 50,
+    specialAttack: baseCardData.specialAttack || 40,
     image: baseCardData.variants[variant].image,
     holographic: baseCardData.variants[variant].holographic || variant !== 'normal',
     sparkle: baseCardData.variants[variant].sparkle || variant === 'shiny',
     foil: baseCardData.variants[variant].foil || variant === 'shiny' || variant === 'glossy',
+    animation: baseCardData.variants[variant].animation || '',
     collectionCount: collectionCount(id) + 1,
-    isMutant: false
+    isMutant: false,
+    abilities: baseCardData.abilities || [baseCardData.ability]
   }
 }
 

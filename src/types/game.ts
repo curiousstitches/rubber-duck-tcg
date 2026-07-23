@@ -12,13 +12,18 @@ export interface Card {
   hp: number
   attack: number
   defense: number
+  speed: number
+  specialAttack: number
   image: string
   holographic: boolean
   sparkle: boolean
   foil: boolean
+  animation: string
   collectionCount: number
   isMutant: boolean
   baseCards?: string[]
+  abilities?: string[]
+  description?: string
 }
 
 export interface Pack {
@@ -27,16 +32,44 @@ export interface Pack {
   cards: Card[]
   openingAnimation: 'frontToBack' | 'backToFront'
   createdAt: number
+  grade: 'basic' | 'premium' | 'elite'
+}
+
+export interface Deck {
+  id: string
+  name: string
+  cards: string[]
+  active: boolean
+}
+
+export interface Achievement {
+  id: string
+  title: string
+  description: string
+  icon: string
+  unlocked: boolean
+  unlockedAt?: number
+  progress: number
+  target: number
 }
 
 export interface GameState {
   cards: Card[]
   packs: Pack[]
   duckTypes: DuckType[]
+  decks: Deck[]
+  achievements: Achievement[]
+  quests: Quest[]
   lastPackClaim: number
   lastAppOpenPack: number
+  lastLogin: number
+  loginStreak: number
+  coins: number
+  gems: number
   accountSync: boolean
   accountId: string | null
+  soundEnabled: boolean
+  language: string
 }
 
 export interface DuckType {
@@ -47,6 +80,7 @@ export interface DuckType {
   evolutionImages: string[]
   habitat: string
   ability: string
+  element: 'water' | 'fire' | 'earth' | 'wind' | 'lightning' | 'ice' | 'light' | 'dark' | 'neutral'
 }
 
 export interface MutantRecipe {
@@ -62,6 +96,8 @@ export interface CardData {
   hp: number
   attack: number
   defense: number
+  speed: number
+  specialAttack: number
   description: string
   habitat: string
   ability: string
@@ -72,10 +108,32 @@ export interface CardData {
       holographic: boolean
       sparkle: boolean
       foil: boolean
+      animation: string
     }
   }
   evolution: string
   mutantRecipes: string[]
+  element: 'water' | 'fire' | 'earth' | 'wind' | 'lightning' | 'ice' | 'light' | 'dark' | 'neutral'
+  abilities: string[]
 }
 
 export type CardGrade = 'basic' | 'advanced' | 'premium'
+
+export interface BattleState {
+  playerDeck: Card[]
+  enemyDeck: Card[]
+  currentTurn: 'player' | 'enemy'
+  playerHp: number
+  enemyHp: number
+  log: string[]
+}
+
+export interface Quest {
+  id: string
+  title: string
+  description: string
+  reward: { coins?: number, gems?: number, card?: string }
+  progress: number
+  target: number
+  completed: boolean
+}
