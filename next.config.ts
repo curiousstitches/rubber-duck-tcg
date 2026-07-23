@@ -28,16 +28,7 @@ const nextConfig: NextConfig = {
         loaders: [loaderPath]
       }
     }
-  },
-  experimental: {
-    pwa: {
-      disable: false,
-      register: true,
-      mode: 'production',
-      dest: 'public',
-      cache: {},
-    },
-  },
+  }
 } as NextConfig;
 
 export default nextConfig;

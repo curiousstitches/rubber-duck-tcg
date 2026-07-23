@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   title: "Rubber Duck TCG",
   description: "Collect rubber duck cards, open packs, and evolve your ducks!",
   manifest: "/manifest.json",
-  themeColor: "#1e40af",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
