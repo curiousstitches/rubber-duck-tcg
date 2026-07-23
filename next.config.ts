@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 
-// Loader path from @ideavo/webpack-tagger - use direct resolve to get the actual file
 const loaderPath = require.resolve('@ideavo/webpack-tagger');
 
 const nextConfig: NextConfig = {
@@ -29,7 +28,16 @@ const nextConfig: NextConfig = {
         loaders: [loaderPath]
       }
     }
-  }
+  },
+  experimental: {
+    pwa: {
+      disable: false,
+      register: true,
+      mode: 'production',
+      dest: 'public',
+      cache: {},
+    },
+  },
 } as NextConfig;
 
 export default nextConfig;

@@ -1,0 +1,16 @@
+{
+  "name": "Rubber Duck TCG",
+  "short_name": "Duck TCG",
+  "description": "Collect rubber duck cards, open packs, and evolve your ducks!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e40af",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -16,6 +16,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Rubber Duck TCG",
   description: "Collect rubber duck cards, open packs, and evolve your ducks!",
+  manifest: "/manifest.json",
+  themeColor: "#1e40af",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Rubber Duck TCG",
+  },
 };
 
 export default function RootLayout({
@@ -25,11 +32,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#1e40af" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
-        {/* WARNING FOR AGENT: DO NOT REMOVE THIS SCRIPT */}
         <Script src="https://cdn.jsdelivr.net/gh/IdeavoAI/ideavo-scripts@latest/scripts/ideavo.min.js" />
       </body>
     </html>
