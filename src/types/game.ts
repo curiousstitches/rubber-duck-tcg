@@ -70,6 +70,7 @@ export interface GameState {
   accountId: string | null
   soundEnabled: boolean
   language: string
+  battleWinner: 'player' | 'enemy' | null
 }
 
 export interface DuckType {

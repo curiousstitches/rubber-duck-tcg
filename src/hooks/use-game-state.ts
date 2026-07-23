@@ -32,6 +32,7 @@ const EMPTY_STATE: GameState = {
   gems: 50,
   accountSync: false,
   accountId: null,
+  battleWinner: null,
   soundEnabled: true,
   language: 'en'
 }
@@ -249,6 +250,7 @@ function initializeNewGameState(): GameState {
     gems: 50,
     accountSync: false,
     accountId: null,
+    battleWinner: null,
     soundEnabled: true,
     language: 'en'
   }

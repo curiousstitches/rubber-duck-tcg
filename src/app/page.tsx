@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react'
 import type { Card as CardType, Pack } from '@/types/game'
 import { useGameState } from '@/hooks/use-game-state'
 import { getRarityColor } from '@/lib/card-generator'
+import { BattleSystem } from '@/components/BattleSystem'
 import { Button } from '@/components/ui/button'
 import { Card as CardUI, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Package as PackIcon, Sparkles, Crown } from 'lucide-react'
+import { Package as PackIcon, Sparkles, Crown, Swords } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type View = 'theme' | 'packs' | 'collection' | 'evolve'
+type View = 'theme' | 'packs' | 'collection' | 'evolve' | 'battle'
 
 export default function Home() {
   const { state, isLoaded, addPack, openPack, evolveCard, combineMutants, checkPackClaims } = useGameState()
@@ -21,6 +22,7 @@ export default function Home() {
   const [selectedPack, setSelectedPack] = useState<Pack | null>(null)
   const [isOpening, setIsOpening] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null)
+  const [battleWinner, setBattleWinner] = useState<'player' | 'enemy' | null>(null)
   const [theme, setTheme] = useState('classic')
 
   useEffect(() => {
@@ -45,11 +47,14 @@ export default function Home() {
   }
 
   const handleOpenPack = (pack: Pack) => {
+    const animation = pack.openingAnimation
     setSelectedPack(pack)
     setIsOpening(true)
     setTimeout(() => {
       setIsOpening(false)
-    }, 1000)
+      openPack(pack.id, animation)
+      setCurrentView('collection')
+    }, 1500)
   }
 
   const handlePackAnimationComplete = () => {
@@ -173,8 +178,13 @@ export default function Home() {
         <Button variant="ghost" size="sm" onClick={() => setCurrentView('packs')}>
           Packs ({state.packs.filter(p => !p.opened).length})
         </Button>
-        <div className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">
-          Collection
+        <div className="flex gap-2 items-center">
+          <Button variant="ghost" size="sm" onClick={() => setCurrentView('battle')}>
+            <Swords className="h-4 w-4 mr-1" /> Battle
+          </Button>
+          <div className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">
+            Collection
+          </div>
         </div>
       </div>
 
@@ -327,6 +337,7 @@ export default function Home() {
       {currentView === 'packs' && renderPacks()}
       {currentView === 'collection' && renderCollection()}
       {currentView === 'evolve' && renderEvolve()}
+      {currentView === 'battle' && <BattleSystem playerCards={state.cards} onBattleEnd={(winner) => { setBattleWinner(winner); setCurrentView('collection'); }} />}
       {renderPacksModal()}
     </>
   )
