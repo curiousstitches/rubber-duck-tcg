@@ -125,3 +125,67 @@
 nextjs-portal {
   display: none !important;
 }
+
+/* ============================================
+   DUCKING FUN — premium card effects
+   ============================================ */
+.holo-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 0, 128, 0.12) 0%,
+    rgba(255, 200, 0, 0.1) 25%,
+    rgba(0, 255, 170, 0.1) 50%,
+    rgba(0, 140, 255, 0.12) 75%,
+    rgba(180, 0, 255, 0.12) 100%
+  );
+  mix-blend-mode: screen;
+}
+
+.foil-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.4) 48%,
+    transparent 64%
+  );
+  background-size: 230% 100%;
+  animation: foil-sweep-anim 2.4s linear infinite;
+}
+
+@keyframes foil-sweep-anim {
+  0% { background-position: 130% 0; }
+  100% { background-position: -130% 0; }
+}
+
+.glow-rare {
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.45);
+  border-radius: 0.75rem;
+}
+.glow-epic {
+  box-shadow: 0 0 14px rgba(192, 132, 252, 0.55);
+  border-radius: 0.75rem;
+}
+.glow-legendary {
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.65), inset 0 0 14px rgba(250, 204, 21, 0.15);
+  border-radius: 0.75rem;
+}
+.glow-mythic {
+  box-shadow: 0 0 22px rgba(244, 114, 182, 0.7), 0 0 44px rgba(168, 85, 247, 0.35);
+  border-radius: 0.75rem;
+  animation: mythic-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes mythic-pulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(244, 114, 182, 0.7), 0 0 44px rgba(168, 85, 247, 0.35); }
+  50% { box-shadow: 0 0 30px rgba(244, 114, 182, 0.9), 0 0 60px rgba(168, 85, 247, 0.55); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foil-sweep, .glow-mythic { animation: none; }
+}

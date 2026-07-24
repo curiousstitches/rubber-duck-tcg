@@ -5,10 +5,11 @@ import type { Card as CardType, Pack } from '@/types/game'
 import { useGameState } from '@/hooks/use-game-state'
 import { getRarityColor } from '@/lib/card-generator'
 import { BattleSystem } from '@/components/BattleSystem'
+import { PackRipOpener } from '@/components/PackRipOpener'
+import { getDuckEmoji } from '@/lib/duck-emoji'
 import { Button } from '@/components/ui/button'
 import { Card as CardUI, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Package as PackIcon, Sparkles, Crown, Swords } from 'lucide-react'
@@ -16,17 +17,38 @@ import { cn } from '@/lib/utils'
 
 type View = 'theme' | 'packs' | 'collection' | 'evolve' | 'battle'
 
+function CardArt({ card, className }: { card: CardType; className?: string }) {
+  const [failed, setFailed] = useState(false)
+  return (
+    <div className={cn('relative flex items-center justify-center overflow-hidden', className)}>
+      {!failed ? (
+        <img
+          src={card.image}
+          alt={card.name}
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="text-2xl sm:text-3xl">{getDuckEmoji(card.duckType)}</div>
+      )}
+      {(card.foil || card.holographic) && <div className="holo-overlay" />}
+      {(card.rarity === 'legendary' || card.rarity === 'mythic') && <div className="foil-sweep" />}
+      {card.holographic && <Sparkles className="absolute right-1 top-1 h-3 w-3 animate-pulse text-yellow-400 sm:h-4 sm:w-4" />}
+      {card.foil && <Crown className="absolute left-1 top-1 h-2 w-2 text-pink-400 sm:h-3 sm:w-3" />}
+    </div>
+  )
+}
+
 export default function Home() {
   const { state, isLoaded, addPack, openPack, evolveCard, combineMutants, checkPackClaims } = useGameState()
   const [currentView, setCurrentView] = useState<View>('theme')
   const [selectedPack, setSelectedPack] = useState<Pack | null>(null)
-  const [isOpening, setIsOpening] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null)
   const [battleWinner, setBattleWinner] = useState<'player' | 'enemy' | null>(null)
   const [theme, setTheme] = useState('classic')
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && !selectedPack) {
       checkPackClaims()
       const unopenedPacks = state.packs.filter(p => !p.opened)
       if (unopenedPacks.length === 0) {
@@ -47,21 +69,20 @@ export default function Home() {
   }
 
   const handleOpenPack = (pack: Pack) => {
-    const animation = pack.openingAnimation
     setSelectedPack(pack)
-    setIsOpening(true)
-    setTimeout(() => {
-      setIsOpening(false)
-      openPack(pack.id, animation)
-      setCurrentView('collection')
-    }, 1500)
   }
 
-  const handlePackAnimationComplete = () => {
-    if (selectedPack) {
-      openPack(selectedPack.id, selectedPack.openingAnimation)
-      setSelectedPack(null)
-    }
+  const handleRip = (): CardType[] => {
+    if (!selectedPack) return []
+    const newState = openPack(selectedPack.id, selectedPack.openingAnimation)
+    if (!newState) return []
+    const opened = newState.packs.find(p => p.id === selectedPack.id)
+    return opened?.cards ?? []
+  }
+
+  const handleRipDone = () => {
+    setSelectedPack(null)
+    setCurrentView('collection')
   }
 
   const handleEvolveCard = (card: CardType) => {
@@ -79,11 +100,11 @@ export default function Home() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-purple-900/30 to-blue-900/30 p-4">
       <div className="mb-8 text-center">
         <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">
-          Rubber Duck TCG
+          Ducking Fun
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">Choose your theme!</p>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 max-w-md">
         {['classic', 'ocean', 'cosmic', 'steampunk', 'retro'].map((t) => (
           <motion.div
@@ -112,7 +133,7 @@ export default function Home() {
           Collection ({state.cards.length})
         </Button>
         <div className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-pink-500">
-          Duck TCG
+          Ducking Fun
         </div>
       </div>
 
@@ -139,12 +160,17 @@ export default function Home() {
                     <CardTitle className="flex items-center gap-2 text-base">
                       <PackIcon className="h-5 w-5" />
                       Pack #{state.packs.indexOf(pack) + 1}
+                      {pack.grade && pack.grade !== 'basic' && (
+                        <Badge className={pack.grade === 'elite' ? 'bg-purple-500' : 'bg-blue-500'}>
+                          {pack.grade}
+                        </Badge>
+                      )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="text-center py-4 sm:py-6 border-2 border-dashed rounded-lg">
-                      <p className="text-muted-foreground text-sm">Tap to open pack!</p>
-                      <p className="text-xs mt-1">Animation: {pack.openingAnimation === 'frontToBack' ? 'Front to Back' : 'Back to Front'}</p>
+                      <p className="text-muted-foreground text-sm">Tap to rip this pack open!</p>
+                      <p className="text-xs mt-1">🦆 5 cards inside</p>
                     </div>
                   </CardContent>
                 </CardUI>
@@ -206,13 +232,16 @@ export default function Home() {
               className="cursor-pointer"
               onClick={() => handleEvolveCard(card)}
             >
-              <CardUI className={cn('border-2', getRarityColor(card.rarity))}>
+              <CardUI
+                className={cn(
+                  'border-2',
+                  getRarityColor(card.rarity),
+                  card.rarity === 'legendary' && 'glow-legendary',
+                  card.rarity === 'mythic' && 'glow-mythic'
+                )}
+              >
                 <CardContent className="p-2">
-                  <div className="aspect-[3/4] rounded-lg bg-muted/30 flex items-center justify-center mb-1.5 relative overflow-hidden">
-                    <div className="text-2xl sm:text-3xl">{getDuckEmoji(card.duckType)}</div>
-                    {card.holographic && <Sparkles className="absolute w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 animate-pulse" />}
-                    {card.foil && <Crown className="absolute w-2 h-2 sm:w-3 sm:h-3 text-pink-400" />}
-                  </div>
+                  <CardArt card={card} className="aspect-[3/4] rounded-lg bg-muted/30 mb-1.5" />
                   <div className="text-xs font-semibold truncate">{card.name}</div>
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>{card.hp} HP</span>
@@ -229,9 +258,9 @@ export default function Home() {
 
   const renderEvolve = () => {
     if (!selectedCard) return null
-    
+
     const evolutionData = state.cards.filter(c => c.id === selectedCard.id).length
-    
+
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-2 sm:p-4 z-50">
         <motion.div
@@ -248,7 +277,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-4">
-                <div className="text-4xl sm:text-5xl mb-2">{getDuckEmoji(selectedCard.duckType)}</div>
+                <CardArt card={selectedCard} className="mx-auto mb-2 h-32 w-24 rounded-lg bg-muted/30" />
                 <div className="text-lg sm:text-xl font-bold mb-3">{selectedCard.name}</div>
                 <div className="flex justify-center gap-4 mb-4">
                   <div className="text-center">
@@ -279,58 +308,6 @@ export default function Home() {
     )
   }
 
-  const renderPacksModal = () => {
-    if (!selectedPack || !isOpening) return null
-    
-    return (
-      <Dialog open={true} onOpenChange={() => {}}>
-        <DialogContent className="bg-gradient-to-b from-purple-900/50 to-blue-900/50 border-2 border-yellow-500">
-          <DialogHeader>
-            <DialogTitle>Opening Pack...</DialogTitle>
-            <DialogDescription>
-              {selectedPack.openingAnimation === 'frontToBack' ? 'Revealing cards...' : 'Uncovering treasures...'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-5 gap-1.5 py-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ scale: 0.5, opacity: 0, rotateY: 180 }}
-                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                transition={{ delay: i * 0.15 }}
-              >
-                <CardUI className="h-12 w-full sm:h-16 flex items-center justify-center border-2 border-yellow-500">
-                  <div className="text-2xl sm:text-3xl">🦆</div>
-                </CardUI>
-              </motion.div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
-  const getDuckEmoji = (duckType: string): string => {
-    const emojis: Record<string, string> = {
-      mallard: '🦆', pintail: '🦆', teal: '🦆', canvasback: '🦆', bufflehead: '🦆',
-      woodduck: '🦆', mandarin: '🦆', eagle: '🦅', rubber: '🛁', glow: '🌟',
-      storm: '⛈️', ice: '🧊', fire: '🔥', earth: '🌍', wind: '💨',
-      rain: '🌧️', shadow: '🌑', light: '☀️', crystal: '💎', metal: '⚙️',
-      ghost: '👻', dragon: '🐉', phantom: '👻', neon: '⚡', bio: '🧬',
-      cyber: '🖥️', quantum: '🌀', nebula: '🌌', stellar: '⭐', omega: '🌀',
-      alpha: '🔱', chaos: '🎲', order: '📐', prism: '🌈', echo: '🔊',
-      flare: '🌋', tide: '🌊', breeze: '💨', thorn: '🌵', frost: '❄️',
-      quake: '🌋', vortex: '🌀', nova: '💥', eclipse: '🌒', aurora: '🌈',
-      comet: '☄️', meteor: '☄️', shock: '⚡', static: '⚡', current: '⚡',
-      plasma: '⚡', fusion: '☀️', antimatter: '💥', singularity: '🌀', entropy: '🌀',
-      void: '🕳️', infinity: '∞', zen: '🧘', seed: '🌱', spore: '🍄',
-      hive: '🐝', colony: '🐜', soul: '👻', dream: '🌙', nightmare: '😱',
-      waking: '☀️', gravity: '🌍', magnet: '🧲', radiation: '☢️', isotope: '⚛️',
-      elemental: '🔥', prime: '🔢', fibonacci: '🔢', fractal: '🔁'
-    }
-    return emojis[duckType] || '🦆'
-  }
-
   return (
     <>
       {currentView === 'theme' && renderThemeSelection()}
@@ -338,7 +315,13 @@ export default function Home() {
       {currentView === 'collection' && renderCollection()}
       {currentView === 'evolve' && renderEvolve()}
       {currentView === 'battle' && <BattleSystem playerCards={state.cards} onBattleEnd={(winner) => { setBattleWinner(winner); setCurrentView('collection'); }} />}
-      {renderPacksModal()}
+      {selectedPack && (
+        <PackRipOpener
+          pack={selectedPack}
+          onRip={handleRip}
+          onDone={handleRipDone}
+        />
+      )}
     </>
   )
 }
