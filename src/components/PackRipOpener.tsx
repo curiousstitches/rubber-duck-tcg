@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import type { Card as CardType, Pack } from '@/types/game'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getDuckEmoji } from '@/lib/duck-emoji'
+import { DuckCard } from '@/components/DuckCard'
 import { cn } from '@/lib/utils'
 
 interface PackRipOpenerProps {
@@ -56,42 +56,6 @@ function ConfettiBurst({ mythic }: { mythic?: boolean }) {
   )
 }
 
-function CardFace({ card }: { card: CardType }) {
-  const [imgFailed, setImgFailed] = useState(false)
-  const style = RARITY_STYLE[card.rarity] || RARITY_STYLE.common
-  return (
-    <div className={cn('flex h-full w-full flex-col overflow-hidden rounded-xl border-[3px] bg-slate-800', style.frame)}>
-      <div className="flex items-start justify-between gap-1 px-2 pt-1.5">
-        <div className="truncate text-[11px] font-bold text-white drop-shadow">{card.name}</div>
-        <div className="shrink-0 text-[9px] font-semibold text-white/70">{card.hp} HP</div>
-      </div>
-      <div className="relative mx-1.5 mt-1 flex-1 overflow-hidden rounded-lg bg-slate-700/60">
-        {!imgFailed ? (
-          <img
-            src={card.image}
-            alt={card.name}
-            className="h-full w-full object-cover"
-            onError={() => setImgFailed(true)}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-4xl">
-            {getDuckEmoji(card.duckType)}
-          </div>
-        )}
-        {(card.foil || card.holographic) && <div className="holo-overlay" />}
-        {(card.rarity === 'legendary' || card.rarity === 'mythic') && <div className="foil-sweep" />}
-      </div>
-      <div className="flex items-center justify-between px-2 py-1.5">
-        <span className={cn('rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider', style.tag)}>
-          {style.label}
-        </span>
-        {card.variant !== 'normal' && (
-          <span className="text-[8px] font-bold uppercase tracking-wider text-white/70">{card.variant}</span>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export function PackRipOpener({ pack, onRip, onDone }: PackRipOpenerProps) {
   const [stage, setStage] = useState<'pack' | 'ripping' | 'reveal'>('pack')
@@ -267,7 +231,7 @@ export function PackRipOpener({ pack, onRip, onDone }: PackRipOpenerProps) {
                       className="absolute inset-0"
                       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                     >
-                      <CardFace card={card} />
+                      <DuckCard card={card} size="sm" className="h-full" />
                     </div>
                   </motion.div>
                   {burstAt === i && isFlipped && <ConfettiBurst mythic={card.rarity === 'mythic'} />}
