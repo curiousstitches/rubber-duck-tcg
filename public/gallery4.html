@@ -45,6 +45,7 @@
     <div class="chip" data-f="vet">Originals</div>
     <div class="chip" data-f="new">New Era</div>
     <div class="chip" id="shinyChip">✨ Shiny</div>
+    <div class="chip" id="liveChip">🎬 Live</div>
   </div>
 </header>
 <div id="grid"></div>
@@ -59,7 +60,7 @@
 </div>
 <script>
 const VETERANS = new Set(("alpha antimatter aurora bio breeze bufflehead canvasback chaos colony comet crystal current cyber dragon dream eagle earth echo eclipse elemental entropy fibonacci fire flare fractal frost fusion ghost glow gravity hive ice infinity isotope light magnet mallard mandarin metal meteor mudbog nebula neon nightmare nova omega order phantom pintail plasma prime prism quake quantum radiation rain rubber seed shadow shock singularity soul spore static stellar storm teal thorn tide void vortex waking wind woodduck zen arroyo bandit basecamp butte buzzard cactus campfire canyon compass coyote crawler daybreak dune gravel lantern lasso mesa mirage oasis outlaw overland prospector rattler ridgeline rockhopper rodeo saddle sandstorm scorpion sheriff snorkel spur summit sundown switchback trailboss tumbleweed winch wrangler").split(" "));
-let ducks = [], filter = "all", shiny = false, current = null;
+let ducks = [], filter = "all", shiny = false, live = false, current = null;
 
 async function load() {
   try {
@@ -85,7 +86,11 @@ function render() {
     el.className = "duck" + (vet ? " vet" : "") + (shiny ? " sh" : "");
     const img = document.createElement("img");
     img.loading = "lazy";
-    img.src = "cards/ducks/" + (shiny && d.shiny ? d.shiny : d.normal);
+    if (live && d.live) {
+      img.src = "cards/ducks/" + d.live;
+    } else {
+      img.src = "cards/ducks/" + (shiny && d.shiny ? d.shiny : d.normal);
+    }
     const nm = document.createElement("div");
     nm.className = "nm"; nm.textContent = d.name;
     el.append(img, nm);
@@ -104,7 +109,9 @@ function open(d) {
   document.getElementById("viewer").style.display = "flex";
 }
 function setViewerImg(useShiny) {
-  const f = useShiny && current.shiny ? current.shiny : current.normal;
+  let f;
+  if (live && current.live) f = current.live;
+  else f = useShiny && current.shiny ? current.shiny : current.normal;
   document.getElementById("vImg").src = "cards/ducks/" + f;
 }
 document.getElementById("vClose").onclick = () => document.getElementById("viewer").style.display = "none";
@@ -118,6 +125,9 @@ document.querySelectorAll(".chip[data-f]").forEach(c => c.onclick = () => {
 });
 document.getElementById("shinyChip").onclick = function () {
   shiny = !shiny; this.classList.toggle("on", shiny); render();
+};
+document.getElementById("liveChip").onclick = function () {
+  live = !live; this.classList.toggle("on", live); render();
 };
 load();
 setInterval(load, 60000); // fresh ducks appear every minute automatically
