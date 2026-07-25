@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦆 Duck Gallery 4</title>
+<style>
+  :root { --bg:#0b0e1a; --card:#151a2e; --edge:#2a3352; --gold:#ffd24a; --txt:#e8ebf5; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--txt); font-family:system-ui,-apple-system,sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:linear-gradient(180deg,#0b0e1a 70%,transparent);
+           padding:16px 14px 10px; text-align:center; }
+  h1 { font-size:1.5rem; letter-spacing:.5px; }
+  h1 span { color:var(--gold); }
+  #count { color:#9aa3c0; font-size:.85rem; margin-top:4px; }
+  .bar { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
+  input[type=search] { flex:1 1 200px; max-width:340px; padding:10px 14px; border-radius:12px;
+    border:1px solid var(--edge); background:var(--card); color:var(--txt); font-size:1rem; outline:none; }
+  .chip { padding:10px 16px; border-radius:12px; border:1px solid var(--edge); background:var(--card);
+    color:var(--txt); font-size:.9rem; cursor:pointer; user-select:none; }
+  .chip.on { background:var(--gold); color:#111; border-color:var(--gold); font-weight:700; }
+  #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:14px; }
+  .duck { background:var(--card); border:1px solid var(--edge); border-radius:16px; overflow:hidden;
+    text-align:center; transition:transform .15s; }
+  .duck:active { transform:scale(.96); }
+  .duck img { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#0e1226; }
+  .duck .nm { padding:8px 4px 10px; font-weight:700; font-size:.85rem; text-transform:capitalize; }
+  .duck.sh .nm::after { content:" ✨"; }
+  .duck.vet .nm { color:var(--gold); }
+  #empty { text-align:center; padding:60px 20px; color:#9aa3c0; display:none; }
+  #viewer { position:fixed; inset:0; background:rgba(5,7,15,.94); display:none; z-index:20;
+    flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; }
+  #viewer img { max-width:92vw; max-height:70vh; border-radius:20px; border:2px solid var(--edge); }
+  #viewer .nm { font-size:1.4rem; font-weight:800; text-transform:capitalize; }
+  #viewer .btns { display:flex; gap:10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🦆 DUCK GALLERY <span>4</span></h1>
+  <div id="count">loading the pond...</div>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search ducks...">
+    <div class="chip on" data-f="all">All</div>
+    <div class="chip" data-f="vet">Originals</div>
+    <div class="chip" data-f="new">New Era</div>
+    <div class="chip" id="shinyChip">✨ Shiny</div>
+  </div>
+</header>
+<div id="grid"></div>
+<div id="empty">No ducks match — try another search 🔍</div>
+<div id="viewer">
+  <img id="vImg" alt="">
+  <div class="nm" id="vNm"></div>
+  <div class="btns">
+    <div class="chip" id="vToggle">✨ Shiny</div>
+    <div class="chip" id="vClose">Close ✕</div>
+  </div>
+</div>
+<script>
+const VETERANS = new Set(("alpha antimatter aurora bio breeze bufflehead canvasback chaos colony comet crystal current cyber dragon dream eagle earth echo eclipse elemental entropy fibonacci fire flare fractal frost fusion ghost glow gravity hive ice infinity isotope light magnet mallard mandarin metal meteor mudbog nebula neon nightmare nova omega order phantom pintail plasma prime prism quake quantum radiation rain rubber seed shadow shock singularity soul spore static stellar storm teal thorn tide void vortex waking wind woodduck zen arroyo bandit basecamp butte buzzard cactus campfire canyon compass coyote crawler daybreak dune gravel lantern lasso mesa mirage oasis outlaw overland prospector rattler ridgeline rockhopper rodeo saddle sandstorm scorpion sheriff snorkel spur summit sundown switchback trailboss tumbleweed winch wrangler").split(" "));
+let ducks = [], filter = "all", shiny = false, current = null;
+
+async function load() {
+  try {
+    const r = await fetch("cards/ducks/manifest.json?t=" + Date.now());
+    const j = await r.json();
+    ducks = j.ducks || [];
+  } catch (e) { ducks = []; }
+  render();
+}
+
+function render() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  let shown = 0;
+  for (const d of ducks) {
+    const vet = VETERANS.has(d.name);
+    if (filter === "vet" && !vet) continue;
+    if (filter === "new" && vet) continue;
+    if (q && !d.name.includes(q)) continue;
+    if (shiny && !d.shiny) continue;
+    const el = document.createElement("div");
+    el.className = "duck" + (vet ? " vet" : "") + (shiny ? " sh" : "");
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.src = "cards/ducks/" + (shiny && d.shiny ? d.shiny : d.normal);
+    const nm = document.createElement("div");
+    nm.className = "nm"; nm.textContent = d.name;
+    el.append(img, nm);
+    el.onclick = () => open(d);
+    grid.appendChild(el);
+    shown++;
+  }
+  document.getElementById("count").textContent = shown + " of " + ducks.length + " ducks in the pond";
+  document.getElementById("empty").style.display = shown ? "none" : "block";
+}
+
+function open(d) {
+  current = d;
+  document.getElementById("vNm").textContent = d.name;
+  setViewerImg(shiny);
+  document.getElementById("viewer").style.display = "flex";
+}
+function setViewerImg(useShiny) {
+  const f = useShiny && current.shiny ? current.shiny : current.normal;
+  document.getElementById("vImg").src = "cards/ducks/" + f;
+}
+document.getElementById("vClose").onclick = () => document.getElementById("viewer").style.display = "none";
+let vShiny = false;
+document.getElementById("vToggle").onclick = () => { vShiny = !vShiny; setViewerImg(vShiny); };
+
+document.getElementById("q").oninput = render;
+document.querySelectorAll(".chip[data-f]").forEach(c => c.onclick = () => {
+  document.querySelectorAll(".chip[data-f]").forEach(x => x.classList.remove("on"));
+  c.classList.add("on"); filter = c.dataset.f; render();
+});
+document.getElementById("shinyChip").onclick = function () {
+  shiny = !shiny; this.classList.toggle("on", shiny); render();
+};
+load();
+setInterval(load, 60000); // fresh ducks appear every minute automatically
+</script>
+</body>
+</html>
