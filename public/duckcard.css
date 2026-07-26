@@ -1,0 +1,182 @@
+
+.dwrap{perspective:1000px;width:min(88vw,420px);touch-action:pan-y;
+ padding:14% 12% 12%;margin:-14% -12% -12%}
+/* 3D stage — the card and the pop-out share this space but the orb is NOT clipped */
+.dscene{position:relative;width:100%;aspect-ratio:5/7;transform-style:preserve-3d;
+ transform:rotateY(calc(var(--tx,0)*13deg)) rotateX(calc(var(--ty,0)*-10deg));
+ will-change:transform}
+.dcard{position:relative;width:100%;height:100%;border-radius:20px;overflow:hidden;
+ background:#0c0f1b;isolation:isolate;
+ box-shadow:0 16px 46px rgba(0,0,0,.7)}
+.dart{position:absolute;left:5.5%;right:5.5%;top:9%;height:62%;border-radius:10px;
+ overflow:hidden;border:2px solid #28325a}
+.dart img{width:100%;height:100%;object-fit:cover;display:block;
+ transform:scale(1.06) translate(calc(var(--tx,0)*-1.6%),calc(var(--ty,0)*-1.6%));
+ will-change:transform}
+.foilzone{position:relative;isolation:isolate;overflow:hidden;
+ box-shadow:0 0 calc(7px + var(--neon,6px)) var(--gcol,#00fff2),
+            0 0 calc(18px + var(--neon,6px)) rgba(255,67,224,.35)}
+/* themed colour wash */
+.foilzone::after{content:"";position:absolute;inset:0;pointer-events:none;
+ mix-blend-mode:color-dodge;opacity:var(--foil,.6);
+ background:var(--wash);
+ background-size:340% 340%;filter:saturate(1.9) brightness(1.5);
+ background-position:calc(50% + var(--tx,0)*54%) calc(50% + var(--ty,0)*54%)}
+/* diamond lattice texture layer */
+.foilzone .lattice{position:absolute;inset:0;pointer-events:none;z-index:2;
+ mix-blend-mode:color-dodge;opacity:calc(var(--foil,.6)*.95);
+ background:var(--pat);background-size:var(--patsize,22px) var(--patsize,22px);
+ background-position:calc(var(--tx,0)*14px) calc(var(--ty,0)*14px);
+ filter:saturate(1.7) brightness(1.5)}
+.foilzone::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+ mix-blend-mode:screen;opacity:calc(var(--foil,.6)*.75);
+ background:linear-gradient(100deg,transparent 41%,rgba(255,255,255,.95) 49%,
+  rgba(150,255,255,.8) 53%,transparent 61%);
+ background-size:300% 300%;
+ background-position:calc(50% + var(--tx,0)*76%) calc(50% + var(--ty,0)*76%);
+ animation:neonStreak calc(var(--shim,6s)) linear infinite}
+@keyframes neonStreak{0%{transform:translateX(-13%)}100%{transform:translateX(13%)}}
+.dframe{position:absolute;inset:0;border-radius:20px;pointer-events:none;
+ border:var(--fw,8px) solid #151b31}
+.dframe::after{content:"";position:absolute;inset:0;border-radius:13px;pointer-events:none;
+ mix-blend-mode:color-dodge;opacity:calc(var(--foil,.6)*1.18);
+ border:var(--fw,8px) solid transparent;
+ background:var(--wash) border-box;
+ background-size:340% 340%;filter:saturate(2.0) brightness(1.6);
+ background-position:calc(50% + var(--tx,0)*54%) calc(50% + var(--ty,0)*54%);
+ -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+ -webkit-mask-composite:xor;mask-composite:exclude}
+.dframe::before{content:"";position:absolute;inset:0;border-radius:20px;pointer-events:none;
+ box-shadow:0 0 calc(11px + var(--neon,6px)) var(--gcol,#00fff2),
+            0 0 calc(28px + var(--neon,6px)*2) rgba(255,67,224,.35),
+            inset 0 0 calc(9px + var(--neon,6px)) rgba(130,255,255,.32);
+ animation:neonPulse calc(var(--shim,6s)*.85) ease-in-out infinite}
+@keyframes neonPulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* ============ PROP LAYER — one animation per weapon type ============ */
+.popout{position:absolute;left:50%;top:30%;width:38%;aspect-ratio:1;
+ margin-left:-19%;pointer-events:none;transform-style:preserve-3d;
+ transform:translateZ(var(--pz,86px)) translate(calc(var(--tx,0)*-9%),calc(var(--ty,0)*-9%));
+ will-change:transform}
+/* held props sit lower-left, where the duck's wing is framed */
+.popout.held{left:16%;top:46%;width:30%;margin-left:0}
+.orb{position:absolute;inset:0}
+.orb i{position:absolute;border-radius:50%;display:block}
+.orb .core{inset:26%;background:radial-gradient(circle at 38% 34%,#ffffff 0%,
+ var(--o1) 34%,var(--o2) 66%,transparent 78%);
+ filter:blur(1px) saturate(1.7) brightness(1.35);
+ box-shadow:0 0 26px var(--o1),0 0 60px var(--o2),0 0 100px var(--o3)}
+.orb .shell{inset:10%;background:conic-gradient(from 0deg,transparent,var(--o1),transparent 28%,
+ var(--o2),transparent 56%,var(--o3),transparent 84%,var(--o1));
+ filter:blur(5px) saturate(1.8);opacity:.9;
+ animation:spin calc(var(--ocyc)*1.6) linear infinite}
+.orb .shell2{inset:2%;background:conic-gradient(from 180deg,transparent,var(--o3),transparent 34%,
+ var(--o1),transparent 70%,var(--o2),transparent);
+ filter:blur(9px) saturate(1.6);opacity:.62;
+ animation:spin calc(var(--ocyc)*2.3) linear infinite reverse}
+.orb .aura{inset:-22%;background:radial-gradient(circle,var(--o2) 0%,transparent 62%);
+ filter:blur(13px);opacity:.5}
+.orb .ring{position:absolute;inset:-6%;animation:spin calc(var(--ocyc)*1.15) linear infinite}
+.orb .ring.r2{inset:-16%;animation-duration:calc(var(--ocyc)*1.9);animation-direction:reverse}
+.orb .mote{position:absolute;width:6%;aspect-ratio:1;border-radius:50%;background:#fff;
+ box-shadow:0 0 9px var(--o1),0 0 16px var(--o2)}
+.orb .burst{inset:14%;border:2px solid var(--o1);opacity:0;
+ animation:burstRing calc(var(--ocyc)*2) ease-out infinite}
+.podrop{position:absolute;left:50%;top:34%;width:34%;aspect-ratio:1;margin-left:-17%;
+ border-radius:50%;background:rgba(0,0,0,.5);filter:blur(14px);
+ transform:translateZ(1px) translate(calc(var(--tx,0)*6%),calc(var(--ty,0)*6%)) scale(.94);
+ pointer-events:none}
+.podrop.held{left:18%;top:50%;width:26%;margin-left:0}
+@keyframes spin{0%{rotate:0deg}100%{rotate:360deg}}
+@keyframes burstRing{0%{opacity:0;transform:scale(.6)}12%{opacity:.85}
+ 45%{opacity:0;transform:scale(2.3)}100%{opacity:0;transform:scale(2.3)}}
+
+/* --- the 32 prop motions --- */
+.pa-cradle .orb{animation:paCradle var(--ocyc) ease-in-out infinite}
+@keyframes paCradle{0%,100%{transform:translateY(0) rotate(-4deg) scale(1)}
+ 50%{transform:translateY(-9%) rotate(4deg) scale(1.06)}}
+.pa-swing .orb,.pa-chop .orb,.pa-reap .orb{animation:paSwing var(--ocyc) cubic-bezier(.5,0,.2,1) infinite;
+ transform-origin:50% 88%}
+@keyframes paSwing{0%,38%{transform:rotate(-26deg)}54%{transform:rotate(48deg)}
+ 74%{transform:rotate(-14deg)}100%{transform:rotate(-26deg)}}
+.pa-draw-slash .orb{animation:paDrawSlash var(--ocyc) cubic-bezier(.7,0,.2,1) infinite;
+ transform-origin:50% 88%}
+@keyframes paDrawSlash{0%,44%{transform:rotate(-52deg) translateX(-8%)}
+ 52%{transform:rotate(-52deg) translateX(-8%)}62%{transform:rotate(62deg) translateX(6%)}
+ 82%{transform:rotate(-52deg) translateX(-8%)}100%{transform:rotate(-52deg) translateX(-8%)}}
+.pa-thrust .orb,.pa-bash .orb,.pa-jab .orb{animation:paThrust var(--ocyc) cubic-bezier(.5,0,.15,1) infinite}
+@keyframes paThrust{0%,44%{transform:translate(0,0)}56%{transform:translate(-30%,-6%)}
+ 74%{transform:translate(0,0)}100%{transform:translate(0,0)}}
+.pa-slam .orb,.pa-bonk .orb{animation:paSlam var(--ocyc) cubic-bezier(.4,0,.1,1) infinite;
+ transform-origin:50% 90%}
+@keyframes paSlam{0%,36%{transform:rotate(-34deg)}52%{transform:rotate(46deg)}
+ 58%{transform:rotate(40deg) scale(1.06)}76%{transform:rotate(-34deg)}100%{transform:rotate(-34deg)}}
+.pa-lash .orb,.pa-whirl .orb{animation:paLash var(--ocyc) ease-in-out infinite;transform-origin:50% 88%}
+@keyframes paLash{0%,40%{transform:rotate(-40deg)}52%{transform:rotate(70deg)}
+ 64%{transform:rotate(-18deg)}100%{transform:rotate(-40deg)}}
+.pa-flurry .orb{animation:paFlurry calc(var(--ocyc)*.5) ease-in-out infinite;transform-origin:50% 88%}
+@keyframes paFlurry{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(26deg)}}
+.pa-beamswing .orb{animation:paSwing var(--ocyc) cubic-bezier(.5,0,.2,1) infinite;
+ transform-origin:50% 88%;filter:drop-shadow(0 0 14px var(--o1))}
+/* guns: fire then reload */
+.pa-fire-burst .orb,.pa-charge-fire .orb,.pa-click-fire .orb{
+ animation:paRecoil var(--ocyc) ease-out infinite}
+@keyframes paRecoil{0%,46%{transform:translate(0,0) rotate(0)}
+ 52%{transform:translate(16%,-5%) rotate(-11deg)}58%{transform:translate(6%,-2%) rotate(-4deg)}
+ 64%{transform:translate(14%,-4%) rotate(-9deg)}80%{transform:translate(0,0) rotate(0)}
+ 100%{transform:translate(0,0) rotate(0)}}
+.pa-fire-reload .orb{animation:paFireReload var(--ocyc) ease-out infinite}
+@keyframes paFireReload{
+ 0%,30%{transform:translate(0,0) rotate(0)}
+ 36%{transform:translate(15%,-5%) rotate(-12deg)}42%{transform:translate(4%,-1%) rotate(-3deg)}
+ 48%{transform:translate(15%,-5%) rotate(-12deg)}54%{transform:translate(0,0) rotate(0)}
+ 66%{transform:translate(-6%,4%) rotate(64deg)}   /* flick out the cylinder */
+ 78%{transform:translate(-6%,4%) rotate(64deg)}
+ 90%{transform:translate(0,0) rotate(0)}100%{transform:translate(0,0) rotate(0)}}
+.pa-spray .orb{animation:paSpray var(--ocyc) ease-in-out infinite}
+@keyframes paSpray{0%,40%{transform:rotate(0)}55%{transform:rotate(-13deg) translate(-7%,0)}
+ 70%{transform:rotate(6deg)}100%{transform:rotate(0)}}
+.pa-pull-release .orb,.pa-draw-loose .orb{animation:paDraw var(--ocyc) ease-out infinite}
+@keyframes paDraw{0%,34%{transform:scaleX(1)}54%{transform:scaleX(.82) translateX(9%)}
+ 60%{transform:scaleX(1.08) translateX(-6%)}76%{transform:scaleX(1)}100%{transform:scaleX(1)}}
+.pa-pop .orb,.pa-honk .orb{animation:paPop var(--ocyc) ease-out infinite}
+@keyframes paPop{0%,48%{transform:scale(1)}56%{transform:scale(1.28) rotate(-7deg)}
+ 72%{transform:scale(1)}100%{transform:scale(1)}}
+.pa-throw-return .orb,.pa-hook-pull .orb{animation:paThrow var(--ocyc) ease-in-out infinite}
+@keyframes paThrow{0%,34%{transform:translate(0,0) rotate(0)}
+ 58%{transform:translate(-150%,-22%) rotate(400deg)}
+ 86%{transform:translate(0,0) rotate(760deg)}100%{transform:translate(0,0) rotate(760deg)}}
+.pa-yo .orb{animation:paYo var(--ocyc) cubic-bezier(.4,0,.4,1) infinite}
+@keyframes paYo{0%,100%{transform:translateY(0) rotate(0)}
+ 50%{transform:translateY(78%) rotate(540deg)}}
+.pa-rev .orb{animation:paRev calc(var(--ocyc)*.24) ease-in-out infinite}
+@keyframes paRev{0%,100%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(1.5%,-1.5%) rotate(3deg)}}
+.pa-channel .orb,.pa-page-cast .orb{animation:paChannel var(--ocyc) ease-in-out infinite}
+@keyframes paChannel{0%,100%{transform:translateY(0) scale(1)}
+ 50%{transform:translateY(-11%) scale(1.12)}}
+.pa-orbit-fire .orb{animation:paOrbit var(--ocyc) linear infinite}
+@keyframes paOrbit{0%{transform:translate(0,0)}25%{transform:translate(16%,-11%)}
+ 50%{transform:translate(0,-19%)}75%{transform:translate(-16%,-11%)}100%{transform:translate(0,0)}}
+.pa-boost .orb{animation:paBoost var(--ocyc) ease-in-out infinite}
+@keyframes paBoost{0%,100%{transform:translateY(0) scale(1)}
+ 40%{transform:translateY(-26%) scale(1.1)}70%{transform:translateY(-6%) scale(.97)}}
+.pa-blow .orb{animation:paBlow var(--ocyc) ease-out infinite}
+@keyframes paBlow{0%,44%{transform:scale(1)}60%{transform:scale(1.34);opacity:.8}
+ 74%{transform:scale(1)}100%{transform:scale(1)}}
+.dname{position:absolute;left:5.5%;right:5.5%;top:2.4%;height:5.6%;border-radius:9px;
+ background:#131931;display:flex;align-items:center;justify-content:center;
+ font:800 clamp(.8rem,4.2vw,1.28rem)/1 system-ui,sans-serif;color:#fff;
+ text-transform:uppercase;letter-spacing:.06em;border:2px solid #2c3660}
+.dstats{position:absolute;left:5.5%;right:5.5%;top:73%;height:7%;border-radius:9px;
+ background:#121730;display:flex;align-items:center;justify-content:space-around;
+ font:800 clamp(.68rem,3.4vw,1rem)/1 system-ui,sans-serif;color:#e3e9ff;
+ border:2px solid #283260}
+.dstars{position:absolute;left:5.5%;top:81.4%;height:5.4%;padding:0 12px;border-radius:9px;
+ background:#121730;display:flex;align-items:center;
+ font:800 clamp(.72rem,3.5vw,1.05rem)/1 system-ui,sans-serif;color:#ffdc80;
+ letter-spacing:.13em;border:2px solid #283260}
+.dmove{position:absolute;left:5.5%;right:5.5%;top:88%;height:8.6%;border-radius:9px;
+ background:#101527;padding:6px 11px;border:2px solid #283260;
+ display:flex;flex-direction:column;justify-content:center;gap:3px}
+.dmove b{font:800 clamp(.66rem,3.2vw,.96rem)/1 system-ui,sans-serif;color:#fff}
+.dmove span{font:600 clamp(.6rem,2.9vw,.86rem)/1 system-ui,sans-serif;color:#ffdc80}
