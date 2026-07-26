@@ -158,23 +158,33 @@
 @keyframes emFall{0%{opacity:.8;transform:translateY(0)}100%{opacity:0;transform:translateY(240px)}}
 @keyframes emTwinkle{0%,100%{opacity:.1}50%{opacity:.9}}
 @keyframes emFlash{0%,58%{opacity:0}62%{opacity:.9}68%{opacity:0}100%{opacity:0}}
+/* ---- holographic lettering (contrast hue so it always reads) ---- */
+.dname,.dstats,.dstars,.dmove{--txtholo:linear-gradient(112deg,var(--t1),var(--t2) 30%,
+ #ffffff 48%,var(--t3) 66%,var(--t1));}
+.holotext{background:var(--txtholo);background-size:220% 220%;
+ background-position:calc(50% + var(--tx,0)*40%) calc(50% + var(--ty,0)*40%);
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ -webkit-text-stroke:.5px rgba(4,6,14,.85);
+ filter:drop-shadow(0 1px 0 rgba(0,0,0,.95)) drop-shadow(0 0 5px rgba(0,0,0,.75))
+        drop-shadow(0 0 9px var(--t1));
+ position:relative;z-index:3}
 .dname{position:absolute;left:5.5%;right:5.5%;top:2.4%;height:5.6%;border-radius:9px;
- background:#131931;display:flex;align-items:center;justify-content:center;
- font:800 clamp(.8rem,4.2vw,1.28rem)/1 system-ui,sans-serif;color:#fff;
+ background:#0d1122;display:flex;align-items:center;justify-content:center;
+ font:800 clamp(.8rem,4.2vw,1.28rem)/1 system-ui,sans-serif;
  text-transform:uppercase;letter-spacing:.06em;border:2px solid #2c3660}
 .dstats{position:absolute;left:5.5%;right:5.5%;top:73%;height:7%;border-radius:9px;
- background:#121730;display:flex;align-items:center;justify-content:space-around;
- font:800 clamp(.68rem,3.4vw,1rem)/1 system-ui,sans-serif;color:#e3e9ff;
+ background:#0c1020;display:flex;align-items:center;justify-content:space-around;
+ font:800 clamp(.68rem,3.4vw,1rem)/1 system-ui,sans-serif;
  border:2px solid #283260}
 .dstars{position:absolute;left:5.5%;top:81.4%;height:5.4%;padding:0 12px;border-radius:9px;
- background:#121730;display:flex;align-items:center;
- font:800 clamp(.72rem,3.5vw,1.05rem)/1 system-ui,sans-serif;color:#ffdc80;
+ background:#0c1020;display:flex;align-items:center;
+ font:800 clamp(.72rem,3.5vw,1.05rem)/1 system-ui,sans-serif;
  letter-spacing:.13em;border:2px solid #283260}
 .dmove{position:absolute;left:5.5%;right:5.5%;top:88%;height:8.6%;border-radius:9px;
- background:#101527;padding:6px 11px;border:2px solid #283260;
+ background:#0b0f1e;padding:6px 11px;border:2px solid #283260;
  display:flex;flex-direction:column;justify-content:center;gap:3px}
-.dmove b{font:800 clamp(.66rem,3.2vw,.96rem)/1 system-ui,sans-serif;color:#fff}
-.dmove span{font:600 clamp(.6rem,2.9vw,.86rem)/1 system-ui,sans-serif;color:#ffdc80}
+.dmove b{font:800 clamp(.66rem,3.2vw,.96rem)/1 system-ui,sans-serif}
+.dmove span{font:600 clamp(.6rem,2.9vw,.86rem)/1 system-ui,sans-serif}
 
 
 :root{
@@ -673,12 +683,28 @@ function foilFor(d){
   else p=`repeating-linear-gradient(115deg,${a} 0 2px,transparent 2px 12px)`;
   return {wash,patt:p,size:PATSIZE[pat],pal};
 }
+function contrastPal(pal){
+  function h2r(x){x=x.replace('#','');return [parseInt(x.slice(0,2),16),parseInt(x.slice(2,4),16),parseInt(x.slice(4,6),16)];}
+  function r2h(a,b,c){return '#'+[a,b,c].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+  function rgb2hsv(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+    let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;}
+    h/=6;if(h<0)h+=1;return [h,mx?d/mx:0,mx];}
+  function hsv2rgb(h,s,v){h=((h%1)+1)%1;const i=Math.floor(h*6),f=h*6-i,p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);
+    let r,g,b;switch(i%6){case 0:r=v;g=t;b=p;break;case 1:r=q;g=v;b=p;break;case 2:r=p;g=v;b=t;break;
+    case 3:r=p;g=q;b=v;break;case 4:r=t;g=p;b=v;break;default:r=v;g=p;b=q;}
+    return r2h(r*255,g*255,b*255);}
+  const hs=pal.map(c=>rgb2hsv(...h2r(c)));
+  const avgS=hs.reduce((a,x)=>a+x[1],0)/hs.length, avgH=hs.reduce((a,x)=>a+x[0],0)/hs.length;
+  const weak=avgS<0.34, anchor=weak?(avgH>0.5?0.09:0.55):(avgH+0.5)%1;
+  return hs.map((x,i)=>hsv2rgb(anchor+(i-hs.length/2)*0.035, weak?0.95:Math.min(1,Math.max(0.72,x[1]*1.35)), Math.min(1,Math.max(0.88,x[2]*1.1))));
+}
 function buildCard(d,big){
   const r=d.rarity;
   const foil=(0.40+r*0.13).toFixed(2), fw=6+r, neon=3+r*3, shim=(7.2-r*0.75).toFixed(2);
   const stars="\u2605".repeat(r)+"\u2606".repeat(5-r);
   const F=foilFor(d), pal=d.palette||F.pal;
   const o1=pal[1],o2=pal[0],o3=pal[2];
+  const CT=contrastPal(pal); const t1=CT[1],t2=CT[3]||CT[0],t3=CT[0];
   const ocyc=d.cycle||4.2, pz=62+r*12;
   const mount=d.mount==='held'?'held':'';
   const pcls='pa-'+(d.prop||'cradle');
@@ -706,13 +732,13 @@ function buildCard(d,big){
   wrap.className='dwrap';
   if(big) wrap.style.width='min(84vw,360px)';
   wrap.innerHTML=
-    `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge}">`+
+    `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge};--t1:${t1};--t2:${t2};--t3:${t3}">`+
       `<div class="dcard">`+
         `<div class="dart"><img loading="lazy" src="cards/ducks/${d.hero}" alt="${d.name}">${EDGE}</div>`+
-        `<div class="dname foilzone">${L}${d.name}</div>`+
-        `<div class="dstats foilzone">${L}<span>ATK ${d.atk}</span><span>DEF ${d.def}</span><span>SPD ${d.spd}</span></div>`+
-        `<div class="dstars foilzone">${L}${stars}</div>`+
-        `<div class="dmove foilzone">${L}<b>${d.icon} ${d.badge}</b><span>${d.move}</span></div>`+
+        `<div class="dname foilzone">${L}<span class="holotext">${d.name}</span></div>`+
+        `<div class="dstats foilzone">${L}<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span></div>`+
+        `<div class="dstars foilzone">${L}<span class="holotext">${stars}</span></div>`+
+        `<div class="dmove foilzone">${L}<b class="holotext">${d.icon} ${d.badge}</b><span class="holotext">${d.move}</span></div>`+
         `<div class="dframe"></div>`+
       `</div>`+
     `</div>`;
