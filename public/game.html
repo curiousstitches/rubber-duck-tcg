@@ -62,116 +62,102 @@
  animation:neonPulse calc(var(--shim,6s)*.85) ease-in-out infinite}
 @keyframes neonPulse{0%,100%{opacity:.7}50%{opacity:1}}
 
-/* ============ PROP LAYER — one animation per weapon type ============ */
-.popout{position:absolute;left:50%;top:30%;width:38%;aspect-ratio:1;
- margin-left:-19%;pointer-events:none;transform-style:preserve-3d;
- transform:translateZ(var(--pz,86px)) translate(calc(var(--tx,0)*-9%),calc(var(--ty,0)*-9%));
- will-change:transform}
-/* held props sit lower-left, where the duck's wing is framed */
-.popout.held{left:16%;top:46%;width:30%;margin-left:0}
-.orb{position:absolute;inset:0}
-.orb i{position:absolute;border-radius:50%;display:block}
-.orb .core{inset:26%;background:radial-gradient(circle at 38% 34%,#ffffff 0%,
- var(--o1) 34%,var(--o2) 66%,transparent 78%);
- filter:blur(1px) saturate(1.7) brightness(1.35);
- box-shadow:0 0 26px var(--o1),0 0 60px var(--o2),0 0 100px var(--o3)}
-.orb .shell{inset:10%;background:conic-gradient(from 0deg,transparent,var(--o1),transparent 28%,
- var(--o2),transparent 56%,var(--o3),transparent 84%,var(--o1));
- filter:blur(5px) saturate(1.8);opacity:.9;
- animation:spin calc(var(--ocyc)*1.6) linear infinite}
-.orb .shell2{inset:2%;background:conic-gradient(from 180deg,transparent,var(--o3),transparent 34%,
- var(--o1),transparent 70%,var(--o2),transparent);
- filter:blur(9px) saturate(1.6);opacity:.62;
- animation:spin calc(var(--ocyc)*2.3) linear infinite reverse}
-.orb .aura{inset:-22%;background:radial-gradient(circle,var(--o2) 0%,transparent 62%);
- filter:blur(13px);opacity:.5}
-.orb .ring{position:absolute;inset:-6%;animation:spin calc(var(--ocyc)*1.15) linear infinite}
-.orb .ring.r2{inset:-16%;animation-duration:calc(var(--ocyc)*1.9);animation-direction:reverse}
-.orb .mote{position:absolute;width:6%;aspect-ratio:1;border-radius:50%;background:#fff;
- box-shadow:0 0 9px var(--o1),0 0 16px var(--o2)}
-.orb .burst{inset:14%;border:2px solid var(--o1);opacity:0;
- animation:burstRing calc(var(--ocyc)*2) ease-out infinite}
-.podrop{position:absolute;left:50%;top:34%;width:34%;aspect-ratio:1;margin-left:-17%;
- border-radius:50%;background:rgba(0,0,0,.5);filter:blur(14px);
- transform:translateZ(1px) translate(calc(var(--tx,0)*6%),calc(var(--ty,0)*6%)) scale(.94);
- pointer-events:none}
-.podrop.held{left:18%;top:50%;width:26%;margin-left:0}
-@keyframes spin{0%{rotate:0deg}100%{rotate:360deg}}
-@keyframes burstRing{0%{opacity:0;transform:scale(.6)}12%{opacity:.85}
- 45%{opacity:0;transform:scale(2.3)}100%{opacity:0;transform:scale(2.3)}}
+/* ============ EDGE-LIGHT SYSTEM ============
+   No objects sit on the art. Instead a travelling light traces the
+   linework — the art window border, the frame, and the foil zones —
+   with a pulse rhythm matched to each duck's weapon. */
 
-/* --- the 32 prop motions --- */
-.pa-cradle .orb{animation:paCradle var(--ocyc) ease-in-out infinite}
-@keyframes paCradle{0%,100%{transform:translateY(0) rotate(-4deg) scale(1)}
- 50%{transform:translateY(-9%) rotate(4deg) scale(1.06)}}
-.pa-swing .orb,.pa-chop .orb,.pa-reap .orb{animation:paSwing var(--ocyc) cubic-bezier(.5,0,.2,1) infinite;
- transform-origin:50% 88%}
-@keyframes paSwing{0%,38%{transform:rotate(-26deg)}54%{transform:rotate(48deg)}
- 74%{transform:rotate(-14deg)}100%{transform:rotate(-26deg)}}
-.pa-draw-slash .orb{animation:paDrawSlash var(--ocyc) cubic-bezier(.7,0,.2,1) infinite;
- transform-origin:50% 88%}
-@keyframes paDrawSlash{0%,44%{transform:rotate(-52deg) translateX(-8%)}
- 52%{transform:rotate(-52deg) translateX(-8%)}62%{transform:rotate(62deg) translateX(6%)}
- 82%{transform:rotate(-52deg) translateX(-8%)}100%{transform:rotate(-52deg) translateX(-8%)}}
-.pa-thrust .orb,.pa-bash .orb,.pa-jab .orb{animation:paThrust var(--ocyc) cubic-bezier(.5,0,.15,1) infinite}
-@keyframes paThrust{0%,44%{transform:translate(0,0)}56%{transform:translate(-30%,-6%)}
- 74%{transform:translate(0,0)}100%{transform:translate(0,0)}}
-.pa-slam .orb,.pa-bonk .orb{animation:paSlam var(--ocyc) cubic-bezier(.4,0,.1,1) infinite;
- transform-origin:50% 90%}
-@keyframes paSlam{0%,36%{transform:rotate(-34deg)}52%{transform:rotate(46deg)}
- 58%{transform:rotate(40deg) scale(1.06)}76%{transform:rotate(-34deg)}100%{transform:rotate(-34deg)}}
-.pa-lash .orb,.pa-whirl .orb{animation:paLash var(--ocyc) ease-in-out infinite;transform-origin:50% 88%}
-@keyframes paLash{0%,40%{transform:rotate(-40deg)}52%{transform:rotate(70deg)}
- 64%{transform:rotate(-18deg)}100%{transform:rotate(-40deg)}}
-.pa-flurry .orb{animation:paFlurry calc(var(--ocyc)*.5) ease-in-out infinite;transform-origin:50% 88%}
-@keyframes paFlurry{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(26deg)}}
-.pa-beamswing .orb{animation:paSwing var(--ocyc) cubic-bezier(.5,0,.2,1) infinite;
- transform-origin:50% 88%;filter:drop-shadow(0 0 14px var(--o1))}
-/* guns: fire then reload */
-.pa-fire-burst .orb,.pa-charge-fire .orb,.pa-click-fire .orb{
- animation:paRecoil var(--ocyc) ease-out infinite}
-@keyframes paRecoil{0%,46%{transform:translate(0,0) rotate(0)}
- 52%{transform:translate(16%,-5%) rotate(-11deg)}58%{transform:translate(6%,-2%) rotate(-4deg)}
- 64%{transform:translate(14%,-4%) rotate(-9deg)}80%{transform:translate(0,0) rotate(0)}
- 100%{transform:translate(0,0) rotate(0)}}
-.pa-fire-reload .orb{animation:paFireReload var(--ocyc) ease-out infinite}
-@keyframes paFireReload{
- 0%,30%{transform:translate(0,0) rotate(0)}
- 36%{transform:translate(15%,-5%) rotate(-12deg)}42%{transform:translate(4%,-1%) rotate(-3deg)}
- 48%{transform:translate(15%,-5%) rotate(-12deg)}54%{transform:translate(0,0) rotate(0)}
- 66%{transform:translate(-6%,4%) rotate(64deg)}   /* flick out the cylinder */
- 78%{transform:translate(-6%,4%) rotate(64deg)}
- 90%{transform:translate(0,0) rotate(0)}100%{transform:translate(0,0) rotate(0)}}
-.pa-spray .orb{animation:paSpray var(--ocyc) ease-in-out infinite}
-@keyframes paSpray{0%,40%{transform:rotate(0)}55%{transform:rotate(-13deg) translate(-7%,0)}
- 70%{transform:rotate(6deg)}100%{transform:rotate(0)}}
-.pa-pull-release .orb,.pa-draw-loose .orb{animation:paDraw var(--ocyc) ease-out infinite}
-@keyframes paDraw{0%,34%{transform:scaleX(1)}54%{transform:scaleX(.82) translateX(9%)}
- 60%{transform:scaleX(1.08) translateX(-6%)}76%{transform:scaleX(1)}100%{transform:scaleX(1)}}
-.pa-pop .orb,.pa-honk .orb{animation:paPop var(--ocyc) ease-out infinite}
-@keyframes paPop{0%,48%{transform:scale(1)}56%{transform:scale(1.28) rotate(-7deg)}
- 72%{transform:scale(1)}100%{transform:scale(1)}}
-.pa-throw-return .orb,.pa-hook-pull .orb{animation:paThrow var(--ocyc) ease-in-out infinite}
-@keyframes paThrow{0%,34%{transform:translate(0,0) rotate(0)}
- 58%{transform:translate(-150%,-22%) rotate(400deg)}
- 86%{transform:translate(0,0) rotate(760deg)}100%{transform:translate(0,0) rotate(760deg)}}
-.pa-yo .orb{animation:paYo var(--ocyc) cubic-bezier(.4,0,.4,1) infinite}
-@keyframes paYo{0%,100%{transform:translateY(0) rotate(0)}
- 50%{transform:translateY(78%) rotate(540deg)}}
-.pa-rev .orb{animation:paRev calc(var(--ocyc)*.24) ease-in-out infinite}
-@keyframes paRev{0%,100%{transform:translate(0,0) rotate(-3deg)}50%{transform:translate(1.5%,-1.5%) rotate(3deg)}}
-.pa-channel .orb,.pa-page-cast .orb{animation:paChannel var(--ocyc) ease-in-out infinite}
-@keyframes paChannel{0%,100%{transform:translateY(0) scale(1)}
- 50%{transform:translateY(-11%) scale(1.12)}}
-.pa-orbit-fire .orb{animation:paOrbit var(--ocyc) linear infinite}
-@keyframes paOrbit{0%{transform:translate(0,0)}25%{transform:translate(16%,-11%)}
- 50%{transform:translate(0,-19%)}75%{transform:translate(-16%,-11%)}100%{transform:translate(0,0)}}
-.pa-boost .orb{animation:paBoost var(--ocyc) ease-in-out infinite}
-@keyframes paBoost{0%,100%{transform:translateY(0) scale(1)}
- 40%{transform:translateY(-26%) scale(1.1)}70%{transform:translateY(-6%) scale(.97)}}
-.pa-blow .orb{animation:paBlow var(--ocyc) ease-out infinite}
-@keyframes paBlow{0%,44%{transform:scale(1)}60%{transform:scale(1.34);opacity:.8}
- 74%{transform:scale(1)}100%{transform:scale(1)}}
+/* travelling light around the art window */
+.ringmask{position:absolute;inset:0;border-radius:10px;pointer-events:none;
+ border:2px solid transparent;overflow:hidden;
+ -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+ -webkit-mask-composite:xor;mask-composite:exclude;
+ opacity:var(--edge,.85)}
+.ringmask .tracer{position:absolute;inset:-60%;
+ background:conic-gradient(from 0deg,transparent 0 62%,var(--o3) 72%,
+  var(--o1) 80%,#ffffff 85%,var(--o1) 90%,var(--o2) 95%,transparent 100%);
+ filter:saturate(1.6) brightness(1.35);
+ animation:traceSpin var(--ocyc,4s) linear infinite}
+@keyframes traceSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+/* second, slower counter-tracer for depth */
+.ringmask.slow{border-width:1px;opacity:calc(var(--edge,.85)*.55)}
+.ringmask.slow .tracer{animation-duration:calc(var(--ocyc,4s)*2.1);
+ animation-direction:reverse}
+
+/* inner rim glow that breathes with the duck's rhythm */
+.rimlight{position:absolute;inset:0;border-radius:10px;pointer-events:none;
+ box-shadow:inset 0 0 calc(9px + var(--neon,6px)) var(--o1),
+            inset 0 0 calc(22px + var(--neon,6px)) var(--o2);
+ opacity:0;mix-blend-mode:screen}
+
+/* ---- per-weapon pulse rhythm (opacity only — nothing covers the art) ---- */
+.pr-cradle .rimlight   {animation:rhCradle  var(--ocyc) ease-in-out infinite}
+.pr-swing .rimlight,
+.pr-chop .rimlight,
+.pr-reap .rimlight     {animation:rhSwing   var(--ocyc) cubic-bezier(.5,0,.2,1) infinite}
+.pr-draw-slash .rimlight{animation:rhDrawSlash var(--ocyc) cubic-bezier(.7,0,.2,1) infinite}
+.pr-thrust .rimlight,
+.pr-bash .rimlight,
+.pr-jab .rimlight      {animation:rhThrust  var(--ocyc) cubic-bezier(.5,0,.15,1) infinite}
+.pr-slam .rimlight,
+.pr-bonk .rimlight     {animation:rhSlam    var(--ocyc) cubic-bezier(.4,0,.1,1) infinite}
+.pr-lash .rimlight,
+.pr-whirl .rimlight    {animation:rhLash    var(--ocyc) ease-in-out infinite}
+.pr-flurry .rimlight   {animation:rhFlurry  calc(var(--ocyc)*.5) ease-in-out infinite}
+.pr-beamswing .rimlight{animation:rhSwing   var(--ocyc) cubic-bezier(.5,0,.2,1) infinite}
+.pr-fire-burst .rimlight,
+.pr-charge-fire .rimlight,
+.pr-click-fire .rimlight{animation:rhFire   var(--ocyc) ease-out infinite}
+.pr-fire-reload .rimlight{animation:rhReload var(--ocyc) ease-out infinite}
+.pr-spray .rimlight    {animation:rhSpray   var(--ocyc) ease-in-out infinite}
+.pr-pull-release .rimlight,
+.pr-draw-loose .rimlight{animation:rhDraw   var(--ocyc) ease-out infinite}
+.pr-pop .rimlight,
+.pr-honk .rimlight     {animation:rhPop     var(--ocyc) ease-out infinite}
+.pr-throw-return .rimlight,
+.pr-hook-pull .rimlight{animation:rhThrow   var(--ocyc) ease-in-out infinite}
+.pr-yo .rimlight       {animation:rhYo      var(--ocyc) cubic-bezier(.4,0,.4,1) infinite}
+.pr-rev .rimlight      {animation:rhRev     calc(var(--ocyc)*.22) ease-in-out infinite}
+.pr-channel .rimlight,
+.pr-page-cast .rimlight{animation:rhChannel var(--ocyc) ease-in-out infinite}
+.pr-orbit-fire .rimlight{animation:rhOrbit  var(--ocyc) linear infinite}
+.pr-boost .rimlight    {animation:rhBoost   var(--ocyc) ease-in-out infinite}
+.pr-blow .rimlight     {animation:rhBlow    var(--ocyc) ease-out infinite}
+
+@keyframes rhCradle {0%,100%{opacity:.22}50%{opacity:.62}}
+@keyframes rhSwing  {0%,40%{opacity:.14}56%{opacity:.9}72%{opacity:.3}100%{opacity:.14}}
+@keyframes rhDrawSlash{0%,52%{opacity:.1}60%{opacity:1}70%{opacity:.2}100%{opacity:.1}}
+@keyframes rhThrust {0%,46%{opacity:.16}57%{opacity:.88}70%{opacity:.24}100%{opacity:.16}}
+@keyframes rhSlam   {0%,40%{opacity:.12}53%{opacity:.95}60%{opacity:.55}74%{opacity:.18}100%{opacity:.12}}
+@keyframes rhLash   {0%,42%{opacity:.14}53%{opacity:.85}62%{opacity:.3}100%{opacity:.14}}
+@keyframes rhFlurry {0%,100%{opacity:.2}50%{opacity:.7}}
+@keyframes rhFire   {0%,48%{opacity:.14}53%{opacity:.95}59%{opacity:.3}64%{opacity:.85}
+ 74%{opacity:.2}100%{opacity:.14}}
+@keyframes rhReload {0%,32%{opacity:.14}
+ 37%{opacity:.95}43%{opacity:.28}49%{opacity:.95}55%{opacity:.2}
+ 66%{opacity:.5}72%{opacity:.24}78%{opacity:.5}
+ 90%{opacity:.14}100%{opacity:.14}}
+@keyframes rhSpray  {0%,42%{opacity:.18}58%{opacity:.72}74%{opacity:.26}100%{opacity:.18}}
+@keyframes rhDraw   {0%,36%{opacity:.12}56%{opacity:.34}62%{opacity:.95}76%{opacity:.18}100%{opacity:.12}}
+@keyframes rhPop    {0%,50%{opacity:.14}57%{opacity:1}70%{opacity:.2}100%{opacity:.14}}
+@keyframes rhThrow  {0%,36%{opacity:.16}58%{opacity:.8}86%{opacity:.3}100%{opacity:.16}}
+@keyframes rhYo     {0%,100%{opacity:.2}50%{opacity:.75}}
+@keyframes rhRev    {0%,100%{opacity:.3}50%{opacity:.6}}
+@keyframes rhChannel{0%,100%{opacity:.2}50%{opacity:.8}}
+@keyframes rhOrbit  {0%{opacity:.2}25%{opacity:.7}50%{opacity:.28}75%{opacity:.7}100%{opacity:.2}}
+@keyframes rhBoost  {0%,100%{opacity:.18}40%{opacity:.9}70%{opacity:.34}}
+@keyframes rhBlow   {0%,46%{opacity:.16}62%{opacity:.8}76%{opacity:.2}100%{opacity:.16}}
+
+/* elemental motes — tiny, drifting along the edges only */
+.edgemotes{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:10px}
+.edgemotes i{position:absolute;width:3px;height:3px;border-radius:50%;
+ background:var(--o1);box-shadow:0 0 6px var(--o1);opacity:0}
+@keyframes emRise{0%{opacity:0;transform:translateY(0)}18%{opacity:.85}
+ 100%{opacity:0;transform:translateY(-210px)}}
+@keyframes emFall{0%{opacity:.8;transform:translateY(0)}100%{opacity:0;transform:translateY(240px)}}
+@keyframes emTwinkle{0%,100%{opacity:.1}50%{opacity:.9}}
+@keyframes emFlash{0%,58%{opacity:0}62%{opacity:.9}68%{opacity:0}100%{opacity:0}}
 .dname{position:absolute;left:5.5%;right:5.5%;top:2.4%;height:5.6%;border-radius:9px;
  background:#131931;display:flex;align-items:center;justify-content:center;
  font:800 clamp(.8rem,4.2vw,1.28rem)/1 system-ui,sans-serif;color:#fff;
@@ -702,24 +688,33 @@ function buildCard(d,big){
   for(let k=0;k<3;k++){const a=(k*120+40)*Math.PI/180;
     m2+=`<i class="mote" style="left:${(50+47*Math.cos(a)).toFixed(1)}%;top:${(50+47*Math.sin(a)).toFixed(1)}%"></i>`;}
   const L='<i class="lattice"></i>';
+  const pr='pr-'+(d.prop||'cradle');
+  const edge=(0.55+r*0.09).toFixed(2);
+  const kind=d.pkind||'twinkle';
+  const anim={rise:'emRise',fall:'emFall',flash:'emFlash'}[kind]||'emTwinkle';
+  let motes='';
+  for(let k=0;k<4+r;k++){
+    const left=(k*83)%92+4, dly=((k*0.53)%3.1).toFixed(2), dur=(2.9+(k%4)*0.6).toFixed(2);
+    const pos = kind==='rise' ? 'bottom:-3%' : kind==='fall' ? 'top:-3%' : `top:${(k*37)%80+6}%`;
+    motes+=`<i style="left:${left}%;${pos};animation:${anim} ${dur}s linear ${dly}s infinite"></i>`;
+  }
+  const EDGE = `<div class="edgemotes">${motes}</div><div class="rimlight"></div>`+
+    `<div class="ringmask slow"><i class="tracer"></i></div>`+
+    `<div class="ringmask"><i class="tracer"></i></div>`;
+
   const wrap=document.createElement('div');
   wrap.className='dwrap';
   if(big) wrap.style.width='min(84vw,360px)';
   wrap.innerHTML=
-    `<div class="dscene" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px">`+
+    `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge}">`+
       `<div class="dcard">`+
-        `<div class="dart"><img loading="lazy" src="cards/ducks/${d.hero}" alt="${d.name}"></div>`+
+        `<div class="dart"><img loading="lazy" src="cards/ducks/${d.hero}" alt="${d.name}">${EDGE}</div>`+
         `<div class="dname foilzone">${L}${d.name}</div>`+
         `<div class="dstats foilzone">${L}<span>ATK ${d.atk}</span><span>DEF ${d.def}</span><span>SPD ${d.spd}</span></div>`+
         `<div class="dstars foilzone">${L}${stars}</div>`+
         `<div class="dmove foilzone">${L}<b>${d.icon} ${d.badge}</b><span>${d.move}</span></div>`+
         `<div class="dframe"></div>`+
       `</div>`+
-      `<div class="podrop ${mount}"></div>`+
-      `<div class="popout ${mount} ${pcls}" style="--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${ocyc}s;--pz:${pz}px">`+
-        `<div class="orb"><i class="aura"></i><i class="shell2"></i><i class="shell"></i>`+
-        `<i class="core"></i><i class="burst"></i>`+
-        `<div class="ring">${m1}</div><div class="ring r2">${m2}</div></div></div>`+
     `</div>`;
   setTimeout(()=>bindTilt(wrap),0);
   return wrap;
