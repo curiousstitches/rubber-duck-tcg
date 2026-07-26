@@ -434,6 +434,7 @@ function buildCard(d){
   const shim=(7.2-r*0.75).toFixed(2), F=foilFor(d), pal=d.palette||FOILPAL.calm;
   const stars="\u2605".repeat(r)+"\u2606".repeat(5-r);
   const o1=pal[1],o2=pal[0],o3=pal[2],pz=62+r*12;
+  const CT=contrastPal(pal), t1=CT[1], t2=CT[3]||CT[0], t3=CT[0];
   const mount=d.mount==='held'?'held':'';
   let m1="",m2="";
   for(let k=0;k<4;k++){const a=k*90*Math.PI/180;
