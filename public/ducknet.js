@@ -106,5 +106,69 @@
           N.match = null;
     };
 
+
+    /* ---------------- friend challenges ---------------- */
+    N.challengeFriend = async function(opponentHandle, myHandle, myDeck){
+          if(!await N.signedIn()) return {error:'sign in first'};
+          const { data, error } = await N.sb.rpc('create_friend_challenge',
+                                                 { opponent_handle: opponentHandle, my_handle: myHandle||'duck', my_deck: myDeck||[] });
+          if(error) return {error: error.message};
+          N.watchChallengeStatus(data);
+          return {id: data};
+    };
+
+    // challenger listens for their sent challenge flipping to accepted, then auto-joins the match
+    N.watchChallengeStatus = function(challengeId){
+          if(N.chalWatch){ try{ N.chalWatch.unsubscribe(); }catch(e){} }
+          N.chalWatch = N.sb.channel('chalstatus-'+challengeId)
+                  .on('postgres_changes',
+                      {event:'UPDATE', schema:'public', table:'friend_challenges', filter:'id=eq.'+challengeId},
+                              async p=>{
+                                          if(p.new && p.new.status==='accepted' && p.new.match_id){
+                                                        try{ N.chalWatch.unsubscribe(); }catch(e){}
+                                                        await N.join(p.new.match_id);
+                                          }
+                              })
+                  .subscribe();
+    };
+
+    N.acceptChallenge = async function(challengeId, myDeck){
+          if(!await N.signedIn()) return {error:'sign in first'};
+          const { data, error } = await N.sb.rpc('accept_friend_challenge',
+                                                 { challenge_id: challengeId, my_deck: myDeck||[] });
+          if(error) return {error: error.message};
+          if(data){ await N.join(data); return {matched:true, id:data}; }
+          return {error:'challenge expired or unavailable'};
+    };
+
+    N.declineChallenge = async function(challengeId){
+          if(!N.sb) return;
+          await N.sb.rpc('decline_friend_challenge', { challenge_id: challengeId });
+    };
+
+    N.cancelChallenge = async function(challengeId){
+          if(!N.sb) return;
+          await N.sb.rpc('cancel_friend_challenge', { challenge_id: challengeId });
+    };
+
+    N.myPendingChallenges = async function(){
+          if(!N.sb || !N.me) return [];
+          const { data } = await N.sb.from('friend_challenges')
+                  .select('*').eq('opponent_id', N.me.id).eq('status','pending');
+          return data||[];
+    };
+
+    // realtime push for new incoming challenges (in addition to the polling fallback in the UI)
+    N.watchChallenges = function(onIncoming){
+          if(!N.me || !N.sb) return;
+          if(N.chalChan){ try{ N.chalChan.unsubscribe(); }catch(e){} }
+          N.chalChan = N.sb.channel('chal-'+N.me.id)
+                  .on('postgres_changes',
+                      {event:'INSERT', schema:'public', table:'friend_challenges',
+                                filter:'opponent_id=eq.'+N.me.id},
+                              p=>{ if(onIncoming) onIncoming(p.new); })
+                  .subscribe();
+    };
+
     window.DuckNet = N;
 })();
