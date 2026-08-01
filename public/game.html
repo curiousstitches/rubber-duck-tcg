@@ -3563,6 +3563,113 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
   });
 })();
 </script>
+
+<!-- ==== WEEKLY_BOSS_LOCK_V1: enforces the "weekly" in Weekly Boss for signed-in players (cloud-checked) ==== -->
+<script>
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+
+  function mondayStart(d){
+    d = new Date(d);
+    var day = d.getDay();
+    var diff = (day===0 ? -6 : 1-day);
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate()+diff);
+    return d;
+  }
+  function nextMonday(d){ var m = mondayStart(d); return new Date(m.getTime() + 7*24*60*60*1000); }
+  function fmtCountdown(ms){
+    if(ms<0) ms=0;
+    var h = Math.floor(ms/3600000);
+    var d = Math.floor(h/24); h = h%24;
+    var m = Math.floor((ms%3600000)/60000);
+    if(d>0) return d+'d '+h+'h';
+    if(h>0) return h+'h '+m+'m';
+    return m+'m';
+  }
+
+  function findBossCard(){
+    var heads = document.querySelectorAll('div,h2,h3,h4,span,b');
+    for(var i=0;i<heads.length;i++){
+      var el = heads[i];
+      if(el.children.length===0 && /weekly\s*boss/i.test(el.textContent||'')){
+        var card = el.closest('div');
+        // walk up until we find a container that also has a button inside (the mode card)
+        var hops = 0;
+        while(card && !card.querySelector('button') && hops<6){ card = card.parentElement; hops++; }
+        if(card && card.querySelector('button')) return card;
+      }
+    }
+    return null;
+  }
+
+  var lockedNote = null;
+
+  function applyLock(card, locked, resetAt){
+    var btn = card.querySelector('button');
+    if(!btn) return;
+    if(locked){
+      btn.dataset.weeklyLocked = '1';
+      btn.style.opacity = '0.45';
+      btn.style.filter = 'grayscale(1)';
+      btn.textContent = 'CLEARED';
+      card.style.opacity = '0.7';
+      if(!card.querySelector('.weeklyBossNote')){
+        var note = document.createElement('div');
+        note.className = 'weeklyBossNote';
+        note.style.cssText = 'font-size:11px;opacity:.8;margin-top:4px;color:#ffd83d';
+        note.textContent = 'Resets in ' + fmtCountdown(resetAt - Date.now());
+        card.appendChild(note);
+      } else {
+        card.querySelector('.weeklyBossNote').textContent = 'Resets in ' + fmtCountdown(resetAt - Date.now());
+      }
+    } else {
+      if(btn.dataset.weeklyLocked){
+        delete btn.dataset.weeklyLocked;
+        btn.style.opacity = '';
+        btn.style.filter = '';
+        btn.textContent = 'ENTER';
+        card.style.opacity = '';
+        var n = card.querySelector('.weeklyBossNote');
+        if(n) n.remove();
+      }
+    }
+  }
+
+  function armBlocker(card){
+    var btn = card.querySelector('button');
+    if(!btn || btn.dataset.weeklyBlockerArmed) return;
+    btn.dataset.weeklyBlockerArmed = '1';
+    btn.addEventListener('click', function(e){
+      if(btn.dataset.weeklyLocked){
+        e.preventDefault(); e.stopImmediatePropagation();
+        var t = document.getElementById('toast');
+        if(t){ t.textContent = 'Weekly Boss already cleared \u2014 check back next week!'; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 2200); }
+      }
+    }, true);
+  }
+
+  async function checkAndApply(){
+    if(!window.DuckSave || !window.DuckSave.online || !window.DuckSave.sb || !window.DuckSave.user) return;
+    var card = findBossCard();
+    if(!card) return;
+    armBlocker(card);
+    try{
+      var monday = mondayStart(new Date()).toISOString();
+      var { data } = await window.DuckSave.sb.from('matches')
+        .select('id').eq('player_id', window.DuckSave.user.id)
+        .eq('mode','boss').eq('won', true).gte('played_at', monday).limit(1);
+      var locked = !!(data && data.length);
+      applyLock(card, locked, nextMonday(new Date()).getTime());
+    } catch(e){}
+  }
+
+  ready(function(){
+    setTimeout(checkAndApply, 1500);
+    setInterval(checkAndApply, 60000);
+  });
+})();
+</script>
 </body><script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
