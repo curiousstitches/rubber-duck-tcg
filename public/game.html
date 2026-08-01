@@ -3187,7 +3187,10 @@ function trackSeries(mode, won){
   if(won) SERIES.w++; else SERIES.l++;
   if(SERIES.w>=2 || SERIES.l>=2){
     if(SERIES.w>=2){ S.coins+=300; S.shards+=3; toast('🏅 Series won! +300 💩 +3 💎'); }
+    else { toast('Series lost — next ranked win starts a fresh best-of-3.'); }
     SERIES = {mode:null,w:0,l:0};
+  } else {
+    toast('Ranked series: ' + SERIES.w + '-' + SERIES.l);
   }
 }
 const ACH = [
