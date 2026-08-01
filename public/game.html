@@ -356,7 +356,7 @@ main{position:relative;z-index:1;flex:1;overflow-y:auto;padding:16px 14px 96px;
 
 /* nav */
 nav{position:fixed;bottom:0;left:0;right:0;z-index:6;display:grid;
-  grid-template-columns:repeat(5,1fr);gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  grid-template-columns:repeat(6,1fr);gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg,var(--void) 62%,rgba(7,10,20,.86));
   border-top:1px solid var(--edge);backdrop-filter:blur(9px)}
 nav button{background:none;border:0;color:var(--dim);font:700 .58rem/1 'Chakra Petch',system-ui;
@@ -936,6 +936,36 @@ input.search{width:100%;background:var(--panel);border:1px solid var(--edge);
   color:var(--ink);border-radius:13px;padding:12px 15px;font-size:.94rem;
   margin-bottom:11px;outline:none}
 input.search:focus{border-color:var(--cyan)}
+
+/* ===== mobile / small-screen refinements ===== */
+.modeTabs{display:flex;gap:7px;margin-bottom:12px}
+.modeTabs button{flex:1 1 0;text-align:center}
+.modeTabs button small{display:block;font-size:.6rem;text-transform:none;letter-spacing:0;opacity:.75;margin-top:2px;font-weight:600}
+html,body{max-width:100vw;overflow-x:hidden}
+@media (max-width:480px){
+  html{font-size:15px}
+  .hd h2{font-size:1.15rem}
+  .hd span{font-size:.72rem}
+  .panel{padding:12px}
+  .panel h3{font-size:.95rem}
+  .panel p{font-size:.82rem;line-height:1.45}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+  .shopgrid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+  .sitem{padding:9px}
+  .sitem .si{font-size:1.4rem}
+  main{padding:12px 10px 100px}
+  nav button{font-size:.5rem;padding:7px 1px;gap:3px}
+  nav button em{font-size:1.12rem}
+  .stabs button{padding:7px 11px;font-size:.66rem}
+  .btn{min-height:44px}
+}
+@media (max-width:360px){
+  html{font-size:13.5px}
+  .dwrap{width:min(92vw,340px)}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px}
+  nav button{font-size:.46rem}
+  nav button em{font-size:1rem}
+}
 </style>
 </head><body>
 <div id="sky"></div>
@@ -1079,7 +1109,11 @@ input.search:focus{border-color:var(--cyan)}
            <b>defend</b> — neither of you sees the other's choice until you both commit.
            A beaten duck goes to the graveyard and its own value comes off your health.</p>
       </div>
-      <div class="grid" id="modeGrid"></div>
+      <div class="stabs modeTabs" id="modeTabs">
+      <button class="on" data-mt="ai">🤖 AI Arena<small>earn coins &amp; gems vs bots</small></button>
+      <button data-mt="online">👤 Multiplayer<small>live players only</small></button>
+    </div>
+    <div class="grid" id="modeGrid"></div>
     </div>
 
     <div id="battleLive" style="display:none">
@@ -2435,28 +2469,44 @@ async function startOnline(){
 }
 
 /* ---------------- the arena ---------------- */
-const MODES=[
-  {k:'online',   n:'ONLINE',    icon:'🌐', risk:false, note:'Live player vs player.'},
+const AI_MODES = [
   {k:'ranked',   n:'RANKED',    icon:'🏆', risk:true,  note:'Cards on the line. Rank moves.'},
   {k:'unranked', n:'UNRANKED',  icon:'⚔️', risk:false, note:'Safe. Coins and the odd item.'},
   {k:'random',   n:'RANDOM',    icon:'🎲', risk:false, note:'Random opponent, safe stakes.'},
   {k:'norisk',   n:'NO RISK',   icon:'🕊️', risk:false, note:'Practice. Bragging rights only.'},
 ];
-let B=null;
+const ONLINE_MODES = [
+  {k:'online',   n:'ONLINE',    icon:'🌐', risk:false, note:'Live player vs player.'},
+];
+let modeTab = 'ai';
+let B = null;
 function renderModes(){
-  const g=$('#modeGrid'); g.innerHTML='';
-  MODES.forEach(m=>{
-    const el=document.createElement('div');
-    el.className='sitem';
-    el.innerHTML=`<div class="si">${m.icon}</div><b>${m.n}</b><span>${m.note}</span>`+
-      `<div class="price">${m.risk?'⚠️ cards at risk':'safe'}</div><button>Enter</button>`;
-    el.querySelector('button').onclick=()=>{
+  const g = $('#modeGrid'); g.innerHTML = '';
+  const list = modeTab==='ai' ? AI_MODES : ONLINE_MODES;
+  list.forEach(m=>{
+    const el = document.createElement('div');
+    el.className = 'sitem';
+    const tag = m.k==='online' ? '👤 live player' : '🤖 AI opponent';
+    el.innerHTML = `<div class="si">${m.icon}</div><b>${m.n}</b><span>${m.note}</span>`+
+      `<div class="price">${tag}${m.risk?' ⚠️ cards at risk':''}</div><button>Enter</button>`;
+    el.querySelector('button').onclick = ()=>{
       if(m.k==='online') return startOnline();
       startArena(m);
     };
     g.appendChild(el);
   });
 }
+function wireModeTabs(){
+  const wrap = $('#modeTabs'); if(!wrap) return;
+  wrap.querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{
+      modeTab = b.dataset.mt;
+      wrap.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+      renderModes();
+    };
+  });
+}
+
 function myPool(){
   const pool=[];
   // your saved deck first
@@ -3087,6 +3137,7 @@ $('#leaveBattle').onclick=()=>{
 /* ---------------- wiring ---------------- */
 function renderAll(){ purse(); renderCol(); renderOffers(); renderStore();
   if(typeof renderModes==='function') renderModes();
+  if(typeof wireModeTabs==='function') wireModeTabs();
   if(typeof paintPlayerCard==='function') paintPlayerCard();
   if(typeof renderBoard==='function') renderBoard();
   if(typeof renderHistory==='function') renderHistory();
