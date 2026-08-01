@@ -107,7 +107,7 @@
 
                   const state = {
                             coins: p.coins, packs: p.packs, level: p.level, xp: p.xp,
-                            wins: p.wins, losses: p.losses, tier: p.career_tier, shards: p.shards||0, streak: p.streak_days||0, lastLogin: p.last_login||"", achievements: p.achievements||{},
+                            wins: p.wins, losses: p.losses, tier: p.career_tier, shards: p.shards||0, pity: p.pity ?? 0, streak: p.streak_days||0, lastLogin: p.last_login||"", achievements: p.achievements||{},
                             owned: owned, itemsOwned: items, inventory: inv,
                             decks: dRes.data || [],
                   };
@@ -140,7 +140,7 @@
                             packs: state.packs | 0,
                             level: state.level | 0 || 1,
                             xp: state.xp | 0,
-                            wins: state.wins | 0, shards: state.shards | 0, streak_days: state.streak | 0, last_login: state.lastLogin || null, achievements: state.achievements || {},
+                            wins: state.wins | 0, shards: state.shards | 0, pity: state.pity ?? 0, streak_days: state.streak | 0, last_login: state.lastLogin || null, achievements: state.achievements || {},
                             losses: state.losses | 0,
                             career_tier: state.tier || 'bronze',
                             updated_at: new Date().toISOString(),
