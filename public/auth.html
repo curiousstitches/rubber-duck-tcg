@@ -37,8 +37,8 @@ input{width:100%;background:#0c1020;border:1px solid #26305a;color:#eaeeff;
  border-radius:13px;padding:14px 15px;font-size:1rem;outline:none;margin-bottom:14px;
  font-family:'Outfit',system-ui}
    input:focus{border-color:#00fff2}
-   input.code{text-align:center;font:800 1.7rem 'Chakra Petch',system-ui;
- letter-spacing:.55em;padding-left:.55em}
+   input.code{text-align:center;font:800 1.35rem 'Chakra Petch',system-ui;
+ letter-spacing:.34em;padding-left:.34em}
 .btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;
  font:800 .92rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
  color:#06070d;background:linear-gradient(96deg,#00fff2,#3dff9e 48%,#ffd83d);
@@ -125,7 +125,7 @@ h1 b{background-size:220% auto;animation:brandFlow 6s linear infinite}
   <!-- ---------- STEP 2: 6-digit code ---------- -->
   <div class="step" id="s-code">
     <label for="code">Enter the 6-digit code</label>
-      <input id="code" class="code" type="text" inputmode="numeric" maxlength="6"
+      <input id="code" class="code" type="text" inputmode="numeric" maxlength="8"
              autocomplete="one-time-code" placeholder="······">
       <button class="btn" id="btnVerify">Verify</button>
       <button class="btn ghost" id="btnResend">Send it again</button>
@@ -232,7 +232,7 @@ $('#btnContinue').onclick = async () => {
 /* ---------- step 2: verify the code ---------- */
 $('#btnVerify').onclick = async () => {
     const token = $('#code').value.trim();
-  if(token.length !== 6){ msg('Enter all six digits.', 'err'); return; }
+  if(token.length < 6){ msg('Enter the code from your email.', 'err'); return; }
   busy($('#btnVerify'), true, 'Verifying…');
   try{
     const { data, error } = await sb.auth.verifyOtp({
@@ -315,8 +315,8 @@ $('#btnGoogle').onclick = async () => {
 $('#btnBack1').onclick = () => { $('#sub').textContent='Sign in to save your collection'; step('email'); };
 $('#btnBack2').onclick = () => { $('#sub').textContent='Sign in to save your collection'; step('email'); };
 $('#code').addEventListener('input', e => {
-    e.target.value = e.target.value.replace(/\D/g,'').slice(0,6);
-    if(e.target.value.length === 6) $('#btnVerify').click();
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,8);
+    if(e.target.value.length === 8) $('#btnVerify').click();
 });
 $('#email').addEventListener('keydown', e => { if(e.key==='Enter') $('#btnContinue').click(); });
 $('#pw').addEventListener('keydown', e => { if(e.key==='Enter') $('#btnLogin').click(); });
