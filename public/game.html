@@ -3420,10 +3420,8 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
       try { return JSON.parse(localStorage.getItem('duck_tcg_save_v1')) || {}; } catch(e){ return {}; }
     }
     function myDeckAndHandle(){
-      var st = myState();
-      var decks = st.decks || [];
-      var activeDeck = null;
-      for(var i=0;i<decks.length;i++){ if(decks[i].is_active){ activeDeck = decks[i]; break; } }
+      var deck = [];
+      try { deck = JSON.parse(localStorage.getItem('duck_deck_v1')) || []; } catch(e){ deck = []; }
       var handle = 'duck';
       try {
         if(window.DuckNet.me && window.DuckNet.me.user_metadata && window.DuckNet.me.user_metadata.full_name){
@@ -3432,7 +3430,7 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
           handle = window.DuckNet.me.email.split('@')[0];
         }
       } catch(e){}
-      return { deck: activeDeck ? activeDeck.cards : [], handle: handle };
+      return { deck: deck, handle: handle };
     }
 
     btn.addEventListener('click', function(){
@@ -3500,6 +3498,64 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
         if(ok && window.DuckNet.watchChallenges) window.DuckNet.watchChallenges(function(){ refresh(); });
       });
     }
+  });
+})();
+</script>
+
+<!-- ==== DECK_CLOUD_SYNC_V1: backs up the single active deck to Supabase and restores it on a fresh device ==== -->
+<script>
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  ready(function(){
+    if(!window.DuckSave) return;
+    var DECK_KEY = 'duck_deck_v1';
+    var lastPushed = null;
+
+    function waitForDuckSave(){
+      var tries = 0;
+      return new Promise(function(resolve){
+        (function poll(){
+          tries++;
+          if(window.DuckSave.ready || tries>20){ resolve(!!window.DuckSave.ready); return; }
+          setTimeout(poll, 300);
+        })();
+      });
+    }
+
+    async function seedFromCloudIfEmpty(){
+      if(!window.DuckSave.online) return;
+      var local = null;
+      try{ local = JSON.parse(localStorage.getItem(DECK_KEY)); }catch(e){}
+      if(local && local.length) return;
+      try {
+        var state = await window.DuckSave.load();
+        var decks = (state && state.decks) || [];
+        var active = null;
+        for(var i=0;i<decks.length;i++){ if(decks[i].is_active){ active = decks[i]; break; } }
+        if(!active && decks.length) active = decks[0];
+        if(active && active.cards && active.cards.length){
+          localStorage.setItem(DECK_KEY, JSON.stringify(active.cards));
+          lastPushed = JSON.stringify(active.cards);
+        }
+      } catch(e){}
+    }
+
+    function pushIfChanged(){
+      if(!window.DuckSave.online) return;
+      var raw = localStorage.getItem(DECK_KEY);
+      if(!raw || raw === lastPushed) return;
+      lastPushed = raw;
+      var cards;
+      try{ cards = JSON.parse(raw); }catch(e){ return; }
+      if(!cards || !cards.length) return;
+      window.DuckSave.saveDeck('active', cards, true).catch(function(){});
+    }
+
+    waitForDuckSave().then(function(ok){
+      if(!ok) return;
+      seedFromCloudIfEmpty();
+      setInterval(pushIfChanged, 5000);
+    });
   });
 })();
 </script>
