@@ -3391,6 +3391,118 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
   if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
 </script>
+
+<!-- ==== Friend Challenges widget (self-contained, additive) ==== -->
+<div id="friendChalBtn" title="Challenge a friend" style="position:fixed;right:14px;bottom:14px;z-index:9000;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#00fff2,#ff43e0);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.5)">DUCK</div>
+<div id="friendChalBadge" style="position:fixed;right:10px;bottom:52px;z-index:9001;background:#ff3d5a;color:#fff;font:700 11px/1 sans-serif;padding:3px 6px;border-radius:10px;display:none">0</div>
+<div id="friendChalPanel" style="display:none;position:fixed;right:14px;bottom:74px;z-index:9000;width:280px;max-height:60vh;overflow:auto;background:#0c0f1b;border:1px solid #28325a;border-radius:14px;padding:14px;box-shadow:0 16px 46px rgba(0,0,0,.7);font-family:Outfit,sans-serif;color:#e8ecf5">
+  <h3 style="margin:0 0 8px;font-size:15px">Friend Challenges</h3>
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    <input id="fcHandle" placeholder="friend's handle" style="flex:1;min-width:0;background:#141a2e;border:1px solid #28325a;border-radius:8px;padding:8px;color:inherit">
+    <button id="fcSend" style="background:#00fff2;border:none;border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer">Send</button>
+  </div>
+  <div id="fcIncoming"></div>
+  <div id="fcSentNote" style="font-size:12px;opacity:.7;margin-top:6px"></div>
+</div>
+<script>
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  ready(function(){
+    var btn = document.getElementById('friendChalBtn');
+    var panel = document.getElementById('friendChalPanel');
+    var badge = document.getElementById('friendChalBadge');
+    var incomingEl = document.getElementById('fcIncoming');
+    var note = document.getElementById('fcSentNote');
+    var sendBtn = document.getElementById('fcSend');
+    if(!btn || !panel || !window.DuckNet) return;
+
+    function myState(){
+      try { return JSON.parse(localStorage.getItem('duck_tcg_save_v1')) || {}; } catch(e){ return {}; }
+    }
+    function myDeckAndHandle(){
+      var st = myState();
+      var decks = st.decks || [];
+      var activeDeck = null;
+      for(var i=0;i<decks.length;i++){ if(decks[i].is_active){ activeDeck = decks[i]; break; } }
+      var handle = 'duck';
+      try {
+        if(window.DuckNet.me && window.DuckNet.me.user_metadata && window.DuckNet.me.user_metadata.full_name){
+          handle = window.DuckNet.me.user_metadata.full_name;
+        } else if(window.DuckNet.me && window.DuckNet.me.email){
+          handle = window.DuckNet.me.email.split('@')[0];
+        }
+      } catch(e){}
+      return { deck: activeDeck ? activeDeck.cards : [], handle: handle };
+    }
+
+    btn.addEventListener('click', function(){
+      panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+    });
+
+    if(sendBtn) sendBtn.addEventListener('click', async function(){
+      var input = document.getElementById('fcHandle');
+      var handle = input ? input.value.trim() : '';
+      if(!handle) return;
+      var me = myDeckAndHandle();
+      note.textContent = 'Sending...';
+      var res = await window.DuckNet.challengeFriend(handle, me.handle, me.deck);
+      note.textContent = res.error ? ('Error: ' + res.error) : ('Challenge sent to ' + handle + '!');
+    });
+
+    function renderIncoming(list){
+      if(!list || !list.length){ incomingEl.innerHTML = ''; badge.style.display='none'; return; }
+      badge.style.display = 'block';
+      badge.textContent = String(list.length);
+      var html = '';
+      for(var i=0;i<list.length;i++){
+        var c = list[i];
+        html += '<div style="border-top:1px solid #28325a;padding:8px 0">' +
+          '<div style="font-size:13px;margin-bottom:6px">' + c.challenger_handle + ' challenged you!</div>' +
+          '<button data-accept="' + c.id + '" style="background:#3dff9e;border:none;border-radius:6px;padding:5px 9px;font-weight:700;cursor:pointer;margin-right:6px">Accept</button>' +
+          '<button data-decline="' + c.id + '" style="background:#ff3d5a;border:none;border-radius:6px;padding:5px 9px;font-weight:700;color:#fff;cursor:pointer">Decline</button>' +
+          '</div>';
+      }
+      incomingEl.innerHTML = html;
+      var accBtns = incomingEl.querySelectorAll('[data-accept]');
+      for(var j=0;j<accBtns.length;j++){
+        accBtns[j].addEventListener('click', async function(ev){
+          var id = Number(ev.target.getAttribute('data-accept'));
+          var me = myDeckAndHandle();
+          var res = await window.DuckNet.acceptChallenge(id, me.deck);
+          note.textContent = res.error ? ('Error: ' + res.error) : 'Match starting!';
+          if(!res.error) panel.style.display = 'none';
+          refresh();
+        });
+      }
+      var decBtns = incomingEl.querySelectorAll('[data-decline]');
+      for(var k=0;k<decBtns.length;k++){
+        decBtns[k].addEventListener('click', async function(ev){
+          var id = Number(ev.target.getAttribute('data-decline'));
+          await window.DuckNet.declineChallenge(id);
+          refresh();
+        });
+      }
+    }
+
+    async function refresh(){
+      if(!window.DuckNet.signedIn) return;
+      var signedIn = await window.DuckNet.signedIn();
+      if(!signedIn) return;
+      var list = await window.DuckNet.myPendingChallenges();
+      renderIncoming(list);
+    }
+
+    refresh();
+    setInterval(refresh, 15000);
+
+    if(window.DuckNet.signedIn){
+      window.DuckNet.signedIn().then(function(ok){
+        if(ok && window.DuckNet.watchChallenges) window.DuckNet.watchChallenges(function(){ refresh(); });
+      });
+    }
+  });
+})();
+</script>
 </body><script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
