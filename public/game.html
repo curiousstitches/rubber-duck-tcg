@@ -2315,8 +2315,8 @@ let _lbLoading=false;
 async function loadRealBoard(){
   if(_lbLoading) return; _lbLoading=true;
   try{
-    if(typeof supabase==='undefined' || !window.SUPABASE_URL) return;
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sb = (typeof getDuckClient==='function') ? getDuckClient() : null;
+    if(!sb) return;
     const { data, error } = await sb.from('players').select('handle,wins,losses,career_tier').order('wins',{ascending:false}).limit(15);
     if(!error && data && data.length){
       REAL_BOARD = data.filter(p=>(p.wins||0)>0).map(p=>({ name:p.handle||'Player', wins:p.wins||0, losses:p.losses||0, cards:0, legends:0, av:'🦆', me:false }));
@@ -3448,10 +3448,15 @@ const FOUNDER_BONUS_COINS = 5000;
 
 async function onboardNewPlayer(){
   if(!S.dex.length) return false;
+  // NOTE: don't gate on S.lastLogin here — loadDex() already ran renderAll()
+  // -> checkStreak() once by the time we get here, which unconditionally
+  // stamps today's date onto S.lastLogin as its own (unrelated) side effect.
+  // starterGranted is the authoritative one-time flag; owned/wins/losses
+  // empty is the corroborating "this account has never actually played" check.
   const untouched = !S.starterGranted &&
                      Object.keys(S.owned||{}).length===0 &&
                      Object.keys(S.itemsOwned||{}).length===0 &&
-                     !(S.wins>0) && !(S.losses>0) && !S.lastLogin;
+                     !(S.wins>0) && !(S.losses>0);
   if(!untouched) return false;
 
   S.starterGranted = true;
