@@ -993,6 +993,7 @@ html,body{max-width:100vw;overflow-x:hidden}
     <div class="chip gold" title="Duck Droppings">💩 <span id="coins">0</span></div>
     <div class="chip shard" title="Diamond Shards">💎 <span id="shards">0</span></div>
     <div class="chip">📦 <span id="packs">0</span></div>
+    <div class="chip streak" title="Daily streak">🔥 <span id="streakDays">0</span></div>
     <div class="chip" id="sfxBtn" style="cursor:pointer">🔊</div>
     <div class="chip" id="acctBtn" style="cursor:pointer">👤</div>
   </div>
@@ -1047,6 +1048,7 @@ html,body{max-width:100vw;overflow-x:hidden}
       <button data-f="3">3★</button><button data-f="2">2★</button><button data-f="1">1★</button>
       <button data-f="dupe">Duplicates</button>
     </div>
+    <div class="panel" id="fusionPanel"><h3>✨ Fuse Duplicates</h3><p>Combine 3 copies of a card into a Foil for a coin/gem bonus.</p><div class="grid" id="fuseGrid"></div></div>
     <div class="grid" id="colGrid"></div>
   </section>
 
@@ -1256,6 +1258,8 @@ html,body{max-width:100vw;overflow-x:hidden}
 
   <!-- ============ LEADERBOARD ============ -->
   <section class="view" id="v-ranks">
+  <div class="panel" id="battlePassPanel"><h3>⚔️ Battle Pass — Level <span id="bpLevel">1</span></h3><div style="background:var(--panel);border-radius:8px;overflow:hidden;height:10px;margin:8px 0"><div id="bpBar" style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--mag));width:0%"></div></div><span style="font-size:.75rem;opacity:.7" id="bpXpText">0 / 100 XP</span></div>
+  <div class="panel"><h3>U0001F3C6 Achievements</h3><div class="grid" id="achList"></div></div>
     <div class="hd"><h2>Leaderboard</h2><span id="lbNote">Gold and above</span></div>
     <div class="stabs" id="lbTabs">
       <button class="on" data-lb="rank">Rank</button>
@@ -1481,7 +1485,7 @@ function snapshot(){
           luckTier:S.luckTier||0, luckExtra:S.luckExtra||0, luckFloor:S.luckFloor||0,
           luckBoost:S.luckBoost||0, packs:S.packs, owned:S.owned, itemsOwned:S.itemsOwned||{},
           inventory:S.inventory||{}, wins:S.wins, losses:S.losses,
-          level:S.level||1, xp:S.xp||0, tier:S.tier||'bronze'};
+          level:S.level||1, xp:S.xp||0, tier:S.tier||'bronze', ach:S.ach||{}, streak:S.streak||0, lastLogin:S.lastLogin||''};
 }
 function applyState(r){
   if(!r) return;
@@ -1491,6 +1495,7 @@ function applyState(r){
   S.itemsOwned=r.itemsOwned||{}; S.inventory=r.inventory||{};
   S.wins=r.wins||0; S.losses=r.losses||0;
   S.level=r.level||1; S.xp=r.xp||0; S.tier=r.tier||'bronze';
+  S.ach=r.ach||{}; S.streak=r.streak||0; S.lastLogin=r.lastLogin||'';
 }
 function save(){
   if(window.DuckSave && window.DuckSave.ready){ window.DuckSave.save(snapshot()); }
@@ -2488,6 +2493,7 @@ const AI_MODES = [
   {k:'unranked', n:'UNRANKED',  icon:'⚔️', risk:false, note:'Safe. Coins and the odd item.'},
   {k:'random',   n:'RANDOM',    icon:'🎲', risk:false, note:'Random opponent, safe stakes.'},
   {k:'norisk',   n:'NO RISK',   icon:'🕊️', risk:false, note:'Practice. Bragging rights only.'},
+  {k:'boss',    n:'WEEKLY BOSS', icon:'🐉', risk:false, note:'Tougher AI. Big payout.'},
 ];
 const ONLINE_MODES = [
   {k:'online',   n:'ONLINE',    icon:'🌐', risk:false, note:'Live player vs player.'},
@@ -3117,8 +3123,13 @@ function finishArena(won){
   const m=B.mode;
   if(won){
     S.wins++; S.coins+=250; S.shards+=2; SND.win();
-    logLine(`<span class="win">🏆 You win. +250 💩 +2 💎</span>`);
+    let bossBonus='';
+    if(m.k==='boss'){ S.coins+=750; S.shards+=8; bossBonus=' +750 💩 +8 💎 boss bonus'; }
+    logLine(`<span class="win">🏆 You win. +250 💩 +2 💎${bossBonus}</span>`);
     if(m.risk){ showPrizes(); }
+    gainXP(m.k==='boss'?40:(m.k==='ranked'?25:15));
+    trackSeries(m.k, true);
+    checkAchievements();
   }else{
     S.losses++; SND.lose();
     logLine(`<span class="win">Defeat.</span>`);
@@ -3130,6 +3141,8 @@ function finishArena(won){
         logLine(`They take your weakest — <b>${lost}</b>.`);
       }
     }
+    gainXP(5);
+    trackSeries(m.k, false);
   }
   purse(); save(); renderAll(); paintPlayerCard(); renderBoard();
   logMatchLocal(m.k, won);
@@ -3142,6 +3155,92 @@ function finishArena(won){
   },wait);
   B=null;
 }
+
+function gainXP(n){
+  S.xp = (S.xp||0) + n;
+  const need = 100 + (S.level||1)*20;
+  while(S.xp >= need){ S.xp -= need; S.level = (S.level||1) + 1; toast(`⭐ Level up! Now level ${S.level}`); }
+  renderBattlePass();
+}
+let SERIES = {mode:null, w:0, l:0};
+function trackSeries(mode, won){
+  if(mode!=='ranked'){ SERIES = {mode:null,w:0,l:0}; return; }
+  if(SERIES.mode!=='ranked') SERIES = {mode:'ranked', w:0, l:0};
+  if(won) SERIES.w++; else SERIES.l++;
+  if(SERIES.w>=2 || SERIES.l>=2){
+    if(SERIES.w>=2){ S.coins+=300; S.shards+=3; toast('🏅 Series won! +300 💩 +3 💎'); }
+    SERIES = {mode:null,w:0,l:0};
+  }
+}
+const ACH = [
+  {id:'first_win', label:'First Victory', need:()=>S.wins>=1, coins:100, shards:1},
+  {id:'ten_wins', label:'10 Wins', need:()=>S.wins>=10, coins:500, shards:5},
+  {id:'fifty_wins', label:'50 Wins', need:()=>S.wins>=50, coins:2000, shards:20},
+  {id:'collector', label:'50 Cards Owned', need:()=>Object.keys(S.owned||{}).filter(n=>S.owned[n]>0).length>=50, coins:500, shards:5},
+  {id:'legendary', label:'Own a Legendary', need:()=>Object.keys(S.owned||{}).some(n=>S.owned[n]>0&&byName(n)&&byName(n).rarity>=5), coins:750, shards:8},
+  {id:'first_foil', label:'First Foil Fusion', need:()=>Object.keys(S.foil||{}).length>=1, coins:200, shards:2},
+];
+function checkAchievements(){
+  S.ach = S.ach || {};
+  let changed = false;
+  ACH.forEach(a=>{
+    if(!S.ach[a.id] && a.need()){
+      S.ach[a.id]=true; S.coins+=a.coins; S.shards+=a.shards;
+      toast(`🏆 Achievement: ${a.label}! +${a.coins} 💩 +${a.shards} 💎`);
+      changed = true;
+    }
+  });
+  if(changed){ purse(); }
+  renderAchievements();
+}
+function renderAchievements(){
+  const el = document.getElementById('achList'); if(!el) return;
+  S.ach = S.ach || {};
+  el.innerHTML = ACH.map(a=>{
+    const got = !!S.ach[a.id];
+    return `<div class="sitem" style="opacity:${got?1:.55}"><div class="si">${got?'🏆':'🔒'}</div><b>${a.label}</b><span>+${a.coins} 💩 +${a.shards} 💎</span></div>`;
+  }).join('');
+}
+function renderBattlePass(){
+  const lv = document.getElementById('bpLevel'); const bar = document.getElementById('bpBar'); const xt = document.getElementById('bpXpText');
+  if(!lv) return;
+  const need = 100 + (S.level||1)*20;
+  lv.textContent = S.level||1;
+  bar.style.width = Math.min(100, ((S.xp||0)/need)*100)+'%';
+  xt.textContent = (S.xp||0)+' / '+need+' XP';
+}
+function checkStreak(){
+  const today = new Date().toISOString().slice(0,10);
+  const last = S.lastLogin;
+  if(last===today) return;
+  const y = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  S.streak = (last===y) ? (S.streak||0)+1 : 1;
+  S.lastLogin = today;
+  const reward = Math.min(20 + S.streak*10, 200);
+  S.coins += reward; S.shards += Math.min(1 + Math.floor(S.streak/3), 10);
+  toast(`🔥 Day ${S.streak} streak! +${reward} 💩`);
+  purse(); save();
+  const chip = document.getElementById('streakDays'); if(chip) chip.textContent = S.streak;
+}
+function renderFusion(){
+  const el = document.getElementById('fuseGrid'); if(!el) return;
+  const names = Object.keys(S.owned||{}).filter(n=>S.owned[n]>=3);
+  el.innerHTML = names.length ? names.map(n=>{
+    const d = byName(n); if(!d) return '';
+    return `<div class="slot" data-r="${d.rarity}"><img loading="lazy" src="cards/ducks/${d.hero}" alt="${n}">`+
+      `<span class="qty">x${S.owned[n]}</span>`+
+      `<div class="cap"><span>${n}${S.foil&&S.foil[n]?' ✨x'+S.foil[n]:''}</span><button class="btn" data-fuse="${n}">Fuse x3</button></div></div>`;
+  }).join('') : '<p style="opacity:.6;padding:10px">Own 3+ copies of a card to fuse it into a Foil.</p>';
+  el.querySelectorAll('[data-fuse]').forEach(b=>{ b.onclick = ()=>doFuse(b.dataset.fuse); });
+}
+function doFuse(name){
+  if((S.owned[name]||0) < 3) return;
+  S.owned[name] -= 3;
+  S.foil = S.foil||{}; S.foil[name] = (S.foil[name]||0)+1;
+  S.coins += 150; S.shards += 2;
+  toast(`✨ Fused ${name} into a Foil! +150 💩 +2 💎`);
+  purse(); save(); renderCol(); renderFusion(); checkAchievements();
+}
 $('#leaveBattle').onclick=()=>{
   if(NET && window.DuckNet){ DuckNet.leave(); NET=false; }
   $('#battleLive').style.display='none';
@@ -3149,7 +3248,7 @@ $('#leaveBattle').onclick=()=>{
 };
 
 /* ---------------- wiring ---------------- */
-function renderAll(){ purse(); renderCol(); renderOffers(); renderStore();
+function renderAll(){ purse(); checkStreak(); renderCol(); renderOffers(); renderStore(); renderAchievements(); renderBattlePass(); renderFusion();
   if(typeof renderModes==='function') renderModes();
   if(typeof wireModeTabs==='function') wireModeTabs();
   if(typeof paintPlayerCard==='function') paintPlayerCard();
