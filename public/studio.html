@@ -206,6 +206,15 @@ main{padding:15px 14px 40px}
 input.search{width:100%;background:var(--panel);border:1px solid var(--edge);color:var(--ink);
  border-radius:13px;padding:12px 15px;font-size:.95rem;margin-bottom:12px;outline:none}
 input.search:focus{border-color:var(--cyan)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:8px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;background:var(--panel);border:1px solid var(--edge);
+ color:var(--dim);border-radius:99px;padding:8px 13px;
+ font:700 .72rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.05em}
+.tabs button.on{background:var(--cyan);color:#06070d;border-color:var(--cyan)}
+.tabs.stars button.on{background:var(--gold);color:#06070d;border-color:var(--gold)}
+.noart5{aspect-ratio:5/7;display:flex;align-items:center;justify-content:center;
+ font-size:2rem;background:linear-gradient(160deg,#10162c,#1b1140)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:11px}
 .slot{background:var(--panel);border:1px solid var(--edge);border-radius:14px;
  overflow:hidden;transition:.15s;position:relative}
@@ -268,6 +277,16 @@ textarea:focus{border-color:var(--cyan)}
 
 <main>
   <input class="search" id="q" placeholder="Search all cards…">
+  <div class="tabs" id="tabs">
+    <button class="on" data-f="all">All</button>
+    <button data-f="ducks">🦆 Ducks</button>
+    <button data-f="items">🧪 Items</button>
+  </div>
+  <div class="tabs stars" id="stars">
+    <button class="on" data-s="any">Any ★</button>
+    <button data-s="5">★★★★★</button><button data-s="4">★★★★</button>
+    <button data-s="3">★★★</button><button data-s="2">★★</button><button data-s="1">★</button>
+  </div>
   <div class="grid" id="grid"></div>
 </main>
 
@@ -300,6 +319,10 @@ textarea:focus{border-color:var(--cyan)}
     <button class="btn" id="applyBtn">✨ Apply change</button>
     <button class="btn alt" id="retryBtn">🎲 Retry — another take</button>
     <button class="btn ghost" id="revertBtn">↩️ Revert to original</button>
+    <div id="saveRow" style="display:none">
+      <button class="btn ghost" id="saveList" style="margin-top:9px">💾 Save list — make permanent</button>
+      <button class="btn ghost" id="clearOvr" style="margin-top:9px">🧹 Clear all browser changes</button>
+    </div>
     <div class="cmdbox" id="cmd" style="display:none">…</div>
   </div>
 </div>
@@ -461,7 +484,7 @@ function buildCard(d){
   w.innerHTML=
    `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge};--t1:${t1};--t2:${t2};--t3:${t3}">`+
     `<div class="dcard">`+
-     `<div class="dart"><img src="cards/ducks/${d.hero}?v=${Date.now()}" alt="${d.name}">${EDGE}</div>`+
+     `<div class="dart"><img src="${heroSrc(d)}" alt="${d.name}">${EDGE}</div>`+
      `<div class="dname foilzone">${L}<span class="holotext">${d.name}</span></div>`+
      `<div class="dstats foilzone">${L}<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span></div>`+
      `<div class="dstars foilzone">${L}<span class="holotext">${stars}</span></div>`+
@@ -473,21 +496,32 @@ function buildCard(d){
   return w;
 }
 
+function imgFor(d){
+  const o=OVR[d.name];
+  if(o) return (typeof o==='string')?o:o.url;
+  return d.kind==='item' ? 'cards/items/'+d.art : 'cards/ducks/'+d.hero;
+}
+let FILT='all', STARS='any';
 async function load(){
-  try{
-    const r=await fetch('cards/ducks/manifest.json?t='+Date.now());
-    DEX=(await r.json()).ducks||[];
-  }catch(e){DEX=[];}
+  const grab=async u=>{ try{ const r=await fetch(u+'?t='+Date.now()); return await r.json(); }catch(e){ return null; } };
+  const [m,it]=await Promise.all([grab('cards/ducks/manifest.json'),grab('cards/items/items.json')]);
+  DEX=[];
+  (m&&m.ducks||[]).forEach(d=>DEX.push(Object.assign({},d,{kind:'duck'})));
+  (it&&it.items||[]).forEach(i=>DEX.push(Object.assign({},i,{kind:'item',
+    badge:i.familyLabel,move:i.text,hero:i.art})));
   render();
 }
 function render(){
   const q=($('#q').value||'').toLowerCase(), g=$('#grid'); g.innerHTML='';
   let n=0;
   for(const d of DEX){
-    if(q && !d.name.includes(q)) continue;
+    if(q && !d.name.toLowerCase().includes(q)) continue;
+    if(STARS!=='any' && String(d.rarity)!==STARS) continue;
+    if(FILT==='ducks' && d.kind!=='duck') continue;
+    if(FILT==='items' && d.kind!=='item') continue;
     const el=document.createElement('div');
     el.className='slot'; el.dataset.r=d.rarity;
-    el.innerHTML=`<img loading="lazy" src="cards/ducks/${d.hero}" alt="${d.name}">`+
+    el.innerHTML=`<img loading="lazy" src="${heroSrc(d)}" alt="${d.name}">`+
       `<span class="tag">${d.elementLabel||''}</span>`+
       `<div class="cap"><span>${d.name}</span><b>${'\u2605'.repeat(d.rarity)}</b></div>`;
     el.onclick=()=>openEditor(d);
@@ -508,18 +542,32 @@ function openEditor(d){
   $('#editor').classList.add('on');
   document.body.style.overflow='hidden';
 }
-let LIVE=false;
+let LIVE=false;                 // local server present? (optional, for saving to disk)
+const OVR_KEY='duck_overrides_v1';
+let OVR={};
+try{ OVR=JSON.parse(localStorage.getItem(OVR_KEY))||{}; }catch(e){ OVR={}; }
+function saveOvr(){ try{ localStorage.setItem(OVR_KEY,JSON.stringify(OVR)); }catch(e){} }
+
+// browser talks straight to the image AI — works with no Termux at all
+const POLLI='https://image.pollinations.ai/prompt/';
+function artUrl(d,note,seed){
+  const p = note ? `${d.prompt}, ${note}` : d.prompt;
+  return POLLI+encodeURIComponent(p)+
+    `?width=832&height=832&seed=${seed}&nologo=true&model=flux&enhance=true`;
+}
+function heroSrc(d){
+  const o=OVR[d.name];
+  return o ? o.url : `cards/ducks/${d.hero}`;
+}
+
 fetch('/api/ping').then(r=>r.json()).then(j=>{LIVE=!!j.live;paintMode();}).catch(()=>paintMode());
 function paintMode(){
   const n=$('#liveNote');
-  if(LIVE){ n.textContent="Changes apply straight away. Don't like it? Retry for a different take, or revert to the original."; }
-  else{
-    n.innerHTML="Live editing needs the local server. In Termux run <b>duck</b> then press <b>1</b>, "+
-      "or use the command below in Termux.";
-    $('#cmd').style.display='block';
-    $('#applyBtn').textContent='Copy the repaint command';
-    $('#retryBtn').style.display='none';
-  }
+  n.innerHTML = LIVE
+    ? "Changes apply straight away and are saved to your project."
+    : "Changes apply straight away right here in your browser. "+
+      "To make them permanent, tap <b>Save list</b> and run it in Termux later.";
+  $('#saveRow').style.display = LIVE ? 'none' : 'block';
 }
 function updateCmd(){
   if(!CUR) return;
@@ -531,49 +579,58 @@ $('#note').oninput=updateCmd;
 
 function busy(on,msg){
   ['applyBtn','retryBtn','revertBtn'].forEach(id=>{
-    const b=$('#'+id); if(b) b.disabled=on; if(b) b.style.opacity=on?.45:1;
+    const b=$('#'+id); if(b){ b.disabled=on; b.style.opacity=on?.45:1; }
   });
   if(on) toast(msg||'Working…');
 }
 function refreshCard(){
   const c=$('#edCard'); c.innerHTML=''; c.appendChild(buildCard(CUR));
 }
-async function callApi(path,body,msg){
+
+// generate in the browser, show it the moment it lands
+function generate(note,seed,msg){
+  if(!CUR) return;
   busy(true,msg);
-  try{
-    const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)});
-    const j=await r.json();
-    if(j.ok){ refreshCard(); toast('Done'); }
-    else toast(j.error||'That did not work');
-  }catch(e){ toast('Could not reach the local server'); }
-  busy(false);
+  const url=artUrl(CUR,note,seed);
+  const img=new Image();
+  img.onload=()=>{
+    OVR[CUR.name]={url:url,note:note,seed:seed,at:Date.now()};
+    saveOvr(); refreshCard(); busy(false); toast('Done — tap Retry for another take');
+    if(LIVE){ // if the server happens to be up, save it to disk too
+      fetch('/api/restyle',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:CUR.name,note:note,seed:seed})}).catch(()=>{});
+    }
+  };
+  img.onerror=()=>{ busy(false); toast('Image service did not answer — try again'); };
+  img.src=url;
 }
 $('#applyBtn').onclick=()=>{
-  if(!LIVE){
-    const v=$('#cmd').textContent;
-    navigator.clipboard?.writeText(v).then(()=>toast('Command copied'),()=>toast('Copy failed'));
-    return;
-  }
   const note=($('#note').value||'').trim();
   if(!note){ toast('Describe a change first'); return; }
-  callApi('/api/restyle',{name:CUR.name,note:note,seed:Date.now()%900000},'Repainting…');
+  generate(note, Math.floor(Math.random()*900000)+1, 'Repainting…');
 };
 $('#retryBtn').onclick=()=>{
-  if(!LIVE) return;
   const note=($('#note').value||'').trim();
-  callApi('/api/restyle',{name:CUR.name,note:note,seed:Math.floor(Math.random()*900000)+1},
-          'Another take…');
+  generate(note, Math.floor(Math.random()*900000)+1, 'Another take…');
 };
 $('#revertBtn').onclick=()=>{
-  if(!LIVE){ toast('Run: rollback '+CUR.name); return; }
-  callApi('/api/revert',{name:CUR.name},'Restoring…');
+  if(!CUR) return;
+  delete OVR[CUR.name]; saveOvr(); refreshCard(); toast('Back to the original');
+  if(LIVE) fetch('/api/revert',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:CUR.name})}).catch(()=>{});
 };
-$$('#quick button').forEach(b=>b.onclick=()=>{
-  const t=$('#note'); t.value=(t.value?t.value.replace(/,\s*$/,'')+', ':'')+b.textContent;
-  updateCmd();
-});
-
+$('#saveList').onclick=()=>{
+  const lines=Object.entries(OVR).map(([n,o])=>`restyle ${n} "${(o.note||'').replace(/"/g,"'")}" ${o.seed}`);
+  if(!lines.length){ toast('No changes to save yet'); return; }
+  const txt=lines.join(String.fromCharCode(10));
+  navigator.clipboard?.writeText(txt).then(
+    ()=>toast(`${lines.length} change${lines.length>1?'s':''} copied — paste in Termux`),
+    ()=>{ $('#cmd').style.display='block'; $('#cmd').textContent=txt; toast('Shown below — long-press to copy'); });
+};
+$('#clearOvr').onclick=()=>{
+  if(!Object.keys(OVR).length){ toast('Nothing to clear'); return; }
+  OVR={}; saveOvr(); refreshCard(); render(); toast('All browser changes cleared');
+};
 $('#edClose').onclick=()=>{$('#editor').classList.remove('on');document.body.style.overflow='';};
 $('#q').oninput=render;
 load();

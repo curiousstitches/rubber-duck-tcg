@@ -1,48 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🦆 Duck Gallery 4</title>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a14">
+<title>Gallery · Getting Ducked</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0e1a; --card:#151a2e; --edge:#2a3352; --gold:#ffd24a; --txt:#e8ebf5; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--txt); font-family:system-ui,-apple-system,sans-serif; }
-  header { position:sticky; top:0; z-index:5; background:linear-gradient(180deg,#0b0e1a 70%,transparent);
-           padding:16px 14px 10px; text-align:center; }
-  h1 { font-size:1.5rem; letter-spacing:.5px; }
-  h1 span { color:var(--gold); }
-  #count { color:#9aa3c0; font-size:.85rem; margin-top:4px; }
-  .bar { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center; }
-  input[type=search] { flex:1 1 200px; max-width:340px; padding:10px 14px; border-radius:12px;
-    border:1px solid var(--edge); background:var(--card); color:var(--txt); font-size:1rem; outline:none; }
-  .chip { padding:10px 16px; border-radius:12px; border:1px solid var(--edge); background:var(--card);
-    color:var(--txt); font-size:.9rem; cursor:pointer; user-select:none; }
-  .chip.on { background:var(--gold); color:#111; border-color:var(--gold); font-weight:700; }
-  #grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; padding:14px; }
-  .duck { background:var(--card); border:1px solid var(--edge); border-radius:16px; overflow:hidden;
-    text-align:center; transition:transform .15s; }
-  .duck:active { transform:scale(.96); }
-  .duck img { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#0e1226; }
-  .duck .nm { padding:8px 4px 10px; font-weight:700; font-size:.85rem; text-transform:capitalize; }
-  .duck.sh .nm::after { content:" ✨"; }
-  .duck.vet .nm { color:var(--gold); }
-  #empty { text-align:center; padding:60px 20px; color:#9aa3c0; display:none; }
-  #viewer { position:fixed; inset:0; background:rgba(5,7,15,.94); display:none; z-index:20;
-    flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; }
-  #viewer img { max-width:92vw; max-height:70vh; border-radius:20px; border:2px solid var(--edge); }
-  #viewer .nm { font-size:1.4rem; font-weight:800; text-transform:capitalize; }
-  #viewer .btns { display:flex; gap:10px; }
-
-#grid .dcard{width:100%;border-radius:14px}
-
-
-
-
-
-
-
-
 .dwrap{perspective:1000px;width:min(88vw,420px);touch-action:pan-y;
  padding:14% 12% 12%;margin:-14% -12% -12%}
 /* 3D stage — the card and the pop-out share this space but the orb is NOT clipped */
@@ -221,41 +186,132 @@
 .dmove b{font:800 clamp(.66rem,3.2vw,.96rem)/1 system-ui,sans-serif}
 .dmove span{font:600 clamp(.6rem,2.9vw,.86rem)/1 system-ui,sans-serif}
 
-#grid .dwrap{width:100%}
-#grid .dcard{border-radius:12px}
+
+:root{--void:#070a14;--deep:#0d1224;--panel:#141b33;--edge:#26305a;
+ --cyan:#00fff2;--mag:#ff43e0;--gold:#ffd83d;--violet:#7850ff;--mint:#3dff9e;
+ --ink:#eaeeff;--dim:#8b95bd}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--void);color:var(--ink);font-family:'Outfit',system-ui,sans-serif;
+ min-height:100vh;padding-bottom:40px}
+h1,h2,h3,.disp{font-family:'Chakra Petch',system-ui;text-transform:uppercase;
+ letter-spacing:.04em;margin:0}
+#sky{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#sky::before,#sky::after{content:"";position:absolute;inset:-30%;filter:blur(70px);opacity:.5}
+#sky::before{background:radial-gradient(38% 30% at 22% 18%,rgba(120,80,255,.8),transparent 62%),
+ radial-gradient(32% 26% at 78% 12%,rgba(0,255,242,.5),transparent 62%);
+ animation:drift1 26s ease-in-out infinite}
+#sky::after{background:radial-gradient(40% 32% at 68% 86%,rgba(255,67,224,.65),transparent 62%);
+ animation:drift2 34s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6%,-5%) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1.05)}50%{transform:translate(-6%,4%) scale(1)}}
+#grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.14;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+header{position:sticky;top:0;z-index:6;padding:14px 14px 10px;
+ background:rgba(10,13,26,.92);backdrop-filter:blur(18px) saturate(1.4);
+ border-bottom:1px solid rgba(120,140,255,.2)}
+.brow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+h1{font-size:1.06rem}
+h1 b{background:linear-gradient(94deg,var(--cyan),var(--mag) 55%,var(--gold));
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ background-size:220% auto;animation:flow 6s linear infinite}
+@keyframes flow{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+.hlinks{display:flex;gap:8px}
+.hlinks a{color:var(--dim);font-size:.78rem;text-decoration:none;
+ background:var(--panel);border:1px solid var(--edge);border-radius:99px;padding:5px 11px}
+input.search{width:100%;background:var(--panel);border:1px solid var(--edge);color:var(--ink);
+ border-radius:12px;padding:11px 14px;font-size:.94rem;outline:none;margin-bottom:9px;
+ font-family:'Outfit',system-ui}
+input.search:focus{border-color:var(--cyan)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;background:var(--panel);border:1px solid var(--edge);
+ color:var(--dim);border-radius:99px;padding:8px 13px;
+ font:700 .72rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.05em}
+.tabs button.on{background:var(--cyan);color:#06070d;border-color:var(--cyan)}
+.tabs.stars{margin-top:6px}
+.tabs.stars button{font-size:.68rem;letter-spacing:0}
+.tabs.stars button.on{background:var(--gold);color:#06070d;border-color:var(--gold)}
+main{position:relative;z-index:2;padding:13px 14px 60px}
+.count{color:var(--dim);font-size:.8rem;margin-bottom:11px}
+.count b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.slot{background:var(--panel);border:1px solid var(--edge);border-radius:14px;
+ overflow:hidden;position:relative;transition:transform .16s cubic-bezier(.2,1.2,.4,1);
+ backdrop-filter:blur(10px)}
+.slot:active{transform:translateY(-3px) scale(.97)}
+.slot img{width:100%;aspect-ratio:5/7;object-fit:cover;display:block}
+.noart{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+ font-size:4rem;background:linear-gradient(160deg,#10162c,#1b1140)}
+.slot .ph{aspect-ratio:5/7;display:flex;align-items:center;justify-content:center;font-size:2.2rem}
+.slot .cap{padding:7px 8px;display:flex;justify-content:space-between;align-items:center;gap:4px;
+ font-size:.72rem;font-weight:700;text-transform:capitalize}
+.slot .cap span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .cap b{color:var(--gold);font-size:.62rem;flex:0 0 auto}
+.slot[data-r="5"]{border-color:#7a6412;box-shadow:0 0 16px rgba(255,216,61,.22)}
+.slot[data-r="4"]{border-color:#5c3a72}
+.tag{position:absolute;top:6px;left:6px;background:rgba(6,8,16,.86);
+ border:1px solid var(--edge);border-radius:99px;padding:2px 8px;
+ font-size:.56rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.vtag{position:absolute;top:6px;right:6px;background:rgba(6,8,16,.88);
+ border:1px solid;border-radius:99px;padding:2px 7px;
+ font:800 .54rem 'Chakra Petch';letter-spacing:.06em}
+.empty{text-align:center;padding:60px 20px;color:var(--dim)}
+.empty b{display:block;font:800 1.05rem/1.5 'Chakra Petch';color:var(--ink);margin-bottom:6px}
+#viewer{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;
+ flex-direction:column;gap:14px;padding:20px;background:rgba(4,6,13,.96);
+ backdrop-filter:blur(6px)}
+#viewer.on{display:flex}
+#vSlot{display:flex;align-items:center;justify-content:center}
+.vinfo{max-width:min(88vw,420px);background:var(--panel);border:1px solid var(--edge);
+ border-radius:16px;padding:14px;font-size:.84rem;line-height:1.55;color:var(--dim)}
+.vinfo b{color:var(--ink)}
+.vbtns{display:flex;gap:9px}
+.vbtns button{background:var(--panel);color:var(--ink);border:1px solid var(--edge);
+ border-radius:11px;padding:11px 18px;font:700 .8rem 'Chakra Petch';
+ text-transform:uppercase;letter-spacing:.05em}
+.more{display:block;width:100%;margin-top:14px;background:var(--panel);color:var(--ink);
+ border:1px solid var(--edge);border-radius:13px;padding:14px;
+ font:800 .84rem 'Chakra Petch';text-transform:uppercase;letter-spacing:.06em}
 </style>
-</head>
-<body>
+</head><body>
+<div id="sky"></div><div id="grain"></div>
+
 <header>
-  <h1>🦆 DUCK GALLERY <span>4</span></h1>
-  <div id="count">loading the pond...</div>
-  <div class="bar">
-    <input type="search" id="q" placeholder="Search ducks...">
-    <div class="chip on" data-f="all">All</div>
-    <div class="chip" data-f="vet">Originals</div>
-    <div class="chip" data-f="new">New Era</div>
-    <div class="chip" id="shinyChip">✨ Shiny</div>
-    <div class="chip on" id="liveChip">🎬 Live</div><div class="chip" onclick="enableGyro();this.classList.add('on')">📱 Tilt</div>
+  <div class="brow">
+    <h1>🖼️ <b>ALL CARDS</b></h1>
+    <div class="hlinks"><a href="game.html">Game</a><a href="studio.html">Studio</a></div>
   </div>
-  <div style="padding:0 14px 12px">
-    <a href="game.html" style="display:block;text-align:center;text-decoration:none;
-      background:linear-gradient(96deg,#00fff2,#3dff9e 48%,#ffd83d);color:#06070d;
-      border-radius:14px;padding:13px;font:800 .92rem/1 system-ui;letter-spacing:.06em;
-      text-transform:uppercase">🎮 Open the game — rip packs</a>
+  <input class="search" id="q" placeholder="Search every card…">
+  <div class="tabs" id="tabs">
+    <button class="on" data-f="all">All</button>
+    <button data-f="ducks">🦆 Ducks</button>
+    <button data-f="items">🧪 Items</button>
+    <button data-f="variants">✨ Alt art</button>
+  </div>
+  <div class="tabs stars" id="stars">
+    <button class="on" data-s="any">Any ★</button>
+    <button data-s="5">★★★★★</button>
+    <button data-s="4">★★★★</button>
+    <button data-s="3">★★★</button>
+    <button data-s="2">★★</button>
+    <button data-s="1">★</button>
   </div>
 </header>
-<div id="grid"></div>
-<div id="empty">No ducks match — try another search 🔍</div>
-<div id="viewer">
-  <div id="vHolder"></div>
-  <div class="nm" id="vNm"></div>
-  <div class="btns"><div class="chip" id="vBack">← Back</div>
-    <div class="chip" id="vToggle">✨ Shiny</div>
-    <div class="chip" id="vClose">Close ✕</div>
-  </div>
-</div>
-<script>
 
+<main>
+  <div class="count" id="count">Loading…</div>
+  <div class="grid" id="grid"></div>
+  <button class="more" id="more" style="display:none">Show more</button>
+</main>
+
+<div id="viewer">
+  <div id="vSlot"></div>
+  <div class="vinfo" id="vInfo"></div>
+  <div class="vbtns"><button id="vClose">Close</button></div>
+</div>
+
+<script>
 (function(){
   var DRAGGING = false;      // finger wins: gyro ignored while dragging
   var cards = [];
@@ -336,57 +392,19 @@
     return true;
   };
 })();
+</script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const FOILPAL={"ember": ["#ff5a14", "#ff9628", "#ffd65a", "#ffffdc", "#dc321e", "#ff783c", "#b42814"], "frost": ["#b4f0ff", "#ffffff", "#8cd2ff", "#d2ebff", "#6eb4f0", "#e6faff", "#5aa0dc"], "storm": ["#fff078", "#ffffff", "#78c8ff", "#ffe650", "#508cf0", "#dcf0ff", "#ffd23c"], "verdant": ["#5adc6e", "#b4ff8c", "#f0ffc8", "#3cb478", "#c8f078", "#78ffb4", "#32965a"], "tidal": ["#3cbeff", "#8ce6ff", "#ffffff", "#288cdc", "#6efff0", "#b4f0ff", "#1e6ebe"], "cosmic": ["#3a28a0", "#7850ff", "#c896ff", "#ffffff", "#5ab4ff", "#a06eff", "#283cb4"], "sonic": ["#ff78dc", "#ffbef0", "#ffffff", "#ff5aaa", "#ffd778", "#e68cff", "#c83ca0"], "shadow": ["#2a1f3d", "#5a4478", "#8c6eb4", "#c8b4dc", "#1a1228", "#7050a0", "#3c2a55"], "radiant": ["#fff5c8", "#ffffff", "#ffd878", "#fff0a0", "#ffe9b4", "#fffbe6", "#e6c85a"], "iron": ["#8c96aa", "#c8d2e6", "#ffffff", "#5a6478", "#a0aabe", "#dce6f0", "#464e5f"], "venom": ["#7adc32", "#b4ff5a", "#4a9614", "#dcff96", "#2a6400", "#96e63c", "#5aa028"], "crystal": ["#a0f0ff", "#ffffff", "#d2b4ff", "#8cdcf0", "#f0e6ff", "#b4f5ff", "#78b4d2"], "sand": ["#e6c878", "#f5e6b4", "#c8a050", "#fff0c8", "#a07832", "#dcbe78", "#8c6428"], "void": ["#140a28", "#3c1e5a", "#6e32a0", "#a05adc", "#0a0514", "#502878", "#1e0f3c"], "spirit": ["#b4f0e6", "#e6fffa", "#78d2c8", "#ffffff", "#96e6dc", "#c8fff5", "#5aa096"], "tech": ["#00ffb4", "#64ffda", "#ffffff", "#00c896", "#a0fff0", "#28e6b4", "#00966e"], "blood": ["#c81432", "#ff3c5a", "#78000f", "#ff8296", "#a00028", "#e6285a", "#5a000a"], "dream": ["#c8a0ff", "#ffd2f0", "#a0c8ff", "#ffffff", "#e6c8ff", "#b4e6ff", "#8c6ec8"], "chrono": ["#d2b478", "#fff0c8", "#a08c50", "#ffe6a0", "#786432", "#e6d296", "#5a4a1e"], "gravity": ["#5a5aa0", "#8c8cd2", "#c8c8f0", "#3c3c78", "#a0a0e6", "#e6e6ff", "#282850"], "plasma": ["#ff00c8", "#ff64e6", "#ffffff", "#c800a0", "#ff96f0", "#ffc8fa", "#960078"], "bone": ["#e6dcc8", "#fff5e6", "#b4a48c", "#ffffff", "#c8b8a0", "#f0e6d2", "#8c7c64"], "mirror": ["#c8e6f0", "#ffffff", "#a0c8dc", "#e6f5ff", "#8cb4c8", "#dcf0fa", "#6e96aa"], "ash": ["#787878", "#a0a0a0", "#3c3c3c", "#c8c8c8", "#5a5a5a", "#8c8c8c", "#282828"], "magma": ["#ff3c00", "#ff8c28", "#960a00", "#ffc850", "#c81e00", "#ff6414", "#640500"], "aurora": ["#5affc8", "#96ffe6", "#c8a0ff", "#ffffff", "#5ac8ff", "#a0ffdc", "#28a0c8"], "thorn": ["#8c3232", "#c85a5a", "#5a1414", "#e68c8c", "#a04646", "#dc7878", "#3c0a0a"], "gale": ["#c8f0ff", "#ffffff", "#96d2f0", "#e6faff", "#78b4dc", "#dcf5ff", "#5a96be"], "quantum": ["#00c8ff", "#a0f0ff", "#ffffff", "#0096c8", "#64e6ff", "#c8f5ff", "#00648c"], "lunar": ["#dcdcf0", "#ffffff", "#a0a0c8", "#f0f0ff", "#8c8cb4", "#c8c8e6", "#6e6e96"], "solar": ["#ffc800", "#ffe664", "#ff9600", "#fff5b4", "#e6a000", "#ffd228", "#b47800"], "abyss": ["#001e3c", "#00508c", "#0a3c64", "#3c96c8", "#001428", "#0a6ea0", "#000a1e"], "rune": ["#8c5aff", "#b48cff", "#5a28c8", "#dcc8ff", "#6e3cdc", "#a078f0", "#3c1496"], "glass": ["#c8f0f0", "#ffffff", "#a0dcdc", "#e6ffff", "#8cc8c8", "#dcf5f5", "#6ea0a0"], "swarm": ["#c8a000", "#e6c832", "#8c6e00", "#ffe678", "#a08200", "#dcb414", "#5a4600"], "frostfire": ["#ff6432", "#64c8ff", "#ffffff", "#ff9664", "#3296dc", "#ffc8a0", "#c83c14"], "prism": ["#ff5a5a", "#ffd25a", "#5aff8c", "#5ad2ff", "#c85aff", "#ffffff", "#ff5ac8"], "obsidian": ["#1e1e28", "#464655", "#787887", "#a0a0b4", "#0a0a14", "#5a5a6e", "#2d2d3c"], "nectar": ["#ffb4d2", "#ffdcea", "#ff78aa", "#fff0f5", "#e68cb4", "#ffc8dc", "#c85a8c"], "static": ["#c8ff00", "#e6ff64", "#96c800", "#f0ffb4", "#a0dc00", "#dcff32", "#648c00"], "calm": ["#00fff2", "#63f7ff", "#ffffff", "#ff43e0", "#ffd83d", "#3dff9e", "#00c3ff"]};
+const PATSIZE={diamond:22,honeycomb:26,shatter:18,starburst:140,prism:14,linear:24};
+const PATS=["diamond","diamond","diamond","diamond","diamond","honeycomb","honeycomb",
+            "shatter","shatter","starburst","prism","linear"];
+const OV_KEY='duck_overrides_v1';
+let OVR={}; try{ OVR=JSON.parse(localStorage.getItem(OV_KEY))||{}; }catch(e){}
+function ovrUrl(n){ const o=OVR[n]; return o?((typeof o==='string')?o:o.url):null; }
+let ALL=[], FILT='all', STARS='any', SHOWN=0, PAGE=60;
 
-
-
-(function(){
-  function bind(wrap){
-    if(wrap.dataset.tilt) return; wrap.dataset.tilt="1";
-    var card=wrap.querySelector('.dcard'); if(!card) return;
-    function set(x,y){
-      card.style.setProperty('--tx',Math.max(-1,Math.min(1,x)).toFixed(3));
-      card.style.setProperty('--ty',Math.max(-1,Math.min(1,y)).toFixed(3));
-    }
-    var dragging=false;
-    wrap.addEventListener('pointerdown',function(e){dragging=true;wrap.setPointerCapture(e.pointerId);});
-    wrap.addEventListener('pointerup',function(){dragging=false;set(0,0);});
-    wrap.addEventListener('pointercancel',function(){dragging=false;set(0,0);});
-    wrap.addEventListener('pointermove',function(e){
-      var r=wrap.getBoundingClientRect();
-      var x=((e.clientX-r.left)/r.width-.5)*2, y=((e.clientY-r.top)/r.height-.5)*2;
-      if(dragging||e.pointerType==='mouse') set(x,y);
-    });
-    wrap._tiltSet=set;
-  }
-  window.bindTilt=bind;
-  var gyroOn=false;
-  window.enableGyro=function(){
-    function handle(ev){
-      var g=(ev.gamma||0)/32, b=((ev.beta||0)-42)/32;
-      document.querySelectorAll('.dwrap').forEach(function(w){ if(w._tiltSet) w._tiltSet(g,b); });
-    }
-    function start(){ window.addEventListener('deviceorientation',handle); gyroOn=true; }
-    if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission){
-      DeviceOrientationEvent.requestPermission().then(function(s){ if(s==='granted') start(); });
-    } else { start(); }
-    return true;
-  };
-})();
-
-
-const VETERANS = new Set(("alpha antimatter aurora bio breeze bufflehead canvasback chaos colony comet crystal current cyber dragon dream eagle earth echo eclipse elemental entropy fibonacci fire flare fractal frost fusion ghost glow gravity hive ice infinity isotope light magnet mallard mandarin metal meteor mudbog nebula neon nightmare nova omega order phantom pintail plasma prime prism quake quantum radiation rain rubber seed shadow shock singularity soul spore static stellar storm teal thorn tide void vortex waking wind woodduck zen arroyo bandit basecamp butte buzzard cactus campfire canyon compass coyote crawler daybreak dune gravel lantern lasso mesa mirage oasis outlaw overland prospector rattler ridgeline rockhopper rodeo saddle sandstorm scorpion sheriff snorkel spur summit sundown switchback trailboss tumbleweed winch wrangler").split(" "));
-let ducks = [], filter = "all", shiny = false, live = true, current = null;
-
-async function load() {
-  try {
-    const r = await fetch("cards/ducks/manifest.json?t=" + Date.now());
-    const j = await r.json();
-    ducks = j.ducks || [];
-  } catch (e) { ducks = []; }
-  render();
-}
-
-
+function hashName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return h;}
 function contrastPal(pal){
   function h2r(x){x=x.replace('#','');return [parseInt(x.slice(0,2),16),parseInt(x.slice(2,4),16),parseInt(x.slice(4,6),16)];}
   function r2h(a,b,c){return '#'+[a,b,c].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
@@ -402,136 +420,170 @@ function contrastPal(pal){
   const weak=avgS<0.34, anchor=weak?(avgH>0.5?0.09:0.55):(avgH+0.5)%1;
   return hs.map((x,i)=>hsv2rgb(anchor+(i-hs.length/2)*0.035, weak?0.95:Math.min(1,Math.max(0.72,x[1]*1.35)), Math.min(1,Math.max(0.88,x[2]*1.1))));
 }
-function buildCard(d, big) {
-  const r = d.rarity;
-  const foil = (0.40 + r * 0.13).toFixed(2), fw = 6 + r;
-  const neon = 3 + r * 3, shim = (7.2 - r * 0.75).toFixed(2);
-  const stars = "\u2605".repeat(r) + "\u2606".repeat(5 - r);
-  const wrap = document.createElement("div");
-  wrap.className = "dwrap";
-  if (big) wrap.style.width = "min(92vw,420px)";
-  const FOILPAL = {
-  cosmic:["#3a28a0","#7850ff","#c896ff","#ffffff","#5ab4ff","#a06eff","#283cb4"],
-  fire:["#ff5a14","#ff9628","#ffd65a","#ffffdc","#dc321e","#ff783c","#b42814"],
-  ice:["#b4f0ff","#ffffff","#8cd2ff","#d2ebff","#6eb4f0","#e6faff","#5aa0dc"],
-  storm:["#fff078","#ffffff","#78c8ff","#ffe650","#508cf0","#dcf0ff","#ffd23c"],
-  leaf:["#5adc6e","#b4ff8c","#f0ffc8","#3cb478","#c8f078","#78ffb4","#32965a"],
-  water:["#3cbeff","#8ce6ff","#ffffff","#288cdc","#6efff0","#b4f0ff","#1e6ebe"],
-  music:["#ff78dc","#ffbef0","#ffffff","#ff5aaa","#ffd778","#e68cff","#c83ca0"],
-  calm:["#00fff2","#63f7ff","#ffffff","#ff43e0","#ffd83d","#3dff9e","#00c3ff"]
-};
-const PATSIZE = {diamond:22,honeycomb:26,shatter:18,starburst:140,prism:14,linear:24};
 function foilFor(d){
-  const pal = FOILPAL[d.theme] || FOILPAL.calm;
-  const pats = ["diamond","diamond","diamond","diamond","diamond",
-                "honeycomb","honeycomb","shatter","shatter","starburst","prism","linear"];
-  let hsh = 0; for (let i=0;i<d.name.length;i++) hsh = (hsh*31 + d.name.charCodeAt(i)) >>> 0;
-  const pat = pats[hsh % pats.length];
-  const stops = pal.map((c,i)=>`${c} ${12 + Math.round(i*(76/(pal.length-1)))}%`).join(",");
-  const wash = `linear-gradient(115deg,transparent 4%,${stops},transparent 96%)`;
-  const a=pal[0], b=pal[2], w=pal[3];
-  let patt;
-  if (pat==="diamond") patt = `repeating-linear-gradient(45deg,${a} 0 1px,transparent 1px 11px),repeating-linear-gradient(-45deg,${b} 0 1px,transparent 1px 11px)`;
-  else if (pat==="honeycomb") patt = `repeating-linear-gradient(60deg,${a} 0 1px,transparent 1px 13px),repeating-linear-gradient(-60deg,${b} 0 1px,transparent 1px 13px),repeating-linear-gradient(0deg,${w} 0 1px,transparent 1px 13px)`;
-  else if (pat==="shatter") patt = `repeating-linear-gradient(28deg,${a} 0 1px,transparent 1px 9px),repeating-linear-gradient(-67deg,${b} 0 1px,transparent 1px 15px)`;
-  else if (pat==="starburst") patt = `repeating-conic-gradient(${a} 0deg 3deg,transparent 3deg 9deg)`;
-  else if (pat==="prism") patt = `repeating-linear-gradient(72deg,${a} 0 1px,transparent 1px 5px)`;
-  else patt = `repeating-linear-gradient(115deg,${a} 0 2px,transparent 2px 12px)`;
-  return {wash, patt, size:PATSIZE[pat]};
+  const pal=d.palette||FOILPAL.calm;
+  const pat=PATS[hashName(d.name)%PATS.length];
+  const stops=pal.map((c,i)=>`${c} ${12+Math.round(i*(76/(pal.length-1)))}%`).join(",");
+  const wash=`linear-gradient(115deg,transparent 4%,${stops},transparent 96%)`;
+  const a=pal[0],b=pal[2],w=pal[3];
+  let p;
+  if(pat==="diamond")p=`repeating-linear-gradient(45deg,${a} 0 1px,transparent 1px 11px),repeating-linear-gradient(-45deg,${b} 0 1px,transparent 1px 11px)`;
+  else if(pat==="honeycomb")p=`repeating-linear-gradient(60deg,${a} 0 1px,transparent 1px 13px),repeating-linear-gradient(-60deg,${b} 0 1px,transparent 1px 13px),repeating-linear-gradient(0deg,${w} 0 1px,transparent 1px 13px)`;
+  else if(pat==="shatter")p=`repeating-linear-gradient(28deg,${a} 0 1px,transparent 1px 9px),repeating-linear-gradient(-67deg,${b} 0 1px,transparent 1px 15px)`;
+  else if(pat==="starburst")p=`repeating-conic-gradient(${a} 0deg 3deg,transparent 3deg 9deg)`;
+  else if(pat==="prism")p=`repeating-linear-gradient(72deg,${a} 0 1px,transparent 1px 5px)`;
+  else p=`repeating-linear-gradient(115deg,${a} 0 2px,transparent 2px 12px)`;
+  return {wash,patt:p,size:PATSIZE[pat],pal};
 }
-  const F = foilFor(d);
-  const L = '<i class="lattice"></i>';
-  const pal = FOILPAL[d.theme] || FOILPAL.calm;
-  const o1 = pal[1], o2 = pal[0], o3 = pal[2];
-  const ocyc = (4.0 + (r % 4) * 0.4).toFixed(2);
-  const pz = 62 + r * 12;
-  let motes = "", motes2 = "";
-  for (let k=0;k<4;k++){
-    const a = k*90*Math.PI/180;
-    motes += `<i class="mote" style="left:${(50+47*Math.cos(a)).toFixed(1)}%;top:${(50+47*Math.sin(a)).toFixed(1)}%"></i>`;
+function bigCard(d){
+  const r=d.rarity||1;
+  const foil=(0.40+r*0.13).toFixed(2), fw=6+r, neon=3+r*3, shim=(7.2-r*0.75).toFixed(2);
+  const F=foilFor(d), pal=F.pal, CT=contrastPal(pal);
+  const t1=CT[1],t2=CT[3]||CT[0],t3=CT[0];
+  const o1=pal[1],o2=pal[0],o3=pal[2];
+  const stars="\u2605".repeat(r)+"\u2606".repeat(5-r);
+  const pr='pr-'+(d.prop||'cradle');
+  const edge=(0.55+r*0.09).toFixed(2);
+  const kind=d.pkind||'twinkle';
+  const anim={rise:'emRise',fall:'emFall',flash:'emFlash'}[kind]||'emTwinkle';
+  let motes='';
+  for(let k=0;k<4+r;k++){
+    const left=(k*83)%92+4, dly=((k*0.53)%3.1).toFixed(2), dur=(2.9+(k%4)*0.6).toFixed(2);
+    const pos = kind==='rise'?'bottom:-3%':kind==='fall'?'top:-3%':`top:${(k*37)%80+6}%`;
+    motes+=`<i style="left:${left}%;${pos};animation:${anim} ${dur}s linear ${dly}s infinite"></i>`;
   }
-  for (let k=0;k<3;k++){
-    const a = (k*120+40)*Math.PI/180;
-    motes2 += `<i class="mote" style="left:${(50+47*Math.cos(a)).toFixed(1)}%;top:${(50+47*Math.sin(a)).toFixed(1)}%"></i>`;
-  }
-  const ORB = ORB + `</div>`;
-  setTimeout(() => bindTilt(wrap), 0);
-  return wrap;
+  const EDGE=`<div class="edgemotes">${motes}</div><div class="rimlight"></div>`+
+    `<div class="ringmask slow"><i class="tracer"></i></div>`+
+    `<div class="ringmask"><i class="tracer"></i></div>`;
+  const L='<i class="lattice"></i>';
+  const art = d.img
+    ? `<img src="${d.img}" alt="${d.name}" onerror="this.parentNode.innerHTML='<div class='noart'>${d.icon||'🧪'}</div>'+this.parentNode.innerHTML.split('</img>')[1]||''">`
+    : `<div class="noart">${d.icon||'🧪'}</div>`;
+  const w=document.createElement('div');
+  w.className='dwrap'; w.style.width='min(84vw,340px)';
+  w.innerHTML=
+   `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;`+
+   `--gcol:${d.glow||'#00fff2'};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;`+
+   `--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge};`+
+   `--t1:${t1};--t2:${t2};--t3:${t3}">`+
+    `<div class="dcard">`+
+     `<div class="dart">${art}${EDGE}</div>`+
+     `<div class="dname foilzone">${L}<span class="holotext">${d.name}</span></div>`+
+     `<div class="dstats foilzone">${L}`+
+       (d.kind==='item'
+         ? `<span class="holotext">${d.effect||'ITEM'}</span>`
+         : `<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span>`)+
+     `</div>`+
+     `<div class="dstars foilzone">${L}<span class="holotext">${stars}</span></div>`+
+     `<div class="dmove foilzone">${L}<b class="holotext">${d.icon||''} ${d.badge||''}</b>`+
+       `<span class="holotext">${d.move||d.text||''}</span></div>`+
+     `<div class="dframe"></div>`+
+    `</div></div>`;
+  setTimeout(()=>bindTilt(w),0);
+  return w;
 }
 
-function render() {
-  const q = document.getElementById("q").value.trim().toLowerCase();
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
-  let shown = 0;
-  for (const d of ducks) {
-    const vet = VETERANS.has(d.name);
-    if (filter === "vet" && !vet) continue;
-    if (filter === "new" && vet) continue;
-    if (q && !d.name.includes(q)) continue;
-    if (shiny && !d.shiny) continue;
-    const el = document.createElement("div");
-    el.className = "duck" + (vet ? " vet" : "") + (shiny ? " sh" : "");
-    let img;
-    if (true) {
-      img = buildCard(d, false);
-    } else {
-      img = document.createElement("img");
-      img.loading = "lazy";
-      img.src = "cards/ducks/" + d.hero;
-    }
-    const nm = document.createElement("div");
-    nm.className = "nm"; nm.textContent = d.name;
-    el.append(img, nm);
-    el.onclick = () => open(d);
-    grid.appendChild(el);
-    shown++;
+async function load(){
+  const grab=async(u)=>{ try{ const r=await fetch(u+'?t='+Date.now()); return await r.json(); }catch(e){ return null; } };
+  const [m,it,v]=await Promise.all([
+    grab('cards/ducks/manifest.json'),
+    grab('cards/items/items.json'),
+    grab('cards/ducks/variants.json'),
+  ]);
+  ALL=[];
+  (m&&m.ducks||[]).forEach(d=>{
+    ALL.push(Object.assign({},d,{kind:'duck',img:'cards/ducks/'+d.hero,
+      tag:d.elementLabel||'DUCK'}));
+    ALL[ALL.length-1].img = ovrUrl(d.name) || ALL[ALL.length-1].img;
+  });
+  (it&&it.items||[]).forEach(i=>{
+    ALL.push(Object.assign({},i,{kind:'item',img:'cards/items/'+i.art,
+      tag:i.familyLabel||'ITEM',badge:i.familyLabel,move:i.text}));
+    ALL[ALL.length-1].img = ovrUrl(i.name) || ALL[ALL.length-1].img;
+  });
+  if(v&&v.ducks){
+    const labels=v.labels||{};
+    Object.keys(v.ducks).forEach(n=>{
+      const base=(m&&m.ducks||[]).find(d=>d.name===n);
+      v.ducks[n].forEach(vr=>{
+        const lb=labels[vr]||{label:vr.toUpperCase(),colour:'#8b95bd'};
+        ALL.push(Object.assign({}, base||{name:n,rarity:1}, {
+          kind:'variant', variant:vr, vlabel:lb.label, vcol:lb.colour,
+          img:'cards/ducks/'+n+'_'+vr+'.png', tag:lb.label,
+        }));
+      });
+    });
   }
-  document.getElementById("count").textContent = shown + " of " + ducks.length + " ducks in the pond";
-  document.getElementById("empty").style.display = shown ? "none" : "block";
+  render(true);
 }
-
-function open(d) {
-  current = d;
-  document.getElementById("vNm").textContent = d.name;
-  setViewerImg(shiny);
-  document.getElementById("viewer").style.display = "flex";
+function pool(){
+  const q=($('#q').value||'').toLowerCase();
+  return ALL.filter(d=>{
+    if(q && !(d.name||'').toLowerCase().includes(q)) return false;
+    if(STARS!=='any' && String(d.rarity)!==STARS) return false;
+    if(FILT==='ducks') return d.kind==='duck';
+    if(FILT==='items') return d.kind==='item';
+    if(FILT==='variants') return d.kind==='variant';
+    return true;
+  });
 }
-function setViewerImg(useShiny) {
-  const holder = document.getElementById("vHolder");
-  holder.innerHTML = "";
-  if (current.hero) {
-    holder.appendChild(buildCard(current, true));
-  } else {
-    const im = document.createElement("img");
-    im.src = "cards/ducks/" + current.normal;
-    im.style.maxWidth = "92vw"; im.style.maxHeight = "70vh";
-    im.style.borderRadius = "20px";
-    holder.appendChild(im);
-  }
+function render(reset){
+  if(reset) SHOWN=0;
+  const list=pool();
+  const g=$('#grid');
+  if(reset) g.innerHTML='';
+  const slice=list.slice(SHOWN, SHOWN+PAGE);
+  slice.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='slot'; el.dataset.r=d.rarity||1;
+    const art = d.img
+      ? `<img loading="lazy" src="${d.img}" alt="${d.name}" onerror="this.outerHTML='<div class='ph'>${d.icon||'🧪'}</div>'">`
+      : `<div class="ph">${d.icon||'🧪'}</div>`;
+    el.innerHTML = art +
+      `<span class="tag">${d.tag||''}</span>`+
+      (d.kind==='variant'?`<span class="vtag" style="color:${d.vcol};border-color:${d.vcol}">${d.vlabel}</span>`:'')+
+      `<div class="cap"><span>${d.name}</span><b>${'\u2605'.repeat(d.rarity||1)}</b></div>`;
+    el.onclick=()=>open_(d);
+    g.appendChild(el);
+  });
+  SHOWN += slice.length;
+  const ducks=ALL.filter(x=>x.kind==='duck').length;
+  const items=ALL.filter(x=>x.kind==='item').length;
+  const vars=ALL.filter(x=>x.kind==='variant').length;
+  $('#count').innerHTML=`Showing <b>${SHOWN}</b> of <b>${list.length}</b> · `+
+    `<b>${ducks}</b> ducks · <b>${items}</b> items · <b>${vars}</b> alt art · `+
+    `<b>${ALL.length}</b> total`;
+  $('#more').style.display = SHOWN < list.length ? 'block' : 'none';
+  if(!list.length) g.innerHTML='<div class="empty"><b>Nothing here</b>Try another filter, or paint some cards.</div>';
 }
-document.getElementById("vClose").onclick = () => document.getElementById("viewer").style.display = "none";
-let vShiny = false;
-document.getElementById("vToggle").onclick = () => { vShiny = !vShiny; setViewerImg(vShiny); };
-
-document.getElementById("q").oninput = render;
-document.querySelectorAll(".chip[data-f]").forEach(c => c.onclick = () => {
-  document.querySelectorAll(".chip[data-f]").forEach(x => x.classList.remove("on"));
-  c.classList.add("on"); filter = c.dataset.f; render();
+function open_(d){
+  const s=$('#vSlot'); s.innerHTML=''; s.appendChild(bigCard(d));
+  const bits=[];
+  if(d.elementLabel) bits.push(`<b>${d.elementLabel}</b>`);
+  if(d.badge) bits.push(d.badge);
+  if(d.abilityName) bits.push(`<b>${d.abilityName}</b> — ${d.abilityText||''}`);
+  if(d.text) bits.push(d.text);
+  if(d.bio) bits.push(`<i>${d.bio}</i>`);
+  if(d.kind==='variant') bits.push(`<b>${d.vlabel}</b> alternate art`);
+  $('#vInfo').innerHTML = bits.join(' · ') || d.name;
+  $('#viewer').classList.add('on');
+  history.pushState({v:1},'');
+}
+$('#vClose').onclick=()=>$('#viewer').classList.remove('on');
+$('#viewer').onclick=e=>{ if(e.target.id==='viewer') $('#viewer').classList.remove('on'); };
+window.addEventListener('popstate',()=>$('#viewer').classList.remove('on'));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('#viewer').classList.remove('on'); });
+$('#more').onclick=()=>render(false);
+$('#q').oninput=()=>render(true);
+$$('#tabs button').forEach(b=>b.onclick=()=>{
+  $$('#tabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); FILT=b.dataset.f; render(true);
 });
-document.getElementById("shinyChip").onclick = function () {
-  shiny = !shiny; this.classList.toggle("on", shiny); render();
-};
-document.getElementById("liveChip").onclick = function () {
-  live = !live; this.classList.toggle("on", live); render();
-};
-document.getElementById("liveChip").classList.add("on");
-document.getElementById("vBack").onclick=()=>document.getElementById("viewer").classList.remove("on");
-document.addEventListener("keydown",e=>{if(e.key==="Escape")document.getElementById("viewer").classList.remove("on");});
-history.scrollRestoration="manual";
-window.addEventListener("popstate",()=>document.getElementById("viewer").classList.remove("on"));
+$$('#stars button').forEach(b=>b.onclick=()=>{
+  $$('#stars button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); STARS=b.dataset.s; render(true);
+});
 load();
-setInterval(load, 30000); // new ducks appear automatically as they're created
+setInterval(load, 60000);
 </script>
-</body>
-</html>
+</body></html>
