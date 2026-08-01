@@ -107,7 +107,7 @@
 
                   const state = {
                             coins: p.coins, packs: p.packs, level: p.level, xp: p.xp,
-                            wins: p.wins, losses: p.losses, tier: p.career_tier, shards: p.shards||0, pity: p.pity ?? 0, streak: p.streak_days||0, lastLogin: p.last_login||"", achievements: p.achievements||{},
+                            wins: p.wins, losses: p.losses, tier: p.career_tier, shards: p.shards||0, pity: p.pity ?? 0, streak: p.streak_days||0, lastLogin: p.last_login||"", achievements: p.achievements||{}, ach: p.achievements||{},
                             owned: owned, itemsOwned: items, inventory: inv,
                             decks: dRes.data || [],
                   };
