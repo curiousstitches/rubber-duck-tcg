@@ -1779,8 +1779,9 @@ function ripPack(alreadyTorn){
   const pk=$('#pack');
   pk.classList.add('torn');
   $('#flashbang').classList.add('go');
-  sparkBurst(46, ['#00fff2','#ff43e0','#ffd83d','#3dff9e','#ffffff']);
-  shake(false);
+  const tearFx = p.cost>=3000 ? 90 : p.cost>=1200 ? 65 : 46;
+  sparkBurst(tearFx, ['#00fff2','#ff43e0','#ffd83d','#3dff9e','#ffffff']);
+  shake(p.cost>=1200);
 
   queue=[];
   for(let i=0;i<p.cards;i++){
