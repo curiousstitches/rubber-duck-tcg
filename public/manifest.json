@@ -1,16 +1,25 @@
 {
-  "name": "Rubber Duck TCG",
-  "short_name": "Duck TCG",
-  "description": "Collect rubber duck cards, open packs, and evolve your ducks!",
-  "start_url": "/",
+  "name": "Getting Ducked",
+  "short_name": "Ducked",
+  "description": "Rip packs, collect duck cards, and battle AI or live players.",
+  "start_url": "/game.html",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#1e40af",
+  "background_color": "#070a14",
+  "theme_color": "#070a14",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "512x512",
-      "type": "image/x-icon"
+      "src": "/cards/ducks/arroyo_hero.png",
+      "sizes": "768x768",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/cards/ducks/arroyo_hero.png",
+      "sizes": "768x768",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
