@@ -3467,7 +3467,7 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
           var id = Number(ev.target.getAttribute('data-accept'));
           var me = myDeckAndHandle();
           var res = await window.DuckNet.acceptChallenge(id, me.deck);
-          note.textContent = res.error ? ('Error: ' + res.error) : 'Match starting!';
+          note.textContent = res.error ? ('Error: ' + res.error) : 'Match ready! Open Battle to play.';
           if(!res.error) panel.style.display = 'none';
           refresh();
         });
@@ -3492,6 +3492,10 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
 
     refresh();
     setInterval(refresh, 15000);
+
+    window.DuckNet.onChallengeAccepted = function(c){
+      note.textContent = (c.opponent_handle||'Your friend') + ' accepted! Open Battle to play.';
+    };
 
     if(window.DuckNet.signedIn){
       window.DuckNet.signedIn().then(function(ok){
