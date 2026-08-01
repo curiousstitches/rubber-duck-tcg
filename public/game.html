@@ -3210,6 +3210,7 @@ function renderBattlePass(){
   xt.textContent = (S.xp||0)+' / '+need+' XP';
 }
 function checkStreak(){
+  const sd0 = document.getElementById('streakDays'); if(sd0) sd0.textContent = S.streak||0;
   const today = new Date().toISOString().slice(0,10);
   const last = S.lastLogin;
   if(last===today) return;
