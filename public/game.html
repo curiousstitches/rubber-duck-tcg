@@ -1778,7 +1778,7 @@ function paintPacks(){
     const locked = p.isDaily && (S.packs||0)<=0;
     el.className='ptile'+(p.id===CHOSEN.id?' on':'')+(locked?' locked':'');
     if(locked) el.style.opacity='.45';
-    const costLabel = p.isDaily ? `FREE · x${S.packs||0}` : `${p.cost} 💩`;
+    const costLabel = p.isDaily ? `FREE · x${S.packs||0}` : `${priceOf(p)} 💩`;
     el.innerHTML=`<span class="pf">${p.face}</span><div class="pn">${p.name}</div>`+
                  `<div class="pc">${costLabel}</div>`;
     el.onclick=()=>{
@@ -1812,7 +1812,7 @@ function dressPack(){
     addonBox.style.display='none';
   }
   const addon=(p.id==='single' && INCLUDE_ITEM) ? ITEM_ADDON_COST : 0;
-  const cost = p.isDaily ? 0 : (p.cost + addon);
+  const cost = p.isDaily ? 0 : (priceOf(p) + addon);
   $('#ripCost').textContent = p.isDaily ? 'FREE' : cost;
 
   const extras=[];
@@ -1886,7 +1886,7 @@ function ripPack(alreadyTorn){
   if(!S.dex.length){ toast('No cards painted yet'); return; }
   const p=CHOSEN;
   const addon = (p.id==='single' && INCLUDE_ITEM) ? ITEM_ADDON_COST : 0;
-  const cost = p.isDaily ? 0 : (p.cost + addon);
+  const cost = p.isDaily ? 0 : (priceOf(p) + addon);
   if(p.isDaily){
     if((S.packs||0) <= 0){ toast('No daily packs left — come back tomorrow'); return; }
   } else if(S.coins < cost){
