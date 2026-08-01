@@ -1500,8 +1500,9 @@ let CHOSEN = PACKS[2];
 
 /* ---------------- state ---------------- */
 const S = {
-  coins: 500, shards: 0, packs: 3, owned: {}, itemsOwned: {}, inventory: {},
-  dex: [], items: [], ready: false, wins: 0, losses: 0, level: 1, xp: 0, tier: 'bronze'
+  coins: 5000, shards: 0, packs: 3, owned: {}, itemsOwned: {}, inventory: {},
+  dex: [], items: [], ready: false, wins: 0, losses: 0, level: 1, xp: 0, tier: 'bronze',
+  starterGranted: false, founderBonusClaimed: false
 };
 const SAVE = 'duck_tcg_save_v1';
 const $ = s => document.querySelector(s);
@@ -1512,17 +1513,19 @@ function snapshot(){
           luckTier:S.luckTier||0, luckExtra:S.luckExtra||0, luckFloor:S.luckFloor||0,
           luckBoost:S.luckBoost||0, packs:S.packs, owned:S.owned, itemsOwned:S.itemsOwned||{},
           inventory:S.inventory||{}, wins:S.wins, losses:S.losses,
-          level:S.level||1, xp:S.xp||0, tier:S.tier||'bronze', ach:S.ach||{}, achievements:S.ach||{}, streak:S.streak||0, lastLogin:S.lastLogin||''};
+          level:S.level||1, xp:S.xp||0, tier:S.tier||'bronze', ach:S.ach||{}, achievements:S.ach||{}, streak:S.streak||0, lastLogin:S.lastLogin||'',
+          starterGranted:!!S.starterGranted, founderBonusClaimed:!!S.founderBonusClaimed};
 }
 function applyState(r){
   if(!r) return;
-  S.coins=r.coins??500; S.shards=r.shards||0; S.pity=r.pity||0;
+  S.coins=r.coins??5000; S.shards=r.shards||0; S.pity=r.pity||0;
   S.luckTier=r.luckTier||0; S.luckExtra=r.luckExtra||0; S.luckFloor=r.luckFloor||0;
   S.luckBoost=r.luckBoost||0; S.packs=r.packs??3; S.owned=r.owned||{};
   S.itemsOwned=r.itemsOwned||{}; S.inventory=r.inventory||{};
   S.wins=r.wins||0; S.losses=r.losses||0;
   S.level=r.level||1; S.xp=r.xp||0; S.tier=r.tier||'bronze';
   S.ach=r.ach||{}; S.streak=r.streak||0; S.lastLogin=r.lastLogin||'';
+  S.starterGranted=!!r.starterGranted; S.founderBonusClaimed=!!r.founderBonusClaimed;
 }
 function save(){
   if(window.DuckSave && window.DuckSave.ready){ window.DuckSave.save(snapshot()); }
@@ -1680,6 +1683,21 @@ const byName=n=>S.dex.find(d=>d.name===n);
 
 /* weighted pull: rares are rare */
 const WEIGHT={1:46,2:27,3:16,4:8,5:3};
+
+/* pick a card whose rarity falls in [min,max], still weighted so the rarer
+   end of the band stays rarer — used by starter packs and the founder pack,
+   which need a guaranteed band/star instead of the usual difficulty odds() */
+function pullBand(min, max){
+  if(!S.dex.length) return null;
+  const band = S.dex.filter(d => d.rarity >= min && d.rarity <= max);
+  const pool = band.length ? band : S.dex;
+  const weighted = pool.map(d => [d, WEIGHT[d.rarity] || 10]);
+  const total = weighted.reduce((a,[,w]) => a + w, 0);
+  let n = Math.random() * total;
+  for(const [d,w] of weighted){ n -= w; if(n <= 0) return d; }
+  return pool[0];
+}
+
 function pull(floor){
   const O = odds();
   // pick a rarity band from the difficulty table, then a card inside it
@@ -3415,11 +3433,115 @@ paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad
 $('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
 $('#pfBuild').onclick=()=>{ grabProfile(); toast('Player card updated'); SND.coin(); };
 $('#acctBtn').addEventListener('click',()=>{},{once:true});
+/* ---------------- new-player onboarding ---------------- */
+// Starting bundle: every brand-new account gets enough to actually field a
+// legal 50-card deck (35 ducks + 15 items) — 5,000 droppings plus 5 free
+// packs (4 commons-only, 1 with a guaranteed 2-4★ card in every slot).
+const STARTER_COINS = 5000;
+const STARTER_PACK_PLAN = [
+  { count:4, cards:5, band:[1,1] },   // 4 packs — five 1★-only ducks each
+  { count:1, cards:5, band:[2,4] },   // 1 pack  — five ducks, each 2★-4★
+];
+// First 200 accounts ever created get an extra thank-you bonus on top.
+const FOUNDER_LIMIT = 200;
+const FOUNDER_BONUS_COINS = 5000;
+
+async function onboardNewPlayer(){
+  if(!S.dex.length) return false;
+  const untouched = !S.starterGranted &&
+                     Object.keys(S.owned||{}).length===0 &&
+                     Object.keys(S.itemsOwned||{}).length===0 &&
+                     !(S.wins>0) && !(S.losses>0) && !S.lastLogin;
+  if(!untouched) return false;
+
+  S.starterGranted = true;
+  S.coins = STARTER_COINS;
+
+  let starterCount = 0;
+  STARTER_PACK_PLAN.forEach(plan=>{
+    for(let p=0;p<plan.count;p++)
+      for(let i=0;i<plan.cards;i++){
+        const d = pullBand(plan.band[0], plan.band[1]);
+        if(d){ S.owned[d.name]=(S.owned[d.name]||0)+1; starterCount++; }
+      }
+  });
+
+  // save immediately (not debounced) so we can read back the DB-assigned
+  // signup_number the instant this account's row is first created
+  let signupNumber = null;
+  if(window.DuckSave && window.DuckSave.online){
+    try{
+      const res = await window.DuckSave.save(snapshot(), true);
+      if(res) signupNumber = res.signupNumber;
+    }catch(e){}
+  } else {
+    save();
+  }
+
+  renderAll();
+  toast(`🎁 Starter bundle: ${STARTER_COINS.toLocaleString()} 💩 + ${starterCount} cards added!`);
+
+  if(signupNumber && signupNumber <= FOUNDER_LIMIT && !S.founderBonusClaimed){
+    S.founderBonusClaimed = true;
+    S.coins += FOUNDER_BONUS_COINS;
+    const founderCards = [];
+    [2,3,4,5].forEach(r=>{
+      const d = pullBand(r,r);
+      if(d){ S.owned[d.name]=(S.owned[d.name]||0)+1; founderCards.push(d); }
+    });
+    save();
+    renderAll();
+    setTimeout(()=>showFounderModal(signupNumber, founderCards), 700);
+  } else {
+    save();
+  }
+  return true;
+}
+
+function showFounderModal(num, cards){
+  const old = document.getElementById('founderModal'); if(old) old.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'founderModal';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(3,5,11,.86);'+
+    'display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
+  const cardsHtml = cards.map(d =>
+    `<div style="text-align:center;flex:1;min-width:0">`+
+      `<img src="cards/ducks/${d.hero}" alt="${d.name}" style="width:100%;aspect-ratio:5/7;object-fit:cover;border-radius:10px;border:1px solid #26305a">`+
+      `<div style="font-size:.7rem;margin-top:4px;color:#ffd166">${'★'.repeat(d.rarity)}</div>`+
+    `</div>`
+  ).join('');
+  wrap.innerHTML =
+    `<div style="max-width:420px;width:100%;background:rgba(20,27,51,.94);border:1px solid #26305a;`+
+    `border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);`+
+    `font-family:'Outfit',system-ui,sans-serif;color:#eaeeff">`+
+      `<div style="font-size:2.6rem;margin-bottom:6px">🦆</div>`+
+      `<div style="font-family:'Chakra Petch',system-ui;font-size:1.25rem;text-transform:uppercase;`+
+        `letter-spacing:.03em;margin-bottom:8px">Welcome to `+
+        `<span style="background:linear-gradient(94deg,#00fff2,#ff43e0 52%,#ffd83d);`+
+        `-webkit-background-clip:text;background-clip:text;color:transparent">Getting Ducked</span></div>`+
+      `<div style="font-size:.95rem;color:#dfe4ff;margin-bottom:4px">You are player number `+
+        `<b style="color:#ffd83d">#${num}</b> to join.</div>`+
+      `<div style="font-size:.86rem;color:#8b95bd;margin-bottom:18px">Thank you for being here. Here's an extra bonus.</div>`+
+      `<div style="background:#141b33;border:1px solid #26305a;border-radius:14px;padding:14px;margin-bottom:18px">`+
+        `<div style="font:700 .74rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;`+
+          `color:#00fff2;margin-bottom:10px">Founder's Bonus</div>`+
+        `<div style="font-size:.9rem;margin-bottom:12px">+${FOUNDER_BONUS_COINS.toLocaleString()} 💩 Duck Droppings</div>`+
+        `<div style="display:flex;gap:8px">${cardsHtml}</div>`+
+      `</div>`+
+      `<button id="founderModalClose" style="width:100%;border:0;border-radius:14px;padding:15px;`+
+        `font:800 .92rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;color:#06070d;`+
+        `background:linear-gradient(96deg,#00fff2,#3dff9e 48%,#ffd83d);cursor:pointer">Let's play</button>`+
+    `</div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('founderModalClose').onclick = () => wrap.remove();
+}
+
 (async function boot(){
   const info = await load();
   purse();
   await loadDex();
-  if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
+  const onboarded = await onboardNewPlayer();
+  if(!onboarded && info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
 </script>
 
