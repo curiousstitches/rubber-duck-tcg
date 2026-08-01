@@ -3,6 +3,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#070a14">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="cards/ducks/arroyo_hero.png">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -994,6 +996,7 @@ html,body{max-width:100vw;overflow-x:hidden}
     <div class="chip shard" title="Diamond Shards">💎 <span id="shards">0</span></div>
     <div class="chip">📦 <span id="packs">0</span></div>
     <div class="chip streak" title="Daily streak">🔥 <span id="streakDays">0</span></div>
+    <div class="chip" id="pwaInstall" style="cursor:pointer;display:none">⬇️ Install</div>
     <div class="chip" id="sfxBtn" style="cursor:pointer">🔊</div>
     <div class="chip" id="acctBtn" style="cursor:pointer">👤</div>
   </div>
@@ -3387,4 +3390,29 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
   if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
 </script>
-</body></html>
+</body><script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+let __deferredInstall = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  __deferredInstall = e;
+  const btn = document.getElementById('pwaInstall');
+  if(btn) btn.style.display = 'flex';
+});
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('pwaInstall');
+  if(btn) btn.onclick = async ()=>{
+    if(!__deferredInstall) return;
+    __deferredInstall.prompt();
+    await __deferredInstall.userChoice;
+    __deferredInstall = null;
+    btn.style.display = 'none';
+  };
+});
+window.addEventListener('appinstalled', ()=>{
+  const btn = document.getElementById('pwaInstall'); if(btn) btn.style.display='none';
+});
+</script>
+</html>
