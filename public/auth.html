@@ -94,6 +94,11 @@ h1 b{background-size:220% auto;animation:brandFlow 6s linear infinite}
  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);
  animation:sweep 3.6s ease-in-out infinite}
 @keyframes sweep{0%{left:-45%}55%{left:120%}100%{left:120%}}
+.founder{display:flex;align-items:center;justify-content:center;gap:8px;
+ background:rgba(61,255,158,.09);border:1px solid #1f6b48;border-radius:12px;
+ padding:9px 12px;margin-bottom:16px;font:700 .75rem 'Chakra Petch',system-ui;
+ letter-spacing:.03em;color:#7dffc0;text-transform:uppercase}
+.founder.full{background:rgba(255,183,3,.08);border-color:#7a5a14;color:#ffd166}
 </style></head><body>
   <div id="sky"></div>
 
@@ -101,6 +106,8 @@ h1 b{background-size:220% auto;animation:brandFlow 6s linear infinite}
     <span class="duck">🦆</span>
     <h1>Getting <b>Ducked</b></h1>
     <div class="sub" id="sub">Sign in to save your collection</div>
+
+    <div class="founder" id="founderChip" style="display:none">🏆 <span id="founderTxt"></span></div>
 
     <div class="msg" id="msg"></div>
 
@@ -177,6 +184,23 @@ function busy(btn, on, label){
   if(on){ btn.dataset.old = btn.innerHTML; btn.innerHTML = '<span class="spin"></span>' + (label||'Working…'); }
   else if(btn.dataset.old){ btn.innerHTML = btn.dataset.old; }
 }
+async function founderSpots(){
+  const chip=$('#founderChip'), txt=$('#founderTxt');
+  if(typeof SUPABASE_URL==='undefined' || !SUPABASE_URL || SUPABASE_URL.indexOf('PASTE')!==-1) return;
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/players?select=id&signup_number=lte.200', {
+      method:'HEAD',
+      headers:{ apikey:SUPABASE_ANON_KEY, Authorization:'Bearer '+SUPABASE_ANON_KEY, Prefer:'count=exact' }
+    });
+    const range = res.headers.get('content-range');
+    let claimed = 0;
+    if(range){ const m=range.match(/\/(\d+)$/); if(m) claimed=parseInt(m[1],10); }
+    const left = Math.max(0, 200-claimed);
+    chip.style.display='flex';
+    if(left>0){ txt.textContent = `${left} of 200 founder spots left`; }
+    else { chip.classList.add('full'); txt.textContent = 'Founder spots are all claimed'; }
+  }catch(e){ /* silently skip — non-essential UI */ }
+}
 
 /* ---------- boot ---------- */
 const NEXT = new URLSearchParams(location.search).get('next') || 'hub.html';
@@ -190,6 +214,8 @@ const NEXT = new URLSearchParams(location.search).get('next') || 'hub.html';
   // Remember-me: reflect the saved preference, and keep it in sync as it's toggled.
   $('#remember').checked = duckRememberMe();
   $('#remember').onchange = () => duckSetRememberMe($('#remember').checked);
+
+  founderSpots();
 
   if(typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL || SUPABASE_URL.includes('PASTE')){
     $('#setupNote').innerHTML =

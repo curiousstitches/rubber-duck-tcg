@@ -1028,6 +1028,14 @@ html,body{max-width:100vw;overflow-x:hidden}
 
     <div class="packrow" id="packRow"></div>
 
+    <div id="itemAddonBox" style="display:none;margin:10px auto 0;max-width:340px;text-align:center;
+      font:600 .82rem 'Chakra Petch',system-ui;color:#bfe8ff">
+      <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="itemAddonChk" style="width:16px;height:16px;accent-color:#3dff9e">
+        <span>+ Include an item card (extra <span id="itemAddonCost">50</span> 💩)</span>
+      </label>
+    </div>
+
     <div class="packstage">
       <div class="packwrap" id="packWrap">
         <div class="pack" id="pack">
@@ -1495,8 +1503,16 @@ const PACKS = [
     blurb:'Three cards, one guaranteed 3★ or better.', floor:2, guarantee:3 },
   { id:'legend', name:'LEGENDARY',face:'★★★★★', cards:3, cost:3000,
     blurb:'Three cards, one guaranteed 5★.',    floor:3, guarantee:5 },
+  { id:'daily',  name:'DAILY',    face:'🎁', cards:3, cost:0,
+    blurb:'Free daily pack — one to two star cards. Refills once a day.',
+    floor:1, guarantee:0, isDaily:true },
 ];
+const DAILY_PACK_CAP = 3;
 let CHOSEN = PACKS[2];
+// the SINGLE pack's item card is opt-in (extra cost); every other pack always
+// includes one for free, so this toggle only matters while SINGLE is chosen
+let INCLUDE_ITEM = false;
+const ITEM_ADDON_COST = 50;
 
 /* ---------------- state ---------------- */
 const S = {
@@ -1509,7 +1525,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 function snapshot(){
-  return {coins:S.coins, shards:S.shards||0, pity:S.pity||0,
+  return {coins:S.coins, shards:S.shards||0, pity:S.pity||{p4:0,p5:0},
           luckTier:S.luckTier||0, luckExtra:S.luckExtra||0, luckFloor:S.luckFloor||0,
           luckBoost:S.luckBoost||0, packs:S.packs, owned:S.owned, itemsOwned:S.itemsOwned||{},
           inventory:S.inventory||{}, wins:S.wins, losses:S.losses,
@@ -1518,7 +1534,8 @@ function snapshot(){
 }
 function applyState(r){
   if(!r) return;
-  S.coins=r.coins??5000; S.shards=r.shards||0; S.pity=r.pity||0;
+  S.coins=r.coins??5000; S.shards=r.shards||0;
+  S.pity=(r.pity && typeof r.pity==='object') ? {p4:r.pity.p4||0, p5:r.pity.p5||0} : {p4:0,p5:0};
   S.luckTier=r.luckTier||0; S.luckExtra=r.luckExtra||0; S.luckFloor=r.luckFloor||0;
   S.luckBoost=r.luckBoost||0; S.packs=r.packs??3; S.owned=r.owned||{};
   S.itemsOwned=r.itemsOwned||{}; S.inventory=r.inventory||{};
@@ -1637,14 +1654,21 @@ function buildCard(d,big){
   const wrap=document.createElement('div');
   wrap.className='dwrap';
   if(big) wrap.style.width='min(84vw,360px)';
+  const artSrc = d.isItem ? ('cards/items/'+d.art) : (ovrUrl(d.name)||('cards/ducks/'+d.hero));
+  const statsRow = d.isItem
+    ? `<span class="holotext" style="font-size:.72em;line-height:1.3">${d.text||d.effect||''}</span>`
+    : `<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span>`;
+  const moveRow = d.isItem
+    ? `<b class="holotext">${d.icon||'🧪'} ${d.familyLabel||d.family||'ITEM'}</b><span class="holotext">${d.effect&&d.effect!==d.text?d.effect:''}</span>`
+    : `<b class="holotext">${d.icon} ${d.badge}</b><span class="holotext">${d.move}</span>`;
   wrap.innerHTML=
     `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge};--t1:${t1};--t2:${t2};--t3:${t3}">`+
       `<div class="dcard">`+
-        `<div class="dart"><img loading="lazy" src="${ovrUrl(d.name)||('cards/ducks/'+d.hero)}" alt="${d.name}">${EDGE}</div>`+
+        `<div class="dart"><img loading="lazy" src="${artSrc}" alt="${d.name}">${EDGE}</div>`+
         `<div class="dname foilzone">${L}<span class="holotext">${d.name}</span></div>`+
-        `<div class="dstats foilzone">${L}<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span></div>`+
+        `<div class="dstats foilzone">${L}${statsRow}</div>`+
         `<div class="dstars foilzone">${L}<span class="holotext">${stars}</span></div>`+
-        `<div class="dmove foilzone">${L}<b class="holotext">${d.icon} ${d.badge}</b><span class="holotext">${d.move}</span></div>`+
+        `<div class="dmove foilzone">${L}${moveRow}</div>`+
         `<div class="dframe"></div>`+
       `</div>`+
     `</div>`;
@@ -1698,6 +1722,19 @@ function pullBand(min, max){
   return pool[0];
 }
 
+/* same idea, but rolls a real item (from S.items) instead of a duck — used
+   to put a low-value item card in every pack rip */
+function pullItemBand(min, max){
+  if(!S.items || !S.items.length) return null;
+  const band = S.items.filter(it => it.rarity >= min && it.rarity <= max);
+  const pool = band.length ? band : S.items;
+  const weighted = pool.map(it => [it, WEIGHT[it.rarity] || 10]);
+  const total = weighted.reduce((a,[,w]) => a + w, 0);
+  let n = Math.random() * total;
+  for(const [it,w] of weighted){ n -= w; if(n <= 0) return it; }
+  return pool[0];
+}
+
 function pull(floor){
   const O = odds();
   // pick a rarity band from the difficulty table, then a card inside it
@@ -1738,10 +1775,15 @@ function paintPacks(){
   const row=$('#packRow'); row.innerHTML='';
   PACKS.forEach((p,i)=>{
     const el=document.createElement('div');
-    el.className='ptile'+(p.id===CHOSEN.id?' on':'');
+    const locked = p.isDaily && (S.packs||0)<=0;
+    el.className='ptile'+(p.id===CHOSEN.id?' on':'')+(locked?' locked':'');
+    if(locked) el.style.opacity='.45';
+    const costLabel = p.isDaily ? `FREE · x${S.packs||0}` : `${p.cost} 💩`;
     el.innerHTML=`<span class="pf">${p.face}</span><div class="pn">${p.name}</div>`+
-                 `<div class="pc">${p.cost} 💩</div>`;
-    el.onclick=()=>{ SND.tap(); CHOSEN=p; paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad();
+                 `<div class="pc">${costLabel}</div>`;
+    el.onclick=()=>{
+      if(locked){ toast('No daily packs left — come back tomorrow'); return; }
+      SND.tap(); CHOSEN=p; paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad();
 $('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
 $('#pfBuild').onclick=()=>{ grabProfile(); toast('Player card updated'); SND.coin(); };
 $('#acctBtn').addEventListener('click',()=>{},{once:true}); };
@@ -1758,13 +1800,32 @@ function dressPack(){
   face.className='face'+(p.face.indexOf('★')>=0?' stars':'');
   $('#packTitle').textContent='GETTING DUCKED';
   $('#packSub').textContent=p.name+' PACK';
-  $('#ripCost').textContent=p.cost;
+
+  const addonBox=$('#itemAddonBox');
+  if(p.id==='single'){
+    addonBox.style.display='block';
+    $('#itemAddonCost').textContent=ITEM_ADDON_COST;
+    const chk=$('#itemAddonChk');
+    chk.checked=INCLUDE_ITEM;
+    chk.onchange=()=>{ INCLUDE_ITEM=chk.checked; dressPack(); };
+  } else {
+    addonBox.style.display='none';
+  }
+  const addon=(p.id==='single' && INCLUDE_ITEM) ? ITEM_ADDON_COST : 0;
+  const cost = p.isDaily ? 0 : (p.cost + addon);
+  $('#ripCost').textContent = p.isDaily ? 'FREE' : cost;
+
   const extras=[];
   if(S.luckTier>0) extras.push('🍀 tier boost');
   if(S.luckFloor)  extras.push('✨ 4★ guaranteed');
   if(S.luckExtra>0)extras.push('+1 card');
   if((S.inventory&&S.inventory.reroll)>0) extras.push('🎲 '+S.inventory.reroll+' rerolls');
-  $('#ripHint').textContent = extras.length ? extras.join(' · ') : p.blurb;
+  if(!S.pity || typeof S.pity!=='object') S.pity={p4:0,p5:0};
+  const p4left = Math.max(0, PITY_4_AT - (S.pity.p4||0));
+  const p5left = Math.max(0, PITY_5_AT - (S.pity.p5||0));
+  const pityTxt = `🎯 ${p4left} to guaranteed 4★+ · 👑 ${p5left} to guaranteed 5★`;
+  const line = extras.length ? extras.join(' · ') + ' · ' + pityTxt : p.blurb + ' · ' + pityTxt;
+  $('#ripHint').textContent = line;
   pk.style.setProperty('--tear','0%');
 }
 
@@ -1809,55 +1870,86 @@ function sparkBurst(n, colors){
 }
 
 let queue=[], qi=0;
-/* pity: after enough duds you're guaranteed something good */
-const PITY_AT = 12;
-function bumpPity(gotGood){
-  S.pity = gotGood ? 0 : (S.pity||0)+1;
+/* pity: after enough duds without a rare, one is guaranteed. Two independent
+   tracks — a 4★+ pity that fires reasonably often, and a much longer 5★-only
+   pity so legendaries stay a real long-haul goal. */
+const PITY_4_AT = 15;
+const PITY_5_AT = 40;
+function bumpPity(rarity){
+  if(!S.pity || typeof S.pity!=='object') S.pity={p4:0,p5:0};
+  S.pity.p4 = (rarity>=4) ? 0 : (S.pity.p4||0)+1;
+  S.pity.p5 = (rarity>=5) ? 0 : (S.pity.p5||0)+1;
 }
 function doRip(){ ripPack(true); }
 
 function ripPack(alreadyTorn){
   if(!S.dex.length){ toast('No cards painted yet'); return; }
   const p=CHOSEN;
-  if(S.coins < p.cost){ toast(`Need ${p.cost} droppings for that pack`); return; }
-  S.coins -= p.cost; purse(); save(); SND.rip();
+  const addon = (p.id==='single' && INCLUDE_ITEM) ? ITEM_ADDON_COST : 0;
+  const cost = p.isDaily ? 0 : (p.cost + addon);
+  if(p.isDaily){
+    if((S.packs||0) <= 0){ toast('No daily packs left — come back tomorrow'); return; }
+  } else if(S.coins < cost){
+    toast(`Need ${cost} droppings for that pack`); return;
+  }
+  if(p.isDaily){ S.packs--; } else { S.coins -= cost; }
+  purse(); save(); SND.rip();
 
   const pk=$('#pack');
   pk.classList.add('torn');
   $('#flashbang').classList.add('go');
-  const tearFx = p.cost>=3000 ? 90 : p.cost>=1200 ? 65 : 46;
+  const tearFx = cost>=3000 ? 90 : cost>=1200 ? 65 : 46;
   sparkBurst(tearFx, ['#00fff2','#ff43e0','#ffd83d','#3dff9e','#ffffff']);
-  shake(p.cost>=1200);
+  shake(cost>=1200);
 
   queue=[];
   for(let i=0;i<p.cards;i++){
-    const d = pull(p.floor);
+    const d = p.isDaily ? pullBand(1,2) : pull(p.floor);
     const v = rollVariant(d.name);
     queue.push(v ? Object.assign({}, d, {variant:v, hero:heroFor(d.name,v)}) : d);
   }
-  if(p.guarantee>0 && !queue.some(d=>d.rarity>=p.guarantee)){
+  if(!p.isDaily && p.guarantee>0 && !queue.some(d=>d.rarity>=p.guarantee)){
     const good=S.dex.filter(d=>d.rarity>=p.guarantee);
     if(good.length) queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
   }
-  // pity kicks in
-  if((S.pity||0) >= PITY_AT && !queue.some(d=>d.rarity>=4)){
+  // pity kicks in — legendary pity checked first since it's the rarer, bigger payoff.
+  // Daily packs are exempt: they're a free, capped 1-2★ freebie and never pull pity.
+  if(!S.pity || typeof S.pity!=='object') S.pity={p4:0,p5:0};
+  if(p.isDaily){
+    // still counts as "dud" progress toward pity, same as any low-rarity pull would
+  } else if((S.pity.p5||0) >= PITY_5_AT && !queue.some(d=>d.rarity>=5)){
+    const good=S.dex.filter(d=>d.rarity>=5);
+    if(good.length){
+      queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
+      S.pity.p5=0; S.pity.p4=0;
+      setTimeout(()=>toast('👑 Legendary pity — a 5★ was owed to you'),1200);
+    }
+  } else if((S.pity.p4||0) >= PITY_4_AT && !queue.some(d=>d.rarity>=4)){
     const good=S.dex.filter(d=>d.rarity>=4);
     if(good.length){
       queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
-      S.pity=0;
-      setTimeout(()=>toast('Pity bonus — a rare was owed to you'),1200);
+      S.pity.p4=0;
+      setTimeout(()=>toast('🎯 Pity bonus — a rare was owed to you'),1200);
     }
   }
-  // spend any pack-luck charms
-  if(S.luckExtra>0){ queue.push(pull(p.floor)); S.luckExtra--; toast('Bonus card from your charm'); }
-  if(S.luckFloor){ 
-    const band=S.dex.filter(d=>d.rarity>=S.luckFloor);
-    if(band.length) queue[0]=band[Math.floor(Math.random()*band.length)];
-    S.luckFloor=0; toast('Golden Touch delivered');
+  // spend any pack-luck charms — reserved for paid packs, not the free daily one
+  if(!p.isDaily){
+    if(S.luckExtra>0){ queue.push(pull(p.floor)); S.luckExtra--; toast('Bonus card from your charm'); }
+    if(S.luckFloor){
+      const band=S.dex.filter(d=>d.rarity>=S.luckFloor);
+      if(band.length) queue[0]=band[Math.floor(Math.random()*band.length)];
+      S.luckFloor=0; toast('Golden Touch delivered');
+    }
+    if(S.luckTier>0){ S.luckTier--; }
+    if(S.luckBoost>0){ S.luckBoost=0; }
   }
-  if(S.luckTier>0){ S.luckTier--; }
-  if(S.luckBoost>0){ S.luckBoost=0; }
-  queue.forEach(d=>bumpPity(d.rarity>=4));
+  queue.forEach(d=>bumpPity(d.rarity));
+  // every pack except SINGLE includes a low-value item card at no extra cost;
+  // SINGLE only includes one if the player opted into the add-on
+  if(p.id!=='single' || INCLUDE_ITEM){
+    const it = pullItemBand(1,2);
+    if(it) queue.push(Object.assign({}, it, {isItem:true}));
+  }
   qi=0;
   setTimeout(()=>{
     pk.classList.remove('torn');
@@ -1876,7 +1968,8 @@ function showNext(){
     return;
   }
   const d=queue[qi];
-  S.owned[ownKey(d.name,d.variant)] = (S.owned[ownKey(d.name,d.variant)]||0)+1;
+  if(d.isItem){ S.itemsOwned[d.name] = (S.itemsOwned[d.name]||0)+1; }
+  else { S.owned[ownKey(d.name,d.variant)] = (S.owned[ownKey(d.name,d.variant)]||0)+1; }
   const slot=$('#revealSlot'); slot.innerHTML='';
   const c=buildCard(d,true); c.classList.add('enter'); slot.appendChild(c);
   $('#rvCount').textContent=`CARD ${qi+1} OF ${queue.length}`;
@@ -2059,6 +2152,15 @@ function grantRandom(rarity){
   $('#viewer').classList.add('on');
   return d;
 }
+function grantRandomItem(rarity){
+  const band = (S.items||[]).filter(it => it.rarity === rarity);
+  if(!band.length){ toast('No items of that rarity yet'); return null; }
+  const it = band[Math.floor(Math.random()*band.length)];
+  S.itemsOwned[it.name] = (S.itemsOwned[it.name]||0)+1;
+  const s = $('#viewSlot'); s.innerHTML=''; s.appendChild(buildCard(Object.assign({},it,{isItem:true}),true));
+  $('#viewer').classList.add('on');
+  return it;
+}
 function renderStore(){
   if(!S.dex.length) return;
   const st = shopStock();
@@ -2106,10 +2208,8 @@ function renderStore(){
       `<b>${'★'.repeat(r)} item</b><span>A random ${r}-star item card.</span>`+
       `<div class="price">${price.toLocaleString()} 💩</div>`+
       `<button ${S.coins<price?'disabled':''}>Buy</button>`;
-    el.querySelector('button').onclick = () => buyCoins(price, `${'★'.repeat(r)} item claimed`, () => {
-      const key = 'item'+r+'_'+Date.now();
-      S.itemsOwned[key] = (S.itemsOwned[key]||0)+1;
-    });
+    el.querySelector('button').onclick = () =>
+      buyCoins(price, `${'★'.repeat(r)} item claimed`, () => grantRandomItem(r));
     is.appendChild(el);
   });
 
@@ -3286,8 +3386,11 @@ function checkStreak(){
   S.lastLogin = today;
   const reward = Math.min(20 + S.streak*10, 200);
   S.coins += reward; S.shards += Math.min(1 + Math.floor(S.streak/3), 10);
-  toast(`🔥 Day ${S.streak} streak! +${reward} 💩`);
+  const gotPack = (S.packs||0) < DAILY_PACK_CAP;
+  if(gotPack) S.packs = Math.min((S.packs||0)+1, DAILY_PACK_CAP);
+  toast(`🔥 Day ${S.streak} streak! +${reward} 💩${gotPack?' + 1 daily pack 🎁':''}`);
   purse(); save();
+  if(typeof paintPacks==='function') paintPacks();
   const chip = document.getElementById('streakDays'); if(chip) chip.textContent = S.streak;
 }
 function renderFusion(){
@@ -3316,7 +3419,7 @@ $('#leaveBattle').onclick=()=>{
 };
 
 /* ---------------- wiring ---------------- */
-function renderAll(){ purse(); checkStreak(); loadRealBoard(); renderCol(); renderOffers(); renderStore(); renderAchievements(); renderBattlePass(); renderFusion();
+function renderAll(){ purse(); checkStreak(); paintPacks(); dressPack(); loadRealBoard(); renderCol(); renderOffers(); renderStore(); renderAchievements(); renderBattlePass(); renderFusion();
   if(typeof renderModes==='function') renderModes();
   if(typeof wireModeTabs==='function') wireModeTabs();
   if(typeof paintPlayerCard==='function') paintPlayerCard();

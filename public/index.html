@@ -73,6 +73,11 @@ h2{font-family:'Chakra Petch',system-ui;font-size:.78rem;text-transform:uppercas
  animation:sweep 3.4s ease-in-out infinite}
 @keyframes sweep{0%{left:-45%}55%{left:120%}100%{left:120%}}
 .foot{color:#5d688f;font-size:.74rem;margin-top:16px;line-height:1.6}
+.founder{display:flex;align-items:center;justify-content:center;gap:8px;
+ background:rgba(61,255,158,.09);border:1px solid #1f6b48;border-radius:12px;
+ padding:10px 14px;margin-bottom:18px;font:700 .8rem 'Chakra Petch',system-ui;
+ letter-spacing:.03em;color:#7dffc0;text-transform:uppercase}
+.founder.full{background:rgba(255,183,3,.08);border-color:#7a5a14;color:#ffd166}
 </style></head><body>
 <div id="sky"></div>
 <div id="grain"></div>
@@ -99,16 +104,37 @@ h2{font-family:'Chakra Petch',system-ui;font-size:.78rem;text-transform:uppercas
     </div>
   </div>
 
+  <div class="founder" id="founderChip" style="display:none">🏆 <span id="founderTxt">Loading founder spots…</span></div>
+
   <a class="btn" id="btnContinue" href="auth.html">Continue →</a>
   <div class="foot">You'll need to sign in on the next screen — everyone plays signed in, so nothing is ever lost.</div>
 </div>
 
+<script src="supabase-config.js"></script>
 <script>
 (function(){
   let h='';
   for(let i=0;i<52;i++)
     h+=`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${(Math.random()*3.6).toFixed(2)}s"></i>`;
   document.getElementById('sky').innerHTML=h;
+})();
+
+(async function founderSpots(){
+  const chip=document.getElementById('founderChip'), txt=document.getElementById('founderTxt');
+  if(typeof SUPABASE_URL==='undefined' || !SUPABASE_URL || SUPABASE_URL.indexOf('PASTE')!==-1) return;
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/players?select=id&signup_number=lte.200', {
+      method:'HEAD',
+      headers:{ apikey:SUPABASE_ANON_KEY, Authorization:'Bearer '+SUPABASE_ANON_KEY, Prefer:'count=exact' }
+    });
+    const range = res.headers.get('content-range');
+    let claimed = 0;
+    if(range){ const m=range.match(/\/(\d+)$/); if(m) claimed=parseInt(m[1],10); }
+    const left = Math.max(0, 200-claimed);
+    chip.style.display='flex';
+    if(left>0){ txt.textContent = `${left} of 200 founder spots left`; }
+    else { chip.classList.add('full'); txt.textContent = 'Founder spots are all claimed'; }
+  }catch(e){ /* silently skip — non-essential UI */ }
 })();
 </script>
 </body></html>
