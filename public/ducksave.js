@@ -43,7 +43,10 @@
                   return { mode: 'local', reason: 'not configured' };
           }
           try {
-                  DS.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                  // shared client (see supabase-config.js) — keeps "Remember me"
+                  // consistent between the login screen and the live game.
+                  DS.sb = (typeof getDuckClient==='function') ? getDuckClient() : null;
+                  if (!DS.sb) { DS.ready = true; DS.online = false; return { mode: 'local', reason: 'not configured' }; }
                   const { data } = await DS.sb.auth.getSession();
                   DS.user = data.session ? data.session.user : null;
                   DS.online = !!DS.user;

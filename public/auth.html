@@ -54,6 +54,9 @@ input{width:100%;background:#0c1020;border:1px solid #26305a;color:#eaeeff;
 .or::before,.or::after{content:"";flex:1;height:1px;background:#26305a}
 .link{text-align:center;color:#8b95bd;font-size:.84rem;margin-top:14px}
 .link a{color:#00fff2;text-decoration:none;font-weight:700}
+.remember{display:flex;align-items:center;gap:9px;margin:-2px 0 16px;user-select:none;cursor:pointer}
+.remember input{width:auto;margin:0;accent-color:#00fff2;width:17px;height:17px;flex:0 0 auto}
+.remember span{color:#c4cbe8;font-size:.86rem}
 .msg{border-radius:12px;padding:12px 14px;font-size:.85rem;margin-bottom:14px;display:none;
  line-height:1.5}
 .msg.on{display:block}
@@ -106,6 +109,10 @@ h1 b{background-size:220% auto;animation:brandFlow 6s linear infinite}
       <label for="email">Email address</label>
       <input id="email" type="email" inputmode="email" autocomplete="email"
              placeholder="you@example.com">
+      <label class="remember" for="remember">
+        <input type="checkbox" id="remember" checked>
+        <span>Remember me on this device</span>
+      </label>
       <button class="btn" id="btnContinue">Continue</button>
 
       <div class="or">or</div>
@@ -172,27 +179,31 @@ function busy(btn, on, label){
 }
 
 /* ---------- boot ---------- */
+const NEXT = new URLSearchParams(location.search).get('next') || 'hub.html';
+
 (function(){
   let h='';
   for(let i=0;i<52;i++)
         h+=`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${(Math.random()*3.6).toFixed(2)}s"></i>`;
   $('#sky').innerHTML=h;
 
+  // Remember-me: reflect the saved preference, and keep it in sync as it's toggled.
+  $('#remember').checked = duckRememberMe();
+  $('#remember').onchange = () => duckSetRememberMe($('#remember').checked);
+
   if(typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL || SUPABASE_URL.includes('PASTE')){
     $('#setupNote').innerHTML =
             "⚙️ Not connected yet — open <b>supabase-config.js</b> and paste your project URL and key. "+
             "See <b>SETUP-LOGIN.md</b> for the walkthrough.";
-    msg("Accounts aren't switched on yet. You can still play — your collection saves on this device.", 'info');
-    $('#foot').innerHTML = '<a href="game.html">Play without an account →</a>';
+    msg("Accounts aren't switched on yet — sign-in is required to play, so the game can't load until this is configured.", 'info');
     document.querySelectorAll('.btn').forEach(b => b.disabled = true);
     return;
   }
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  $('#foot').innerHTML = '<a href="game.html">Play without an account →</a>';
+  sb = getDuckClient();
 
   // already signed in? go straight through
   sb.auth.getSession().then(({data}) => {
-        if(data.session) location.href = 'game.html';
+        if(data.session) location.href = NEXT;
 });
 })();
 
@@ -201,6 +212,7 @@ $('#btnContinue').onclick = async () => {
     const email = $('#email').value.trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg('That email doesn\'t look right.', 'err'); return; }
   EMAIL = email;
+  duckSetRememberMe($('#remember').checked);
   busy($('#btnContinue'), true, 'Checking…');
   try{
     // try sending a code; shouldCreateUser makes this work for new AND returning users
@@ -229,7 +241,7 @@ $('#btnVerify').onclick = async () => {
     if(error) throw error;
     // brand new account with no password yet -> ask them to make one
     const hasPass = data.user?.user_metadata?.has_password;
-    if(hasPass){ location.href = 'game.html'; return; }
+    if(hasPass){ location.href = NEXT; return; }
     $('#sub').textContent = 'Almost there — set a password';
     step('newpass');
   }catch(e){
@@ -259,7 +271,7 @@ $('#btnSetPass').onclick = async () => {
           password: a, data: { has_password: true }
 });
     if(error) throw error;
-    location.href = 'game.html';
+    location.href = NEXT;
 }catch(e){ msg(friendly(e), 'err'); busy($('#btnSetPass'), false); }
 };
 
@@ -271,7 +283,7 @@ $('#btnLogin').onclick = async () => {
           email: EMAIL, password: $('#pw').value
     });
     if(error) throw error;
-    location.href = 'game.html';
+    location.href = NEXT;
 }catch(e){ msg(friendly(e), 'err'); busy($('#btnLogin'), false); }
 };
 $('#btnForgot').onclick = async () => {
@@ -288,11 +300,12 @@ $('#btnForgot').onclick = async () => {
 
 /* ---------- google ---------- */
 $('#btnGoogle').onclick = async () => {
+    duckSetRememberMe($('#remember').checked);
     busy($('#btnGoogle'), true, 'Opening Google…');
   try{
     const { error } = await sb.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: location.origin + '/game.html' }
+          options: { redirectTo: location.origin + '/' + NEXT }
 });
     if(error) throw error;
 }catch(e){ msg(friendly(e), 'err'); busy($('#btnGoogle'), false); }

@@ -984,6 +984,12 @@ html,body{max-width:100vw;overflow-x:hidden}
 }
 </style>
 </head><body>
+<div id="authGate" style="position:fixed;inset:0;z-index:99999;background:#070a14;
+ display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
+ font-family:'Outfit',system-ui,sans-serif">
+  <span style="font-size:2.8rem;filter:drop-shadow(0 6px 18px rgba(255,216,61,.4))">🦆</span>
+  <p style="color:#8b95bd;font-size:.86rem;margin:0">Checking your session…</p>
+</div>
 <div id="sky"></div>
 <div id="motes"></div>
 <div id="grain"></div>
@@ -1310,6 +1316,24 @@ html,body{max-width:100vw;overflow-x:hidden}
 <script src="supabase-config.js"></script>
 <script src="ducksave.js"></script>
 <script src="ducknet.js"></script>
+<script>
+/* ---------------- mandatory sign-in gate ---------------- */
+/* Everyone plays signed in. If there's no live Supabase session, bounce to
+   the login screen before any game state renders (the #authGate overlay
+   above keeps the board hidden the whole time this is resolving). */
+(async function requireAuth(){
+  try{
+    var sb = (typeof getDuckClient === 'function') ? getDuckClient() : null;
+    if(!sb){ location.replace('index.html'); return; }
+    var res = await sb.auth.getSession();
+    if(!res.data.session){ location.replace('auth.html?next=game.html'); return; }
+    var gate = document.getElementById('authGate');
+    if(gate) gate.remove();
+  }catch(e){
+    location.replace('auth.html?next=game.html');
+  }
+})();
+</script>
 <script>
 (function(){
   var DRAGGING = false;      // finger wins: gyro ignored while dragging
@@ -2481,7 +2505,7 @@ $('#saveDeck').onclick=()=>{
 let NET=false;
 async function startOnline(){
   if(!window.DuckNet || !DuckNet.ready()){ toast('Accounts not set up yet'); return; }
-  if(!await DuckNet.signedIn()){ toast('Sign in to play online'); location.href='auth.html'; return; }
+  if(!await DuckNet.signedIn()){ toast('Sign in to play online'); location.href='auth.html?next=game.html'; return; }
   const deck=myPool().slice(0,45).map(c=>({name:c.name,hero:c.hero,art:c.art,
     atk:c.atk,def:c.def,spd:c.spd,rarity:c.rarity,theme:c.theme,isItem:!!c.isItem,
     icon:c.icon,value:c.value,behaviour:c.behaviour,effect:c.effect,
@@ -3294,7 +3318,7 @@ $('#ripBtn').onclick=()=>ripPack();
 $('#rvNext').onclick=()=>{SND.tap();showNext();};
 $('#acctBtn').onclick=async function(){
   const who = window.DuckSave && window.DuckSave.who ? window.DuckSave.who() : null;
-  if(!who){ location.href='auth.html'; return; }
+  if(!who){ location.href='auth.html?next=game.html'; return; }
   if(confirm('Signed in as ' + who + '. Sign out?')){
     await window.DuckSave.save(snapshot(), true);
     await window.DuckSave.signOut();

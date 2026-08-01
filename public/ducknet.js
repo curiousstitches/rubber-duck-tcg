@@ -19,10 +19,10 @@
 
     N.ready = function(){
           if(N.sb) return true;
-          if(typeof supabase==='undefined' || typeof SUPABASE_URL==='undefined'
-                    || !SUPABASE_URL || SUPABASE_URL.indexOf('PASTE')!==-1) return false;
-          N.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          return true;
+          // shared client (see supabase-config.js) — keeps "Remember me"
+          // consistent between the login screen and the live game.
+          N.sb = (typeof getDuckClient==='function') ? getDuckClient() : null;
+          return !!N.sb;
     };
 
     N.signedIn = async function(){
