@@ -1626,21 +1626,25 @@ function buildCard(d,big){
 }
 
 /* ---------------- data ---------------- */
+async function fetchJSONResilient(relPath){
+  // same-origin first; if the host's CDN/proxy chokes on this file (seen happening
+  // for the larger manifests on the custom domain), fall back to jsDelivr's GitHub mirror
+  try{
+    const r = await fetch(relPath+'?t='+Date.now());
+    if(r.ok) return await r.json();
+  }catch(e){}
+  try{
+    const r2 = await fetch('https://cdn.jsdelivr.net/gh/curiousstitches/rubber-duck-tcg@master/public/'+relPath+'?t='+Date.now());
+    if(r2.ok) return await r2.json();
+  }catch(e){}
+  return null;
+}
 async function loadDex(){
-  try{
-    const r=await fetch('cards/ducks/manifest.json?t='+Date.now());
-    const j=await r.json();
-    S.dex=(j.ducks||[]).filter(d=>d.hero);
-  }catch(e){ S.dex=[]; }
-  try{
-    const ri=await fetch('cards/items/items.json?t='+Date.now());
-    const ji=await ri.json();
-    S.items=(ji.items||[]);
-  }catch(e){ S.items=[]; }
-  try{
-    const rv=await fetch('cards/ducks/variants.json?t='+Date.now());
-    VAR=await rv.json();
-  }catch(e){ VAR=null; }
+  const j = await fetchJSONResilient('cards/ducks/manifest.json');
+  S.dex = j ? (j.ducks||[]).filter(d=>d.hero) : [];
+  const ji = await fetchJSONResilient('cards/items/items.json');
+  S.items = ji ? (ji.items||[]) : [];
+  VAR = await fetchJSONResilient('cards/ducks/variants.json');
   S.ready=true;
   if(!S.dex.length){
     $('#v-rip').innerHTML='<div class="empty"><b>No ducks found yet</b>'+
