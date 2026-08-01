@@ -1,7 +1,21 @@
 // 🌐 DUCKNET — live player-vs-player over Supabase Realtime
 (function(){
     const N = { sb:null, me:null, match:null, chan:null, side:null,
-                             onMatch:null, onMove:null, onEnd:null, searching:false };
+                             onMove:null, onEnd:null, searching:false };
+    let _pendingMatch = null, _onMatchHandler = null;
+    // onMatch is a property with memory: if a match gets joined before the game
+    // has wired a handler (e.g. a friend-challenge came in while browsing another
+    // screen), we hold onto it and fire the moment a handler is attached.
+    Object.defineProperty(N, 'onMatch', {
+          get(){ return _onMatchHandler; },
+          set(fn){
+                  _onMatchHandler = fn;
+                  if(fn && _pendingMatch){
+                          const pm = _pendingMatch; _pendingMatch = null;
+                          fn(pm.data, pm.side);
+                  }
+          }
+    });
 
     N.ready = function(){
           if(N.sb) return true;
@@ -67,7 +81,7 @@
                               p=>{ N.match = p.new;
                                                if(p.new.state==='done' && N.onEnd) N.onEnd(p.new); })
                   .subscribe();
-          if(N.onMatch) N.onMatch(data, N.side);
+          if(N.onMatch) N.onMatch(data, N.side); else _pendingMatch = {data, side: N.side};
     };
 
     N.move = async function(turn, card, stance, roll){
@@ -126,6 +140,7 @@
                               async p=>{
                                           if(p.new && p.new.status==='accepted' && p.new.match_id){
                                                         try{ N.chalWatch.unsubscribe(); }catch(e){}
+                                                        if(N.onChallengeAccepted){ try{ N.onChallengeAccepted(p.new); }catch(e){} }
                                                         await N.join(p.new.match_id);
                                           }
                               })
