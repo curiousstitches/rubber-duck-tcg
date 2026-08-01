@@ -2260,6 +2260,20 @@ function grabProfile(){
 /* ---------------- leaderboard ---------------- */
 const FAKE=['Pondmaster','Quillfeather','Mallard Prime','Static Wren','Duke Driftwood',
  'Nebula Nine','Ashfoot','Silt & Silver','Grebe','Halcyon','Tidewalker','Bittern'];
+let REAL_BOARD = null;
+let _lbLoading=false;
+async function loadRealBoard(){
+  if(_lbLoading) return; _lbLoading=true;
+  try{
+    if(typeof supabase==='undefined' || !window.SUPABASE_URL) return;
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data, error } = await sb.from('players').select('handle,wins,losses,career_tier').order('wins',{ascending:false}).limit(15);
+    if(!error && data && data.length){
+      REAL_BOARD = data.filter(p=>(p.wins||0)>0).map(p=>({ name:p.handle||'Player', wins:p.wins||0, losses:p.losses||0, cards:0, legends:0, av:'🦆', me:false }));
+      renderBoard();
+    }
+  }catch(e){}
+}
 function fakeBoard(){
   return FAKE.map((n,i)=>({
     name:n, wins: 640 - i*47 - (i*i*2), cards: 700 - i*38, legends: 24 - i,
@@ -2268,7 +2282,7 @@ function fakeBoard(){
 }
 let LB='rank';
 function renderBoard(){
-  const rows=fakeBoard();
+  const rows=(REAL_BOARD&&REAL_BOARD.length)?REAL_BOARD:fakeBoard();
   const me={ name:(PROF.name||(window.DuckSave&&window.DuckSave.who?window.DuckSave.who():'You')),
              wins:S.wins, cards:Object.keys(S.owned||{}).filter(n=>S.owned[n]>0).length,
              legends:Object.keys(S.owned||{}).filter(n=>{const d=byName(n);return d&&d.rarity>=5;}).length,
@@ -3249,7 +3263,7 @@ $('#leaveBattle').onclick=()=>{
 };
 
 /* ---------------- wiring ---------------- */
-function renderAll(){ purse(); checkStreak(); renderCol(); renderOffers(); renderStore(); renderAchievements(); renderBattlePass(); renderFusion();
+function renderAll(){ purse(); checkStreak(); loadRealBoard(); renderCol(); renderOffers(); renderStore(); renderAchievements(); renderBattlePass(); renderFusion();
   if(typeof renderModes==='function') renderModes();
   if(typeof wireModeTabs==='function') wireModeTabs();
   if(typeof paintPlayerCard==='function') paintPlayerCard();
