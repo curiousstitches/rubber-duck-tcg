@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070a14">
-<title>Card Studio</title>
+<title>Card Studio</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -212,7 +212,7 @@ input.search:focus{border-color:var(--cyan)}
  color:var(--dim);border-radius:99px;padding:8px 13px;
  font:700 .72rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.05em}
 .tabs button.on{background:var(--cyan);color:#06070d;border-color:var(--cyan)}
-.tabs.stars button.on{background:var(--gold);color:#06070d;border-color:var(--gold)}
+.tabs.stars button.on{background:var(--gold);color:#06070d;border-color:var(--gold)}.tabs.sort button.on{background:var(--mint);color:#06070d;border-color:var(--mint)}#gate{position:fixed;inset:0;z-index:50;background:var(--void);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#gate.hide{display:none}#gate .box{max-width:360px}#gate h2{font-size:1.2rem;margin-bottom:10px}#gate p{color:var(--dim);font-size:.9rem;line-height:1.6;margin-bottom:16px}.tabs.sort button.on{background:var(--mint);color:#06070d;border-color:var(--mint)}#gate{position:fixed;inset:0;z-index:50;background:var(--void);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#gate.hide{display:none}#gate .box{max-width:360px}#gate h2{font-size:1.2rem;margin-bottom:10px}.tabs.sort button.on{background:var(--mint);color:#06070d;border-color:var(--mint)}#gate{position:fixed;inset:0;z-index:50;background:var(--void);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}#gate.hide{display:none}.tabs.sort button.on{background:var(--mint);color:#06070d;border-color:var(--mint)}
 .noart5{aspect-ratio:5/7;display:flex;align-items:center;justify-content:center;
  font-size:2rem;background:linear-gradient(160deg,#10162c,#1b1140)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:11px}
@@ -268,7 +268,7 @@ textarea:focus{border-color:var(--cyan)}
 .empty{text-align:center;padding:50px 20px;color:var(--dim)}
 .empty b{display:block;font:800 1.05rem/1.5 'Chakra Petch';color:var(--ink);margin-bottom:6px}
 </style>
-</head><body>
+</head><body><div id="gate"><div class="box"><h2>Studio Access</h2><p>This tool is limited to the project owner's account. Sign in on the game page with the authorized email, then reload this page.</p></div></div>
 
 <header>
   <h1>🎨 CARD <b>STUDIO</b></h1>
@@ -281,13 +281,12 @@ textarea:focus{border-color:var(--cyan)}
     <button class="on" data-f="all">All</button>
     <button data-f="ducks">🦆 Ducks</button>
     <button data-f="items">🧪 Items</button>
-  </div>
-  <div class="tabs stars" id="stars">
+  <button data-f="dice">🎲 Dice</button></div><div class="tabs stars" id="stars">
     <button class="on" data-s="any">Any ★</button>
     <button data-s="5">★★★★★</button><button data-s="4">★★★★</button>
     <button data-s="3">★★★</button><button data-s="2">★★</button><button data-s="1">★</button>
   </div>
-  <div class="grid" id="grid"></div>
+  <div class="tabs sort" id="sort"><button class="on" data-sort="name">Name A-Z</button><button data-sort="rarity-desc">Rarity High-Low</button><button data-sort="rarity-asc">Rarity Low-High</button></div><div class="grid" id="grid"></div>
 </main>
 
 <div id="editor">
@@ -501,24 +500,24 @@ function imgFor(d){
   if(o) return (typeof o==='string')?o:o.url;
   return d.kind==='item' ? 'cards/items/'+d.art : 'cards/ducks/'+d.hero;
 }
-let FILT='all', STARS='any';
+let FILT='all', STARS='any', SORT='name';
 async function load(){
   const grab=async u=>{ try{ const r=await fetch(u+'?t='+Date.now()); return await r.json(); }catch(e){ return null; } };
   const [m,it]=await Promise.all([grab('cards/ducks/manifest.json'),grab('cards/items/items.json')]);
   DEX=[];
   (m&&m.ducks||[]).forEach(d=>DEX.push(Object.assign({},d,{kind:'duck'})));
-  (it&&it.items||[]).forEach(i=>DEX.push(Object.assign({},i,{kind:'item',
+  (it&&it.items||[]).forEach(i=>DEX.push(Object.assign({},i,{kind:(i.family==='die'||i.family==='loadeddie')?'dice':'item',
     badge:i.familyLabel,move:i.text,hero:i.art})));
   render();
 }
 function render(){
-  const q=($('#q').value||'').toLowerCase(), g=$('#grid'); g.innerHTML='';
+  const q=($('#q').value||'').toLowerCase(), g=$('#grid'); g.innerHTML='';    const LIST=DEX.slice().sort((a,b)=>{ if(SORT==='rarity-desc') return b.rarity-a.rarity; if(SORT==='rarity-asc') return a.rarity-b.rarity; return a.name.localeCompare(b.name); });
   let n=0;
-  for(const d of DEX){
+  for(const d of LIST){
     if(q && !d.name.toLowerCase().includes(q)) continue;
     if(STARS!=='any' && String(d.rarity)!==STARS) continue;
     if(FILT==='ducks' && d.kind!=='duck') continue;
-    if(FILT==='items' && d.kind!=='item') continue;
+    if(FILT==='items' && d.kind!=='item') continue;      if(FILT==='dice' && d.kind!=='dice') continue;
     const el=document.createElement('div');
     el.className='slot'; el.dataset.r=d.rarity;
     el.innerHTML=`<img loading="lazy" src="${heroSrc(d)}" alt="${d.name}">`+
@@ -632,7 +631,6 @@ $('#clearOvr').onclick=()=>{
   OVR={}; saveOvr(); refreshCard(); render(); toast('All browser changes cleared');
 };
 $('#edClose').onclick=()=>{$('#editor').classList.remove('on');document.body.style.overflow='';};
-$('#q').oninput=render;
-load();
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); FILT=b.dataset.f; render(); }); document.querySelectorAll('#stars button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#stars button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); STARS=b.dataset.s; render(); }); document.querySelectorAll('#sort button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#sort button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); SORT=b.dataset.sort; render(); }); async function checkAccess(){ const ADMIN_EMAIL='thegoodguy421@gmail.com'; try{ const sb=window.supabase.createClient('https://gjqmasubbczbpvrzbdfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqcW1hc3ViYmN6YnB2cnpiZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0NDg1NTcsImV4cCI6MjEwMTAyNDU1N30.wR0SkguKoqsQEhc7ertxV4a9aM2JrVG2gI7gnhEv3Fo'); const {data:{session}}=await sb.auth.getSession(); const email=session&&session.user&&session.user.email; if(email===ADMIN_EMAIL){ document.getElementById('gate').classList.add('hide'); return true; } }catch(e){} document.getElementById('gate').classList.remove('hide'); return false; } $('#q').oninput=render; checkAccess().then(ok=>{ if(ok) load(); });
 </script>
 </body></html>
