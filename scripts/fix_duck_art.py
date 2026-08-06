@@ -11,14 +11,21 @@ regenerates every one of those 536 images using the same free Pollinations
 AI image service Studio already uses in your browser, and saves them
 straight into public/cards/ducks/ with the correct filename.
 
+Art style: this reuses duckdna.py and duckai.py from your duck-toolkit2
+folder -- the exact same weapon phrasing, element language, scene, and
+style tail used to generate every other card in the game -- so shiny and
+evolved cards match the rest of the collection instead of using their own
+separate look.
+
 Run it from inside your rubber-duck-tcg repo (same place Termux already
 runs runduck from), then commit + push as usual -- or let it auto-commit
 for you (see --commit below).
 
 Requirements
 ------------
-Only the Python standard library. No pip installs needed. Works on plain
-Termux Python (pkg install python).
+Only the Python standard library, plus duckdna.py and duckai.py, which
+must already exist in ~/duck-toolkit2 (they do on your phone). No pip
+installs needed. Works on plain Termux Python (pkg install python).
 
 Usage
 -----
@@ -48,12 +55,17 @@ VARIANTS = "public/cards/ducks/variants.json"
 DUCKS_DIR = "public/cards/ducks"
 POLLI = "https://image.pollinations.ai/prompt/"
 
-STYLE_TAIL = (
-    "dynamic action pose, dramatic painterly digital illustration, "
-    "trading card game character art, extremely detailed, cinematic "
-    "lighting, vibrant saturated colour, glowing rim light, dark "
-    "atmospheric background, no text, no watermark, no logo"
-)
+TOOLKIT = os.path.join(os.path.expanduser("~"), "duck-toolkit2")
+if TOOLKIT not in sys.path:
+    sys.path.insert(0, TOOLKIT)
+try:
+    import duckdna
+    import duckai
+except ImportError:
+    print(f"Couldn't find duckdna.py / duckai.py in {TOOLKIT}.")
+    print("These are required so the art matches the rest of the collection.")
+    print("Make sure duck-toolkit2 is installed on this phone, then try again.")
+    sys.exit(1)
 
 
 def find_repo_root():
@@ -78,28 +90,30 @@ def seed_for(name, tag):
     return int(h[:8], 16) % 900000 + 1
 
 
-def shiny_prompt(d):
-    badge = (d.get("badge") or "weapon").lower()
-    theme = d.get("theme") or "elemental"
-    return (
-        f"an anthropomorphic yellow rubber duck warrior named {d['name']}, "
-        f"wielding a {badge}, {theme} elemental power, holographic chrome "
-        f"shiny foil card variant, prismatic reflective metallic rainbow "
-        f"finish across the whole body, " + STYLE_TAIL
-    )
+def _base_look(name):
+    d = duckdna.dna(name)
+    weapon = duckai.WEAPON_ART.get(d["weapon"], "wielding a gleaming sword")
+    base = (f"a heroic battle rubber duck warrior named {name}, "
+            f"fierce armoured rubber duck champion of the {d['elementLabel']} element, "
+            f"{weapon}, {d['shot']}, "
+            f"surrounded by visible {d['elementLabel'].lower()} energy, "
+            f"set in a {d['scene']}")
+    return d, base
 
 
-def evolved_prompt(d):
-    badge = (d.get("badge") or "weapon").lower()
-    theme = d.get("theme") or "elemental"
-    ability = d.get("abilityName") or ""
-    return (
-        f"an anthropomorphic yellow rubber duck warrior named {d['name']}, "
-        f"evolved into a more powerful battle-hardened final form, wielding "
-        f"an upgraded {badge}, intensified {theme} elemental energy"
-        + (f", channeling {ability}" if ability else "")
-        + ", ornate battle-worn armor, glowing aura, " + STYLE_TAIL
-    )
+def shiny_prompt(name):
+    d, base = _base_look(name)
+    return (f"{base}, holographic chrome shiny foil card variant, prismatic "
+            f"reflective metallic rainbow finish across the whole body, "
+            f"{duckai.STYLE}")
+
+
+def evolved_prompt(name):
+    d, base = _base_look(name)
+    return (f"{base}, evolved into a more powerful battle-hardened final "
+            f"form, upgraded {d['weaponLabel'].lower()}, intensified "
+            f"{d['elementLabel'].lower()} energy, channeling {d['abilityName']}, "
+            f"ornate battle-worn armor, glowing aura, {duckai.STYLE}")
 
 
 def pollinations_url(prompt, seed):
@@ -152,7 +166,7 @@ def main():
     shiny_only = sorted([n for n, v in vmap.items() if v == ["shiny"]])
     evolved_needed = sorted([n for n, v in vmap.items() if set(v) == {"evolved", "glossy", "shiny"}])
 
-    jobs = []  # (name, tag, filename, prompt_fn)
+    jobs = []
     if args.only in (None, "shiny"):
         for n in shiny_only:
             jobs.append((n, "shiny", f"{n}_shiny.png", shiny_prompt))
@@ -169,17 +183,18 @@ def main():
 
     if args.dry_run:
         for name, tag, fname, prompt_fn in jobs[:10]:
-            d = ducks_by_name.get(name, {"name": name})
+            if name not in ducks_by_name:
+                print(f"  [{tag}] {fname}  -- SKIP, not in manifest")
+                continue
             print(f"  [{tag}] {fname}")
-            print(f"     prompt: {prompt_fn(d)}")
+            print(f"     prompt: {prompt_fn(name)}")
         if len(jobs) > 10:
             print(f"  ...and {len(jobs) - 10} more")
         return
 
     done, skipped, failed = 0, 0, 0
     for i, (name, tag, fname, prompt_fn) in enumerate(jobs, 1):
-        d = ducks_by_name.get(name)
-        if not d:
+        if name not in ducks_by_name:
             print(f"[{i}/{len(jobs)}] SKIP {fname} -- not found in manifest")
             skipped += 1
             continue
@@ -191,7 +206,7 @@ def main():
                 skipped += 1
                 continue
 
-        prompt = prompt_fn(d)
+        prompt = prompt_fn(name)
         seed = seed_for(name, tag)
         url = pollinations_url(prompt, seed)
         print(f"[{i}/{len(jobs)}] {fname} ...")
