@@ -15,7 +15,8 @@ Art style: this reuses duckdna.py and duckai.py from your duck-toolkit2
 folder -- the exact same weapon phrasing, element language, scene, and
 style tail used to generate every other card in the game -- so shiny and
 evolved cards match the rest of the collection instead of using their own
-separate look.
+separate look. Shiny/evolved always use a bright, front-facing pose so the
+finish/armor is actually visible (never the random silhouette shot type).
 
 Run it from inside your rubber-duck-tcg repo (same place Termux already
 runs runduck from), then commit + push as usual -- or let it auto-commit
@@ -95,7 +96,8 @@ def _base_look(name):
     weapon = duckai.WEAPON_ART.get(d["weapon"], "wielding a gleaming sword")
     base = (f"a heroic battle rubber duck warrior named {name}, "
             f"fierce armoured rubber duck champion of the {d['elementLabel']} element, "
-            f"{weapon}, {d['shot']}, "
+            f"{weapon}, front-facing dramatic hero pose with bright dynamic lighting "
+            f"clearly showing off its reflective surface and armor detail, "
             f"surrounded by visible {d['elementLabel'].lower()} energy, "
             f"set in a {d['scene']}")
     return d, base
