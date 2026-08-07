@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a14">
+<title>Staff · Getting Ducked</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:#070a14;color:#eaeeff;
+ font-family:'Outfit',system-ui,sans-serif;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;padding:24px 18px;
+ background-image:
+  radial-gradient(900px 520px at 18% -8%,rgba(120,80,255,.30),transparent 60%),
+  radial-gradient(760px 430px at 88% 6%,rgba(0,255,242,.16),transparent 60%),
+  radial-gradient(700px 600px at 50% 108%,rgba(255,67,224,.18),transparent 60%)}
+.card{width:100%;max-width:420px;background:rgba(20,27,51,.86);border:1px solid #26305a;
+ border-radius:22px;padding:28px 22px;backdrop-filter:blur(10px);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.duck{font-size:2.6rem;text-align:center;display:block;margin-bottom:6px}
+h1{font-family:'Chakra Petch',system-ui;font-size:1.3rem;text-align:center;margin:0 0 4px;
+ text-transform:uppercase;letter-spacing:.04em}
+.sub{text-align:center;color:#8b95bd;font-size:.85rem;margin-bottom:24px}
+.role{display:inline-block;font:800 .7rem 'Chakra Petch',system-ui;text-transform:uppercase;
+ letter-spacing:.08em;padding:4px 10px;border-radius:8px;margin-left:6px}
+.role.admin{background:rgba(255,67,224,.18);color:#ff85ea;border:1px solid #7a2a68}
+.role.manager{background:rgba(0,255,242,.14);color:#7af5ee;border:1px solid #1a6a75}
+.opt{display:block;width:100%;text-align:left;border:1px solid #26305a;border-radius:16px;
+ padding:16px 18px;margin-bottom:12px;background:#0c1020;color:#eaeeff;text-decoration:none}
+.opt b{display:block;font:800 .95rem 'Chakra Petch',system-ui;text-transform:uppercase;
+ letter-spacing:.04em;margin-bottom:3px}
+.opt span{color:#8b95bd;font-size:.82rem}
+.opt.admin{border-color:#7a2a68}.opt.admin b{color:#ff85ea}
+.opt.manager{border-color:#1a6a75}.opt.manager b{color:#7af5ee}
+.opt.game{border-color:#26305a}.opt.game b{color:#ffd83d}
+.opt.disabled{opacity:.4;pointer-events:none}
+.loading{text-align:center;color:#8b95bd;padding:40px 0}
+</style></head><body>
+
+<div class="card" id="card">
+  <div class="loading" id="loading">Checking access…</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+
+(async function(){
+  if(typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL || SUPABASE_URL.includes('PASTE')){
+    location.href = 'auth.html';
+    return;
+  }
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { user } } = await sb.auth.getUser();
+
+  if(!user){ location.href = 'auth.html'; return; }
+
+  const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
+  if(!staffRow){ location.href = 'game.html'; return; }
+
+  const role = staffRow.role;
+  const handle = user.email.split('@')[0];
+
+  $('#card').innerHTML = `
+    <span class="duck">🦆</span>
+    <h1>Welcome, ${handle}<span class="role ${role}">${role}</span></h1>
+    <div class="sub">Where do you want to go?</div>
+
+    ${role === 'admin' ? `
+      <a class="opt admin" href="admin.html">
+        <b>🛡️ Admin Panel</b>
+        <span>Staff, players, suggestions, broadcasts, everything</span>
+      </a>` : ''}
+
+    <a class="opt manager disabled" href="javascript:void(0)">
+      <b>🧰 Manager Tools</b>
+      <span>Coming soon</span>
+    </a>
+
+    <a class="opt game" href="game.html">
+      <b>🎮 Play the Game</b>
+      <span>Head into Getting Ducked as a player</span>
+    </a>
+  `;
+})();
+</script>
+</body></html>

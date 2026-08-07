@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a14">
+<title>Admin · Getting Ducked</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:#070a14;color:#eaeeff;
+ font-family:'Outfit',system-ui,sans-serif;padding-bottom:90px;
+ background-image:
+  radial-gradient(900px 520px at 18% -8%,rgba(120,80,255,.22),transparent 60%),
+  radial-gradient(760px 430px at 88% 6%,rgba(0,255,242,.12),transparent 60%)}
+a{color:inherit}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(7,10,20,.92);backdrop-filter:blur(10px);
+ border-bottom:1px solid #26305a;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-family:'Chakra Petch',system-ui;font-weight:800;text-transform:uppercase;
+ letter-spacing:.04em;font-size:1rem;display:flex;align-items:center;gap:8px}
+.brand .tag{font-size:.62rem;background:rgba(255,67,224,.18);color:#ff85ea;
+ border:1px solid #7a2a68;padding:2px 8px;border-radius:7px;letter-spacing:.08em}
+.leave{color:#8b95bd;font-size:.8rem;text-decoration:none}
+.wrap{max-width:820px;margin:0 auto;padding:16px}
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:14px 16px 0;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;font:700 .78rem 'Chakra Petch',system-ui;text-transform:uppercase;
+ letter-spacing:.04em;color:#8b95bd;background:#0c1020;border:1px solid #26305a;
+ border-radius:12px;padding:9px 14px;white-space:nowrap}
+.tab.active{color:#06070d;background:linear-gradient(96deg,#00fff2,#ff85ea 60%,#ffd83d);border-color:transparent}
+
+.panel{display:none;padding:18px 0}
+.panel.on{display:block}
+.card{background:rgba(20,27,51,.82);border:1px solid #26305a;border-radius:18px;
+ padding:18px;margin-bottom:14px}
+.card h2{font-family:'Chakra Petch',system-ui;font-size:.92rem;text-transform:uppercase;
+ letter-spacing:.05em;margin:0 0 14px;color:#eaeeff}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#0c1020;border:1px solid #26305a;border-radius:14px;padding:14px}
+.stat .n{font-family:'Chakra Petch',system-ui;font-size:1.5rem;font-weight:800;color:#00fff2}
+.stat .l{color:#8b95bd;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+label{display:block;font:700 .72rem 'Chakra Petch',system-ui;text-transform:uppercase;
+ letter-spacing:.08em;color:#8b95bd;margin:0 0 6px}
+input,select,textarea{width:100%;background:#0c1020;border:1px solid #26305a;color:#eaeeff;
+ border-radius:12px;padding:12px 14px;font-size:.92rem;outline:none;margin-bottom:12px;
+ font-family:'Outfit',system-ui}
+textarea{resize:vertical;min-height:80px}
+input:focus,select:focus,textarea:focus{border-color:#00fff2}
+.btn{border:0;border-radius:12px;padding:12px 18px;font:800 .82rem 'Chakra Petch',system-ui;
+ text-transform:uppercase;letter-spacing:.05em;color:#06070d;
+ background:linear-gradient(96deg,#00fff2,#3dff9e 48%,#ffd83d);cursor:pointer}
+.btn.ghost{background:#141b33;color:#eaeeff;border:1px solid #26305a}
+.btn.danger{background:linear-gradient(96deg,#ff5570,#ff8c3d)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:0 0 auto}
+
+.list-item{background:#0c1020;border:1px solid #26305a;border-radius:14px;padding:13px 15px;
+ margin-bottom:8px}
+.list-item .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.list-item .name{font:700 .88rem 'Outfit',system-ui}
+.badge{font:800 .62rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
+ padding:3px 8px;border-radius:7px}
+.badge.admin{background:rgba(255,67,224,.18);color:#ff85ea}
+.badge.manager{background:rgba(0,255,242,.14);color:#7af5ee}
+.badge.new{background:rgba(255,216,61,.16);color:#ffd83d}
+.badge.replied{background:rgba(61,255,158,.14);color:#a8ffd4}
+.muted{color:#8b95bd;font-size:.8rem}
+.msg{border-radius:12px;padding:11px 13px;font-size:.84rem;margin-bottom:12px;display:none}
+.msg.on{display:block}
+.msg.err{background:rgba(255,67,100,.14);border:1px solid #7a2740;color:#ffb4c2}
+.msg.ok{background:rgba(61,255,158,.12);border:1px solid #1f7a52;color:#a8ffd4}
+.empty{text-align:center;color:#5d688f;font-size:.85rem;padding:30px 0}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(6,7,13,.3);
+ border-top-color:#06070d;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;color:#8b95bd}
+</style></head><body>
+
+<div id="gate" class="gate">Checking access…</div>
+
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div class="brand">🦆 <span>Admin</span><span class="tag">CONTROL DECK</span></div>
+    <a class="leave" href="game.html">Exit to game →</a>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-p="dash">Dashboard</div>
+    <div class="tab" data-p="staff">Staff</div>
+    <div class="tab" data-p="players">Players</div>
+    <div class="tab" data-p="suggestions">Suggestions</div>
+    <div class="tab" data-p="broadcast">Broadcast</div>
+    <div class="tab" data-p="log">Action Log</div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="panel on" id="p-dash">
+      <div class="card">
+        <h2>Live Pulse</h2>
+        <div class="stat-grid" id="statGrid">
+          <div class="stat"><div class="n">–</div><div class="l">Players</div></div>
+          <div class="stat"><div class="n">–</div><div class="l">Staff</div></div>
+          <div class="stat"><div class="n">–</div><div class="l">Open suggestions</div></div>
+          <div class="stat"><div class="n">–</div><div class="l">Matches played</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-staff">
+      <div class="card">
+        <h2>Add / Change Staff</h2>
+        <div class="msg" id="staffMsg"></div>
+        <label>Email</label>
+        <input id="staffEmail" type="email" placeholder="teammate@example.com">
+        <label>Role</label>
+        <select id="staffRole">
+          <option value="manager">Manager</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button class="btn" id="btnPromote">Grant access</button>
+      </div>
+      <div class="card">
+        <h2>Current Staff</h2>
+        <div id="staffList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-players">
+      <div class="card">
+        <h2>Player Lookup</h2>
+        <input id="playerSearch" placeholder="Search by handle…">
+        <div id="playerResults"><div class="empty">Search for a player above</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-suggestions">
+      <div class="card">
+        <h2>Player Suggestions</h2>
+        <div id="suggList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-broadcast">
+      <div class="card">
+        <h2>Send a Message</h2>
+        <div class="msg" id="broadcastMsg"></div>
+        <label>Send to</label>
+        <select id="bcTarget">
+          <option value="all">Everyone</option>
+          <option value="bronze">Bronze tier</option>
+          <option value="silver">Silver tier</option>
+          <option value="gold">Gold tier</option>
+          <option value="platinum">Platinum tier</option>
+          <option value="diamond">Diamond tier</option>
+        </select>
+        <label>Subject</label>
+        <input id="bcSubject" placeholder="What's this about?">
+        <label>Message</label>
+        <textarea id="bcBody" placeholder="Write your message…"></textarea>
+        <button class="btn" id="btnBroadcast">Send</button>
+      </div>
+    </div>
+
+    <div class="panel" id="p-log">
+      <div class="card">
+        <h2>Recent Staff Actions</h2>
+        <div id="logList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+let sb = null, ME = null;
+
+function msg(id, text, kind){
+  const m = $(id);
+  m.className = 'msg on ' + kind;
+  m.textContent = text;
+}
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function timeAgo(iso){
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if(s < 60) return 'just now';
+  if(s < 3600) return Math.floor(s/60) + 'm ago';
+  if(s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+(async function(){
+  if(typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL || SUPABASE_URL.includes('PASTE')){
+    location.href = 'auth.html'; return;
+  }
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { user } } = await sb.auth.getUser();
+  if(!user){ location.href = 'auth.html'; return; }
+
+  const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
+  if(!staffRow || staffRow.role !== 'admin'){ location.href = 'game.html'; return; }
+
+  ME = user;
+  $('#gate').style.display = 'none';
+  $('#app').style.display = 'block';
+
+  loadDashboard();
+  loadStaff();
+  loadSuggestions();
+  loadLog();
+})();
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('on'));
+    t.classList.add('active');
+    $('#p-' + t.dataset.p).classList.add('on');
+  };
+});
+
+async function loadDashboard(){
+  const [{count: players}, {count: staff}, {count: openSugg}, {count: matches}] = await Promise.all([
+    sb.from('players').select('id', {count:'exact', head:true}),
+    sb.from('staff').select('user_id', {count:'exact', head:true}),
+    sb.from('suggestions').select('id', {count:'exact', head:true}).eq('status','new'),
+    sb.from('matches').select('id', {count:'exact', head:true}),
+  ]);
+  const vals = [players, staff, openSugg, matches];
+  document.querySelectorAll('#statGrid .n').forEach((el, i) => el.textContent = vals[i] ?? '–');
+}
+
+async function loadStaff(){
+  const { data, error } = await sb.from('staff').select('email, role, created_at').order('created_at', {ascending:false});
+  const box = $('#staffList');
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load staff list.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No staff yet.</div>`; return; }
+  box.innerHTML = data.map(s => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(s.email)}</span>
+        <span class="badge ${s.role}">${s.role}</span>
+      </div>
+      <div class="muted">Since ${timeAgo(s.created_at)}</div>
+      ${s.email !== ME.email ? `<div class="row" style="margin-top:8px">
+        <button class="btn ghost" data-demote="${esc(s.email)}">Remove access</button>
+      </div>` : `<div class="muted">This is you</div>`}
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-demote]').forEach(b => b.onclick = () => demote(b.dataset.demote));
+}
+
+$('#btnPromote').onclick = async () => {
+  const email = $('#staffEmail').value.trim().toLowerCase();
+  const role = $('#staffRole').value;
+  if(!email){ msg('#staffMsg', 'Enter an email first.', 'err'); return; }
+  const btn = $('#btnPromote');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Working…';
+  const { data, error } = await sb.rpc('promote_staff', { target_email: email, target_role: role });
+  btn.disabled = false; btn.textContent = 'Grant access';
+  if(error){ msg('#staffMsg', error.message, 'err'); return; }
+  if(data === 'no_account'){
+    msg('#staffMsg', `${email} hasn't signed into the game yet -- have them sign in once at auth.html, then try again.`, 'err');
+    return;
+  }
+  msg('#staffMsg', `${email} is now a ${role}.`, 'ok');
+  $('#staffEmail').value = '';
+  loadStaff();
+};
+
+async function demote(email){
+  if(!confirm(`Remove staff access for ${email}?`)) return;
+  const { error } = await sb.rpc('demote_staff', { target_email: email });
+  if(error){ msg('#staffMsg', error.message, 'err'); return; }
+  msg('#staffMsg', `Removed ${email}.`, 'ok');
+  loadStaff();
+}
+
+let searchTimer = null;
+$('#playerSearch').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => searchPlayers(e.target.value.trim()), 350);
+});
+
+async function searchPlayers(q){
+  const box = $('#playerResults');
+  if(!q){ box.innerHTML = `<div class="empty">Search for a player above</div>`; return; }
+  box.innerHTML = `<div class="empty">Searching…</div>`;
+  const { data, error } = await sb.from('players').select('*').ilike('handle', `%${q}%`).limit(15);
+  if(error){ box.innerHTML = `<div class="empty">Search failed.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No players match "${esc(q)}".</div>`; return; }
+  box.innerHTML = data.map(p => `
+    <div class="list-item" id="p-row-${p.id}">
+      <div class="top">
+        <span class="name">${esc(p.handle)}</span>
+        <span class="badge ${p.career_tier}">${p.career_tier}</span>
+      </div>
+      <div class="muted">Lvl ${p.level} · ${p.wins}W-${p.losses}L · ${p.coins ?? 0} coins · ${p.shards ?? 0} shards · ${p.packs} packs</div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn ghost" data-grant-packs="${p.id}">+3 packs</button>
+        <button class="btn ghost" data-grant-currency="${p.id}">+500 coins</button>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-grant-packs]').forEach(b => b.onclick = () => grantPacks(b.dataset.grantPacks));
+  box.querySelectorAll('[data-grant-currency]').forEach(b => b.onclick = () => grantCurrency(b.dataset.grantCurrency));
+}
+
+async function grantPacks(playerId){
+  const { data: p } = await sb.from('players').select('packs').eq('id', playerId).single();
+  await sb.from('players').update({ packs: (p.packs || 0) + 3 }).eq('id', playerId);
+  await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'grant_packs', target: playerId, detail: { amount: 3 } });
+  searchPlayers($('#playerSearch').value.trim());
+}
+async function grantCurrency(playerId){
+  const { data: p } = await sb.from('players').select('coins').eq('id', playerId).single();
+  await sb.from('players').update({ coins: (p.coins || 0) + 500 }).eq('id', playerId);
+  await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'grant_currency', target: playerId, detail: { amount: 500 } });
+  searchPlayers($('#playerSearch').value.trim());
+}
+
+async function loadSuggestions(){
+  const box = $('#suggList');
+  const { data, error } = await sb.from('suggestions').select('*, players(handle)').order('created_at', {ascending:false}).limit(50);
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load suggestions.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No suggestions yet.</div>`; return; }
+  box.innerHTML = data.map(s => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(s.players?.handle || 'unknown')}</span>
+        <span class="badge ${s.status === 'replied' ? 'replied' : 'new'}">${s.status}</span>
+      </div>
+      <div class="muted" style="margin:6px 0">${esc(s.message)}</div>
+      ${s.reply ? `<div class="muted"><b style="color:#a8ffd4">Your reply:</b> ${esc(s.reply)}</div>` : `
+        <textarea id="reply-${s.id}" placeholder="Write a reply…" style="margin-top:8px"></textarea>
+        <button class="btn ghost" data-reply="${s.id}">Send reply</button>
+      `}
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-reply]').forEach(b => b.onclick = () => replySuggestion(b.dataset.reply));
+}
+
+async function replySuggestion(id){
+  const reply = $('#reply-' + id).value.trim();
+  if(!reply) return;
+  await sb.from('suggestions').update({
+    reply, status: 'replied', replied_by: ME.id, replied_at: new Date().toISOString()
+  }).eq('id', id);
+  await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'reply_suggestion', target: String(id) });
+  loadSuggestions();
+  loadDashboard();
+}
+
+$('#btnBroadcast').onclick = async () => {
+  const target = $('#bcTarget').value;
+  const subject = $('#bcSubject').value.trim();
+  const body = $('#bcBody').value.trim();
+  if(!subject || !body){ msg('#broadcastMsg', 'Fill in both subject and message.', 'err'); return; }
+  const btn = $('#btnBroadcast');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Sending…';
+  const { data, error } = await sb.rpc('broadcast_to_players', { target, msg_subject: subject, msg_body: body });
+  btn.disabled = false; btn.textContent = 'Send';
+  if(error){ msg('#broadcastMsg', error.message, 'err'); return; }
+  msg('#broadcastMsg', target === 'all' ? 'Sent to everyone.' : `Sent to ${data} player(s).`, 'ok');
+  $('#bcSubject').value = ''; $('#bcBody').value = '';
+  loadLog();
+};
+
+async function loadLog(){
+  const box = $('#logList');
+  const { data, error } = await sb.from('staff_actions').select('*').order('created_at', {ascending:false}).limit(40);
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load the log.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No actions logged yet.</div>`; return; }
+  box.innerHTML = data.map(a => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(a.actor_email)}</span>
+        <span class="muted">${timeAgo(a.created_at)}</span>
+      </div>
+      <div class="muted">${esc(a.action)}${a.target ? ' → ' + esc(a.target) : ''}</div>
+    </div>
+  `).join('');
+}
+</script>
+</body></html>
