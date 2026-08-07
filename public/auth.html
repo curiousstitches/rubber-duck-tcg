@@ -203,6 +203,7 @@ function busy(btn, on, label){
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $('#foot').innerHTML = '<a href="game.html">Play without an account →</a>';
 
+  // already signed in? go straight through (staff get routed to the chooser)
   sb.auth.getSession().then(({data}) => {
     if(data.session) redirectAfterLogin();
   });
@@ -212,6 +213,18 @@ async function redirectAfterLogin(){
   try{
     const { data: { user } } = await sb.auth.getUser();
     if(!user){ location.href = 'game.html'; return; }
+
+    const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
+
+    if(!staffRow){
+      const { data: sys } = await sb.from('system_status').select('mode, message').eq('id', 1).maybeSingle();
+      if(sys && sys.mode === 'full'){
+        $('#banMsg').innerHTML = `<b>Getting Ducked is down for maintenance.</b><br>${sys.message || 'Please check back soon.'}`;
+        step('banned');
+        await sb.auth.signOut();
+        return;
+      }
+    }
 
     const { data: status, error } = await sb.rpc('check_login_status', { target_player: user.id });
     if(error) throw error;
@@ -229,7 +242,6 @@ async function redirectAfterLogin(){
       return;
     }
 
-    const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
     if(staffRow){ location.href = 'staff.html'; return; }
   }catch(e){ /* fall through to game if the check fails */ }
   location.href = 'game.html';
@@ -254,12 +266,14 @@ async function finishAfterFlags(){
   location.href = 'game.html';
 }
 
+/* ---------- step 1: does this email exist? ---------- */
 $('#btnContinue').onclick = async () => {
   const email = $('#email').value.trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg('That email doesn\'t look right.', 'err'); return; }
   EMAIL = email;
   busy($('#btnContinue'), true, 'Checking…');
   try{
+    // try sending a code; shouldCreateUser makes this work for new AND returning users
     const { error } = await sb.auth.signInWithOtp({
       email, options: { shouldCreateUser: true }
     });
@@ -273,6 +287,7 @@ $('#btnContinue').onclick = async () => {
   busy($('#btnContinue'), false);
 };
 
+/* ---------- step 2: verify the code ---------- */
 $('#btnVerify').onclick = async () => {
   const token = $('#code').value.trim();
   if(token.length !== 6){ msg('Enter all six digits.', 'err'); return; }
@@ -282,6 +297,7 @@ $('#btnVerify').onclick = async () => {
       email: EMAIL, token, type: 'email'
     });
     if(error) throw error;
+    // brand new account with no password yet -> ask them to make one
     const hasPass = data.user?.user_metadata?.has_password;
     if(hasPass){ redirectAfterLogin(); return; }
     $('#sub').textContent = 'Almost there — set a password';
@@ -302,6 +318,7 @@ $('#btnResend').onclick = async () => {
   busy($('#btnResend'), false);
 };
 
+/* ---------- step 3: set the password ---------- */
 $('#btnSetPass').onclick = async () => {
   const a = $('#np').value, b = $('#np2').value;
   if(a.length < 8){ msg('Password needs at least 8 characters.', 'err'); return; }
@@ -316,6 +333,7 @@ $('#btnSetPass').onclick = async () => {
   }catch(e){ msg(friendly(e), 'err'); busy($('#btnSetPass'), false); }
 };
 
+/* ---------- step 4: returning user ---------- */
 $('#btnLogin').onclick = async () => {
   busy($('#btnLogin'), true, 'Signing in…');
   try{
@@ -338,6 +356,7 @@ $('#btnForgot').onclick = async () => {
   busy($('#btnForgot'), false);
 };
 
+/* ---------- google ---------- */
 $('#btnGoogle').onclick = async () => {
   busy($('#btnGoogle'), true, 'Opening Google…');
   try{
@@ -349,6 +368,7 @@ $('#btnGoogle').onclick = async () => {
   }catch(e){ msg(friendly(e), 'err'); busy($('#btnGoogle'), false); }
 };
 
+/* ---------- misc ---------- */
 $('#btnBack1').onclick = () => { $('#sub').textContent='Sign in to save your collection'; step('email'); };
 $('#btnBack2').onclick = () => { $('#sub').textContent='Sign in to save your collection'; step('email'); };
 $('#code').addEventListener('input', e => {
