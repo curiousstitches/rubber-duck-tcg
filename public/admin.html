@@ -93,6 +93,10 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
     <div class="tab" data-p="staff">Staff</div>
     <div class="tab" data-p="players">Players</div>
     <div class="tab" data-p="moderation">Moderation</div>
+    <div class="tab" data-p="economy">Economy</div>
+    <div class="tab" data-p="keylinks">Key Links</div>
+    <div class="tab" data-p="community">Community</div>
+    <div class="tab" data-p="competitive">Matches</div>
     <div class="tab" data-p="suggestions">Suggestions</div>
     <div class="tab" data-p="broadcast">Broadcast</div>
     <div class="tab" data-p="log">Action Log</div>
@@ -109,6 +113,28 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
           <div class="stat"><div class="n">–</div><div class="l">Staff</div></div>
           <div class="stat"><div class="n">–</div><div class="l">Open suggestions</div></div>
           <div class="stat"><div class="n">–</div><div class="l">Matches played</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🟢 Online Now</h2>
+        <div class="stat" style="max-width:140px;margin-bottom:12px">
+          <div class="n" id="onlineCount">–</div><div class="l">Players</div>
+        </div>
+        <div id="onlineList"><div class="empty">Connecting…</div></div>
+      </div>
+      <div class="card">
+        <h2>🎨 Art Pipeline</h2>
+        <div id="artStatus"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h2>🚧 Maintenance Mode</h2>
+        <div class="msg" id="maintMsgAdmin"></div>
+        <div class="muted" style="margin-bottom:10px" id="maintCurrentStatus">Checking…</div>
+        <textarea id="maintMessage" placeholder="Message shown to players (optional)"></textarea>
+        <div class="row">
+          <button class="btn ghost" data-set-maint="off">Off</button>
+          <button class="btn ghost" data-set-maint="playable">Playable</button>
+          <button class="btn danger" data-set-maint="full">Full Lock</button>
         </div>
       </div>
     </div>
@@ -137,6 +163,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
     <div class="panel" id="p-players">
       <div class="card">
         <h2>Players</h2>
+        <button class="btn ghost" id="btnExportCSV" style="margin-bottom:12px">⬇️ Export all players (CSV)</button>
         <input id="playerSearch" placeholder="Search by handle… (leave blank to browse everyone)">
         <label>Sort by</label>
         <select id="playerSort">
@@ -179,6 +206,28 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
       </div>
     </div>
 
+    <div class="panel" id="p-economy">
+      <div class="card">
+        <h2>Rebalance Everything</h2>
+        <div class="msg" id="econMsg"></div>
+        <div class="row">
+          <button class="btn ghost" data-preset="generous">Generous (−30%)</button>
+          <button class="btn ghost" data-preset="default">Default</button>
+          <button class="btn danger" data-preset="grindier">Grindier (+40%)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Pack Prices</h2>
+        <div id="packList"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h2>Store Sell-Back Rate</h2>
+        <label>Percentage of market value players get for duplicates</label>
+        <input id="sellbackPct" type="number" min="0" max="100" step="1">
+        <button class="btn ghost" id="btnSaveSellback">Save</button>
+      </div>
+    </div>
+
     <!-- BROADCAST -->
     <div class="panel" id="p-broadcast">
       <div class="card">
@@ -205,7 +254,78 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
     <div class="panel" id="p-log">
       <div class="card">
         <h2>Recent Staff Actions</h2>
+        <label>Filter by staff member</label>
+        <select id="logFilter">
+          <option value="">Everyone</option>
+        </select>
         <div id="logList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-competitive">
+      <div class="card">
+        <h2>Recent Matches</h2>
+        <div id="matchList"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card" id="matchDetailCard" style="display:none">
+        <h2>Match Detail</h2>
+        <div id="matchDetail"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-keylinks">
+      <div class="card">
+        <h2>Add a Link</h2>
+        <input id="klLabel" placeholder="Label (e.g. Supabase Dashboard)">
+        <input id="klUrl" placeholder="https://...">
+        <input id="klNote" placeholder="Note (optional)">
+        <button class="btn" id="btnAddLink">Add link</button>
+      </div>
+      <div class="card">
+        <h2>Your Links</h2>
+        <div id="klList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-community">
+      <div class="card">
+        <h2>Post an Update</h2>
+        <div class="msg" id="commMsg"></div>
+        <label>Title</label>
+        <input id="updTitle" placeholder="What's new?">
+        <label>Details</label>
+        <textarea id="updBody" placeholder="Tell players more…"></textarea>
+        <label>Ticker color</label>
+        <select id="updColor">
+          <option value="cyan">Cyan</option>
+          <option value="pink">Pink</option>
+          <option value="gold">Gold</option>
+          <option value="green">Green</option>
+        </select>
+        <button class="btn" id="btnPostUpdate">Post to ticker</button>
+      </div>
+      <div class="card">
+        <h2>Schedule a Broadcast</h2>
+        <label>Send to</label>
+        <select id="schTarget">
+          <option value="all">Everyone</option>
+          <option value="bronze">Bronze tier</option>
+          <option value="silver">Silver tier</option>
+          <option value="gold">Gold tier</option>
+          <option value="platinum">Platinum tier</option>
+          <option value="diamond">Diamond tier</option>
+        </select>
+        <label>Subject</label>
+        <input id="schSubject" placeholder="Subject">
+        <label>Message</label>
+        <textarea id="schBody" placeholder="Message…"></textarea>
+        <label>Send at</label>
+        <input id="schWhen" type="datetime-local">
+        <button class="btn" id="btnSchedule">Queue it</button>
+      </div>
+      <div class="card">
+        <h2>Pending Broadcasts</h2>
+        <div id="schList"><div class="empty">Loading…</div></div>
       </div>
     </div>
 
@@ -251,6 +371,9 @@ function timeAgo(iso){
   $('#app').style.display = 'block';
 
   loadDashboard();
+  startPresenceWatch();
+  loadArtStatus();
+  loadMaintenance();
   loadStaff();
   loadSuggestions();
   loadLog();
@@ -265,6 +388,10 @@ document.querySelectorAll('.tab').forEach(t => {
     $('#p-' + t.dataset.p).classList.add('on');
     if(t.dataset.p === 'players' && !playerRowsSoFar.length) loadPlayers(true);
     if(t.dataset.p === 'moderation') { loadBans(); loadReports(); loadDupFlags(); }
+    if(t.dataset.p === 'economy') { loadPacks(); loadSellback(); }
+    if(t.dataset.p === 'keylinks') { loadKeyLinksAdmin(); }
+    if(t.dataset.p === 'community') { loadSchedule(); }
+    if(t.dataset.p === 'competitive') { loadMatches(); }
   };
 });
 
@@ -281,8 +408,33 @@ async function loadDashboard(){
 }
 
 /* ---------- staff ---------- */
+const PERM_KEYS = [
+  { key: 'key_links',      label: 'Key Links' },
+  { key: 'hard_ban',       label: 'Hard bans' },
+  { key: 'grant_currency', label: 'Grant packs/coins' },
+];
+
+async function loadMaintenance(){
+  const { data } = await sb.from('system_status').select('mode, message').eq('id', 1).maybeSingle();
+  const mode = data?.mode || 'off';
+  const labels = { off: '🟢 Live — no maintenance', playable: '🟡 Playable maintenance active', full: '🔴 Full lock active' };
+  $('#maintCurrentStatus').textContent = labels[mode];
+  if(data?.message) $('#maintMessage').value = data.message;
+}
+
+document.querySelectorAll('[data-set-maint]').forEach(b => b.onclick = async () => {
+  const mode = b.dataset.setMaint;
+  if(mode === 'full' && !confirm('This locks EVERY non-staff player out of the game. Continue?')) return;
+  const message = $('#maintMessage').value.trim() || null;
+  const { error } = await sb.rpc('set_maintenance', { mode_in: mode, message_in: message });
+  if(error){ msg('#maintMsgAdmin', error.message, 'err'); return; }
+  msg('#maintMsgAdmin', `Maintenance set to "${mode}".`, 'ok');
+  loadMaintenance();
+  loadLog();
+});
+
 async function loadStaff(){
-  const { data, error } = await sb.from('staff').select('email, role, created_at').order('created_at', {ascending:false});
+  const { data, error } = await sb.from('staff').select('email, role, created_at, permissions').order('created_at', {ascending:false});
   const box = $('#staffList');
   if(error){ box.innerHTML = `<div class="empty">Couldn't load staff list.</div>`; return; }
   if(!data.length){ box.innerHTML = `<div class="empty">No staff yet.</div>`; return; }
@@ -293,12 +445,29 @@ async function loadStaff(){
         <span class="badge ${s.role}">${s.role}</span>
       </div>
       <div class="muted">Since ${timeAgo(s.created_at)}</div>
+      ${s.role === 'manager' ? `
+        <div class="muted" style="margin:8px 0 4px">Permissions</div>
+        ${PERM_KEYS.map(p => `
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-weight:400;font-size:.85rem;margin-bottom:6px">
+            <input type="checkbox" style="width:auto;margin:0" data-perm="${esc(s.email)}" data-perm-key="${p.key}"
+              ${s.permissions && s.permissions[p.key] ? 'checked' : ''}> ${p.label}
+          </label>
+        `).join('')}
+      ` : ''}
       ${s.email !== ME.email ? `<div class="row" style="margin-top:8px">
         <button class="btn ghost" data-demote="${esc(s.email)}">Remove access</button>
       </div>` : `<div class="muted">This is you</div>`}
     </div>
   `).join('');
   box.querySelectorAll('[data-demote]').forEach(b => b.onclick = () => demote(b.dataset.demote));
+  box.querySelectorAll('[data-perm]').forEach(cb => cb.onchange = async () => {
+    const { error } = await sb.rpc('set_manager_permission', {
+      target_email: cb.dataset.perm, perm_key: cb.dataset.permKey, allowed: cb.checked
+    });
+    if(error){ msg('#staffMsg', error.message, 'err'); cb.checked = !cb.checked; return; }
+    msg('#staffMsg', 'Permission updated.', 'ok');
+    loadLog();
+  });
 }
 
 $('#btnPromote').onclick = async () => {
@@ -403,6 +572,7 @@ function toggleModPanel(playerId){
 async function renderModPanel(playerId, box){
   box.innerHTML = `<div class="empty">Loading…</div>`;
   const { data: notes } = await sb.from('staff_notes').select('*').eq('player_id', playerId).order('created_at', {ascending:false});
+  const { data: coll } = await sb.from('collection').select('*').eq('player_id', playerId).gt('qty', 0).order('card_name');
 
   box.innerHTML = `
     <div class="card" style="margin-bottom:8px">
@@ -422,6 +592,28 @@ async function renderModPanel(playerId, box){
       </select>
       <button class="btn danger" data-send-ban="${playerId}">Ban player</button>
     </div>
+    <div class="card" style="margin-bottom:8px">
+      <label>Collection editor (fix missing/wrong cards)</label>
+      <div id="collList-${playerId}" style="max-height:180px;overflow-y:auto;margin-bottom:10px">
+        ${coll && coll.length ? coll.map(c => `
+          <div class="list-item" style="padding:8px 10px;margin-bottom:4px">
+            <div class="top">
+              <span class="muted">${esc(c.card_name)} (${c.card_kind}) · qty ${c.qty}</span>
+              <button class="btn ghost" style="padding:4px 8px" data-quick-remove="${playerId}" data-card="${esc(c.card_name)}" data-kind="${c.card_kind}">−1</button>
+            </div>
+          </div>
+        `).join('') : '<div class="empty">No cards owned yet.</div>'}
+      </div>
+      <input id="collCard-${playerId}" placeholder="Exact card name">
+      <select id="collKind-${playerId}">
+        <option value="duck">Duck card</option>
+        <option value="item">Item card</option>
+      </select>
+      <div class="row">
+        <button class="btn ghost" data-adjust="${playerId}" data-delta="1">+1 copy</button>
+        <button class="btn ghost" data-adjust="${playerId}" data-delta="-1">−1 copy</button>
+      </div>
+    </div>
     <div class="card">
       <label>Staff notes (private, only staff can see these)</label>
       <div id="notesList-${playerId}">
@@ -436,6 +628,33 @@ async function renderModPanel(playerId, box){
   box.querySelector(`[data-send-flag="${playerId}"]`).onclick = () => sendFlag(playerId);
   box.querySelector(`[data-send-ban="${playerId}"]`).onclick = () => sendBan(playerId);
   box.querySelector(`[data-add-note="${playerId}"]`).onclick = () => addNote(playerId);
+  box.querySelectorAll(`[data-adjust="${playerId}"]`).forEach(b => b.onclick = () => adjustCollection(playerId, parseInt(b.dataset.delta, 10)));
+  box.querySelectorAll(`[data-quick-remove]`).forEach(b => b.onclick = () => quickRemove(b.dataset.quickRemove, b.dataset.card, b.dataset.kind));
+}
+
+async function adjustCollection(playerId, delta){
+  const card = $('#collCard-' + playerId).value.trim();
+  const kind = $('#collKind-' + playerId).value;
+  if(!card){ alert('Enter a card name first.'); return; }
+  const { data: newQty, error } = await sb.rpc('admin_adjust_collection', {
+    target_player: playerId, card_name_in: card, card_kind_in: kind, delta
+  });
+  if(error){ alert(error.message); return; }
+  $('#collCard-' + playerId).value = '';
+  alert(`${card} is now at ${newQty} cop${newQty===1?'y':'ies'}.`);
+  const box = $('#mod-' + playerId);
+  box.dataset.loaded = '';
+  renderModPanel(playerId, box);
+}
+
+async function quickRemove(playerId, card, kind){
+  const { error } = await sb.rpc('admin_adjust_collection', {
+    target_player: playerId, card_name_in: card, card_kind_in: kind, delta: -1
+  });
+  if(error){ alert(error.message); return; }
+  const box = $('#mod-' + playerId);
+  box.dataset.loaded = '';
+  renderModPanel(playerId, box);
 }
 
 async function sendFlag(playerId){
@@ -562,6 +781,60 @@ async function grantCurrency(playerId){
   loadPlayers(true);
 }
 
+/* ---------- economy ---------- */
+document.querySelectorAll('[data-preset]').forEach(b => b.onclick = async () => {
+  if(!confirm(`Apply the "${b.dataset.preset}" preset to all pack prices?`)) return;
+  const { error } = await sb.rpc('apply_rebalance_preset', { preset: b.dataset.preset });
+  if(error){ msg('#econMsg', error.message, 'err'); return; }
+  msg('#econMsg', `Applied "${b.dataset.preset}" preset.`, 'ok');
+  loadPacks();
+  loadLog();
+});
+
+async function loadPacks(){
+  const box = $('#packList');
+  const { data, error } = await sb.from('economy_settings').select('*').eq('category', 'pack').order('id');
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load packs.</div>`; return; }
+  box.innerHTML = data.map(p => `
+    <div class="list-item">
+      <div class="top"><span class="name">${esc(p.label)}</span></div>
+      <div class="muted" style="margin:6px 0">${p.value.cards} card(s)${p.value.guarantee ? `, guaranteed ${p.value.guarantee}★+` : ''}</div>
+      <div class="row">
+        <input type="number" id="cost-${p.id}" value="${p.value.cost}" style="margin-bottom:0">
+        <button class="btn ghost" data-save-pack="${p.id}">Save</button>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-save-pack]').forEach(b => b.onclick = () => savePackCost(b.dataset.savePack));
+}
+
+async function savePackCost(packId){
+  const newCost = parseInt($('#cost-' + packId).value, 10);
+  if(isNaN(newCost) || newCost < 0) return;
+  const { data: row } = await sb.from('economy_settings').select('value').eq('id', packId).single();
+  const value = { ...row.value, cost: newCost };
+  await sb.from('economy_settings').update({ value, updated_by: ME.id, updated_at: new Date().toISOString() }).eq('id', packId);
+  await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'edit_pack_price', target: packId, detail: { cost: newCost } });
+  msg('#econMsg', 'Saved.', 'ok');
+  loadLog();
+}
+
+async function loadSellback(){
+  const { data } = await sb.from('economy_settings').select('value').eq('id', 'sellback_pct').single();
+  if(data) $('#sellbackPct').value = Math.round((data.value.pct || 0) * 100);
+}
+
+$('#btnSaveSellback').onclick = async () => {
+  const pct = parseInt($('#sellbackPct').value, 10);
+  if(isNaN(pct) || pct < 0 || pct > 100) { msg('#econMsg', 'Enter a number between 0 and 100.', 'err'); return; }
+  await sb.from('economy_settings').update({
+    value: { pct: pct / 100 }, updated_by: ME.id, updated_at: new Date().toISOString()
+  }).eq('id', 'sellback_pct');
+  await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'edit_sellback_pct', detail: { pct } });
+  msg('#econMsg', 'Saved.', 'ok');
+  loadLog();
+};
+
 /* ---------- suggestions ---------- */
 async function loadSuggestions(){
   const box = $('#suggList');
@@ -612,10 +885,218 @@ $('#btnBroadcast').onclick = async () => {
 };
 
 /* ---------- action log ---------- */
+/* ---------- key links ---------- */
+$('#btnAddLink').onclick = async () => {
+  const label = $('#klLabel').value.trim();
+  const url = $('#klUrl').value.trim();
+  const note = $('#klNote').value.trim();
+  if(!label || !url) return;
+  await sb.from('key_links').insert({ label, url, note: note || null, created_by: ME.id });
+  $('#klLabel').value=''; $('#klUrl').value=''; $('#klNote').value='';
+  loadKeyLinksAdmin();
+};
+
+async function loadKeyLinksAdmin(){
+  const box = $('#klList');
+  const { data, error } = await sb.from('key_links').select('*').order('sort_order');
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load links.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No links yet.</div>`; return; }
+  box.innerHTML = data.map(l => `
+    <div class="list-item">
+      <b>${esc(l.label)}</b><br>
+      <a href="${esc(l.url)}" target="_blank" style="color:#00fff2;word-break:break-all">${esc(l.url)}</a>
+      ${l.note ? `<div class="muted" style="margin-top:4px">${esc(l.note)}</div>` : ''}
+      <div class="row" style="margin-top:8px"><button class="btn ghost" data-del-link="${l.id}">Remove</button></div>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-del-link]').forEach(b => b.onclick = async () => {
+    await sb.from('key_links').delete().eq('id', b.dataset.delLink);
+    loadKeyLinksAdmin();
+  });
+}
+
+/* ---------- community ---------- */
+$('#btnPostUpdate').onclick = async () => {
+  const title = $('#updTitle').value.trim();
+  const body = $('#updBody').value.trim();
+  const color = $('#updColor').value;
+  if(!title){ msg('#commMsg', 'Enter a title.', 'err'); return; }
+  await sb.from('notifications').insert({ title, body, color, created_by: ME.id });
+  $('#updTitle').value=''; $('#updBody').value='';
+  msg('#commMsg', 'Posted to the ticker.', 'ok');
+  loadLog();
+};
+
+$('#btnSchedule').onclick = async () => {
+  const target = $('#schTarget').value;
+  const subject = $('#schSubject').value.trim();
+  const body = $('#schBody').value.trim();
+  const when = $('#schWhen').value;
+  if(!subject || !body || !when){ msg('#commMsg', 'Fill in subject, message, and time.', 'err'); return; }
+  const { error } = await sb.rpc('schedule_broadcast', {
+    target_in: target, subject_in: subject, body_in: body, send_at_in: new Date(when).toISOString()
+  });
+  if(error){ msg('#commMsg', error.message, 'err'); return; }
+  $('#schSubject').value=''; $('#schBody').value=''; $('#schWhen').value='';
+  msg('#commMsg', 'Scheduled.', 'ok');
+  loadSchedule();
+  loadLog();
+};
+
+async function loadSchedule(){
+  // best-effort catch-up in case pg_cron isn't active on this project
+  await sb.rpc('process_scheduled_broadcasts').catch(()=>{});
+
+  const box = $('#schList');
+  const { data, error } = await sb.from('scheduled_broadcasts').select('*').eq('sent', false).order('send_at');
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load schedule.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">Nothing queued.</div>`; return; }
+  box.innerHTML = data.map(b => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(b.subject)}</span>
+        <span class="muted">${new Date(b.send_at).toLocaleString()}</span>
+      </div>
+      <div class="muted" style="margin:6px 0">to ${esc(b.target)}</div>
+      <button class="btn ghost" data-cancel-sched="${b.id}">Cancel</button>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-cancel-sched]').forEach(b => b.onclick = async () => {
+    await sb.rpc('cancel_scheduled_broadcast', { id_in: b.dataset.cancelSched });
+    loadSchedule();
+  });
+}
+
+/* ---------- match viewer ---------- */
+async function loadMatches(){
+  const box = $('#matchList');
+  const { data, error } = await sb.rpc('list_recent_matches', { limit_n: 30 });
+  if(error){ box.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No matches recorded yet.</div>`; return; }
+  box.innerHTML = data.map(m => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(m.p1_handle)} vs ${esc(m.p2_handle)}</span>
+        <span class="muted">${timeAgo(m.created_at)}</span>
+      </div>
+      <div class="muted" style="margin:6px 0">HP ${m.p1_hp}–${m.p2_hp} · ${esc(m.state)}</div>
+      <button class="btn ghost" data-view-match="${m.id}">View full match</button>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-view-match]').forEach(b => b.onclick = () => viewMatch(b.dataset.viewMatch));
+}
+
+async function viewMatch(matchId){
+  const card = $('#matchDetailCard');
+  const box = $('#matchDetail');
+  card.style.display = 'block';
+  box.innerHTML = '<div class="empty">Loading…</div>';
+  const { data, error } = await sb.rpc('get_match_detail', { match_id_in: matchId });
+  if(error){ box.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  const m = data.match;
+  if(!m){ box.innerHTML = '<div class="empty">Match not found.</div>'; return; }
+  const moves = data.moves || [];
+  box.innerHTML = `
+    <div class="list-item">
+      <b>${esc(m.p1_handle)}</b> (${m.p1_hp} HP) vs <b>${esc(m.p2_handle)}</b> (${m.p2_hp} HP)<br>
+      <span class="muted">State: ${esc(m.state)} · Winner: ${esc(m.winner === m.p1 ? m.p1_handle : m.winner === m.p2 ? m.p2_handle : '—')}</span>
+    </div>
+    <div class="muted" style="margin:10px 0 6px">Turn-by-turn</div>
+    ${moves.length ? moves.map(mv => `
+      <div class="list-item">
+        <span class="muted">Turn ${mv.turn} · ${mv.player_id === m.p1 ? esc(m.p1_handle) : esc(m.p2_handle)}</span><br>
+        Played <b>${esc(mv.card?.name || 'unknown')}</b> · stance: ${esc(mv.stance)} · roll: ${mv.roll}
+      </div>
+    `).join('') : '<div class="empty">No move data recorded for this match.</div>'}
+  `;
+}
+
+/* ---------- online presence ---------- */
+let presenceChannel = null;
+function startPresenceWatch(){
+  try{
+    presenceChannel = sb.channel('online-players', { config: { presence: { key: 'admin-' + ME.email } } });
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const online = Object.values(state).flat().filter(p => p.handle);
+        $('#onlineCount').textContent = online.length;
+        $('#onlineList').innerHTML = online.length
+          ? online.map(p => `<span class="badge" style="background:rgba(61,255,158,.14);color:#a8ffd4;margin:2px">${esc(p.handle)}</span>`).join('')
+          : '<div class="empty">Nobody online right now.</div>';
+      })
+      .subscribe();
+  }catch(e){
+    $('#onlineList').innerHTML = '<div class="empty">Could not connect to presence.</div>';
+  }
+}
+
+/* ---------- CSV export ---------- */
+$('#btnExportCSV').onclick = async () => {
+  const { data, error } = await sb.from('players')
+    .select('handle, level, wins, losses, coins, shards, packs, career_tier, created_at')
+    .order('created_at').limit(5000);
+  if(error){ alert(error.message); return; }
+  const headers = ['handle','level','wins','losses','coins','shards','packs','career_tier','created_at'];
+  const csv = [headers.join(',')]
+    .concat(data.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(',')))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `players-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+};
+
+/* ---------- art pipeline status (reads your live repo directly) ---------- */
+const ART_TOTALS = { shiny: 408, evolved: 128, items: 563 };
+async function loadArtStatus(){
+  const box = $('#artStatus');
+  try{
+    const res = await fetch('https://api.github.com/repos/curiousstitches/rubber-duck-tcg/git/trees/master?recursive=1');
+    if(!res.ok) throw new Error('GitHub returned ' + res.status);
+    const data = await res.json();
+    const files = (data.tree || []).map(f => f.path);
+    const shinyDone = files.filter(f => f.startsWith('public/cards/ducks/') && f.endsWith('_shiny.png')).length;
+    const evolvedDone = files.filter(f => f.startsWith('public/cards/ducks/') && f.endsWith('_evolved.png')).length;
+    const itemsDone = files.filter(f => f.startsWith('public/cards/items/') && f.endsWith('.png')).length;
+    const bar = (label, done, total) => {
+      const pct = total ? Math.min(100, Math.round(done/total*100)) : 0;
+      return `<div style="margin-bottom:10px">
+        <div class="muted" style="margin-bottom:4px">${label}: ${done} / ${total} (${pct}%)</div>
+        <div style="background:#0c1020;border:1px solid #26305a;border-radius:8px;height:10px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#00fff2,#3dff9e)"></div>
+        </div>
+      </div>`;
+    };
+    box.innerHTML = bar('Shiny duck art', shinyDone, ART_TOTALS.shiny)
+      + bar('Evolved duck art', evolvedDone, ART_TOTALS.evolved)
+      + bar('Item + dice art', itemsDone, ART_TOTALS.items)
+      + `<div class="muted">Synced from your GitHub repo just now.</div>`;
+  }catch(e){
+    box.innerHTML = `<div class="empty">Couldn't reach GitHub to check status.</div>`;
+  }
+}
+
 async function loadLog(){
+  const filterEmail = $('#logFilter').value;
   const box = $('#logList');
-  const { data, error } = await sb.from('staff_actions').select('*').order('created_at', {ascending:false}).limit(40);
+  let q = sb.from('staff_actions').select('*').order('created_at', {ascending:false}).limit(60);
+  if(filterEmail) q = q.eq('actor_email', filterEmail);
+  const { data, error } = await q;
   if(error){ box.innerHTML = `<div class="empty">Couldn't load the log.</div>`; return; }
+
+  if($('#logFilter').options.length <= 1){
+    const { data: allActors } = await sb.from('staff_actions').select('actor_email');
+    const unique = [...new Set((allActors||[]).map(a => a.actor_email).filter(Boolean))];
+    unique.forEach(email => {
+      const opt = document.createElement('option');
+      opt.value = email; opt.textContent = email;
+      $('#logFilter').appendChild(opt);
+    });
+  }
+
   if(!data.length){ box.innerHTML = `<div class="empty">No actions logged yet.</div>`; return; }
   box.innerHTML = data.map(a => `
     <div class="list-item">
@@ -627,5 +1108,6 @@ async function loadLog(){
     </div>
   `).join('');
 }
+$('#logFilter').addEventListener('change', loadLog);
 </script>
 </body></html>
