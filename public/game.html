@@ -3,8 +3,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#070a14">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="cards/ducks/arroyo_hero.png">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -347,7 +345,7 @@ header{position:relative;z-index:2;padding:14px 16px 10px;display:flex;
 .chip.gold{color:var(--gold);border-color:#5a4a12}
 
 /* stage */
-main{position:relative;z-index:1;flex:1;overflow-y:auto;padding:16px 14px calc(96px + env(safe-area-inset-bottom));
+main{position:relative;z-index:1;flex:1;overflow-y:auto;padding:16px 14px 96px;
   -webkit-overflow-scrolling:touch}
 .view{display:none;animation:fade .3s ease}
 .view.on{display:block}
@@ -358,7 +356,7 @@ main{position:relative;z-index:1;flex:1;overflow-y:auto;padding:16px 14px calc(9
 
 /* nav */
 nav{position:fixed;bottom:0;left:0;right:0;z-index:6;display:grid;
-  grid-template-columns:repeat(6,1fr);gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  grid-template-columns:repeat(5,1fr);gap:2px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg,var(--void) 62%,rgba(7,10,20,.86));
   border-top:1px solid var(--edge);backdrop-filter:blur(9px)}
 nav button{background:none;border:0;color:var(--dim);font:700 .58rem/1 'Chakra Petch',system-ui;
@@ -938,58 +936,8 @@ input.search{width:100%;background:var(--panel);border:1px solid var(--edge);
   color:var(--ink);border-radius:13px;padding:12px 15px;font-size:.94rem;
   margin-bottom:11px;outline:none}
 input.search:focus{border-color:var(--cyan)}
-
-/* ===== mobile / small-screen refinements ===== */
-.modeTabs{display:flex;gap:7px;margin-bottom:12px}
-.modeTabs button{flex:1 1 0;text-align:center}
-.modeTabs button small{display:block;font-size:.6rem;text-transform:none;letter-spacing:0;opacity:.75;margin-top:2px;font-weight:600}
-html,body{max-width:100vw;overflow-x:hidden}
-@media (max-width:480px){
-  html{font-size:15px}
-  .hd h2{font-size:1.15rem}
-  .hd span{font-size:.72rem}
-  .panel{padding:12px}
-  .panel h3{font-size:.95rem}
-  .panel p{font-size:.82rem;line-height:1.45}
-  .grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
-  .shopgrid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
-  .sitem{padding:9px}
-  .sitem .si{font-size:1.4rem}
-  main{padding:12px 10px 100px}
-  nav button{font-size:.5rem;padding:7px 1px;gap:3px}
-  nav button em{font-size:1.12rem}
-  .stabs button{padding:7px 11px;font-size:.66rem}
-  .btn{min-height:44px}
-}
-@media (max-width:360px){
-  html{font-size:13.5px}
-  .dwrap{width:min(92vw,340px)}
-  .grid{grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px}
-  nav button{font-size:.46rem}
-  nav button em{font-size:1rem}
-}
-
-/* ===== rarity foil/holo + idle motion + accessibility ===== */
-.slot[data-r="6"],.slot[data-r="7"]{border-color:rgba(255,210,90,.6);position:relative;overflow:hidden}
-.slot[data-r="6"]::after,.slot[data-r="7"]::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.35) 45%,rgba(255,210,90,.25) 50%,transparent 65%);
-  background-size:250% 250%;animation:foilSheen 3.2s ease-in-out infinite}
-@keyframes foilSheen{0%{background-position:180% 180%}100%{background-position:-20% -20%}}
-.slot[data-r="5"]{border-color:rgba(180,140,255,.55)}
-.slot img,.dcard img{animation:idleBob 4.4s ease-in-out infinite}
-@keyframes idleBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
-@media (prefers-reduced-motion:reduce){
-  .slot[data-r="6"]::after,.slot[data-r="7"]::after,.slot img,.dcard img{animation:none!important}
-  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-}
 </style>
 </head><body>
-<div id="authGate" style="position:fixed;inset:0;z-index:99999;background:#070a14;
- display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;
- font-family:'Outfit',system-ui,sans-serif">
-  <span style="font-size:2.8rem;filter:drop-shadow(0 6px 18px rgba(255,216,61,.4))">🦆</span>
-  <p style="color:#8b95bd;font-size:.86rem;margin:0">Checking your session…</p>
-</div>
 <div id="sky"></div>
 <div id="motes"></div>
 <div id="grain"></div>
@@ -1001,8 +949,6 @@ html,body{max-width:100vw;overflow-x:hidden}
     <div class="chip gold" title="Duck Droppings">💩 <span id="coins">0</span></div>
     <div class="chip shard" title="Diamond Shards">💎 <span id="shards">0</span></div>
     <div class="chip">📦 <span id="packs">0</span></div>
-    <div class="chip streak" title="Daily streak">🔥 <span id="streakDays">0</span></div>
-    <div class="chip" id="pwaInstall" style="cursor:pointer;display:none">⬇️ Install</div>
     <div class="chip" id="sfxBtn" style="cursor:pointer">🔊</div>
     <div class="chip" id="acctBtn" style="cursor:pointer">👤</div>
   </div>
@@ -1027,14 +973,6 @@ html,body{max-width:100vw;overflow-x:hidden}
     </div>
 
     <div class="packrow" id="packRow"></div>
-
-    <div id="itemAddonBox" style="display:none;margin:10px auto 0;max-width:340px;text-align:center;
-      font:600 .82rem 'Chakra Petch',system-ui;color:#bfe8ff">
-      <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-        <input type="checkbox" id="itemAddonChk" style="width:16px;height:16px;accent-color:#3dff9e">
-        <span>+ Include an item card (extra <span id="itemAddonCost">50</span> 💩)</span>
-      </label>
-    </div>
 
     <div class="packstage">
       <div class="packwrap" id="packWrap">
@@ -1065,7 +1003,6 @@ html,body{max-width:100vw;overflow-x:hidden}
       <button data-f="3">3★</button><button data-f="2">2★</button><button data-f="1">1★</button>
       <button data-f="dupe">Duplicates</button>
     </div>
-    <div class="panel" id="fusionPanel"><h3>✨ Fuse Duplicates</h3><p>Combine 3 copies of a card into a Foil for a coin/gem bonus.</p><div class="grid" id="fuseGrid"></div></div>
     <div class="grid" id="colGrid"></div>
   </section>
 
@@ -1142,11 +1079,7 @@ html,body{max-width:100vw;overflow-x:hidden}
            <b>defend</b> — neither of you sees the other's choice until you both commit.
            A beaten duck goes to the graveyard and its own value comes off your health.</p>
       </div>
-      <div class="stabs modeTabs" id="modeTabs">
-      <button class="on" data-mt="ai">🤖 AI Arena<small>earn coins &amp; gems vs bots</small></button>
-      <button data-mt="online">👤 Multiplayer<small>live players only</small></button>
-    </div>
-    <div class="grid" id="modeGrid"></div>
+      <div class="grid" id="modeGrid"></div>
     </div>
 
     <div id="battleLive" style="display:none">
@@ -1275,8 +1208,6 @@ html,body{max-width:100vw;overflow-x:hidden}
 
   <!-- ============ LEADERBOARD ============ -->
   <section class="view" id="v-ranks">
-  <div class="panel" id="battlePassPanel"><h3>⚔️ Battle Pass — Level <span id="bpLevel">1</span></h3><div style="background:var(--panel);border-radius:8px;overflow:hidden;height:10px;margin:8px 0"><div id="bpBar" style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--mag));width:0%"></div></div><span style="font-size:.75rem;opacity:.7" id="bpXpText">0 / 100 XP</span></div>
-  <div class="panel"><h3>🏆 Achievements</h3><div class="grid" id="achList"></div></div>
     <div class="hd"><h2>Leaderboard</h2><span id="lbNote">Gold and above</span></div>
     <div class="stabs" id="lbTabs">
       <button class="on" data-lb="rank">Rank</button>
@@ -1324,24 +1255,6 @@ html,body{max-width:100vw;overflow-x:hidden}
 <script src="supabase-config.js"></script>
 <script src="ducksave.js"></script>
 <script src="ducknet.js"></script>
-<script>
-/* ---------------- mandatory sign-in gate ---------------- */
-/* Everyone plays signed in. If there's no live Supabase session, bounce to
-   the login screen before any game state renders (the #authGate overlay
-   above keeps the board hidden the whole time this is resolving). */
-(async function requireAuth(){
-  try{
-    var sb = (typeof getDuckClient === 'function') ? getDuckClient() : null;
-    if(!sb){ location.replace('index.html'); return; }
-    var res = await sb.auth.getSession();
-    if(!res.data.session){ location.replace('auth.html?next=game.html'); return; }
-    var gate = document.getElementById('authGate');
-    if(gate) gate.remove();
-  }catch(e){
-    location.replace('auth.html?next=game.html');
-  }
-})();
-</script>
 <script>
 (function(){
   var DRAGGING = false;      // finger wins: gyro ignored while dragging
@@ -1503,46 +1416,53 @@ const PACKS = [
     blurb:'Three cards, one guaranteed 3★ or better.', floor:2, guarantee:3 },
   { id:'legend', name:'LEGENDARY',face:'★★★★★', cards:3, cost:3000,
     blurb:'Three cards, one guaranteed 5★.',    floor:3, guarantee:5 },
-  { id:'daily',  name:'DAILY',    face:'🎁', cards:3, cost:0,
-    blurb:'Free daily pack — one to two star cards. Refills once a day.',
-    floor:1, guarantee:0, isDaily:true },
 ];
-const DAILY_PACK_CAP = 3;
 let CHOSEN = PACKS[2];
-// the SINGLE pack's item card is opt-in (extra cost); every other pack always
-// includes one for free, so this toggle only matters while SINGLE is chosen
-let INCLUDE_ITEM = false;
-const ITEM_ADDON_COST = 50;
+
+async function loadLivePrices(){
+  try{
+    if(!(window.DuckSave && window.DuckSave.sb)) return;
+    const { data, error } = await window.DuckSave.sb
+      .from('economy_settings').select('id, value').eq('category', 'pack');
+    if(error || !data) return;
+    const idMap = { pack_single:'single', pack_triple:'triple', pack_five:'five', pack_rare:'rare', pack_legend:'legend' };
+    data.forEach(row => {
+      const packId = idMap[row.id];
+      const pack = PACKS.find(p => p.id === packId);
+      if(pack && row.value){
+        if(typeof row.value.cost === 'number') pack.cost = row.value.cost;
+        if(typeof row.value.cards === 'number') pack.cards = row.value.cards;
+        if(typeof row.value.floor === 'number') pack.floor = row.value.floor;
+        if(typeof row.value.guarantee === 'number') pack.guarantee = row.value.guarantee;
+      }
+    });
+  }catch(e){ /* any failure -- keep the built-in defaults, game still works */ }
+}
 
 /* ---------------- state ---------------- */
 const S = {
-  coins: 5000, shards: 0, packs: 3, owned: {}, itemsOwned: {}, inventory: {},
-  dex: [], items: [], ready: false, wins: 0, losses: 0, level: 1, xp: 0, tier: 'bronze',
-  starterGranted: false, founderBonusClaimed: false
+  coins: 500, shards: 0, packs: 3, owned: {}, itemsOwned: {}, inventory: {},
+  dex: [], items: [], ready: false, wins: 0, losses: 0, level: 1, xp: 0, tier: 'bronze'
 };
 const SAVE = 'duck_tcg_save_v1';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 function snapshot(){
-  return {coins:S.coins, shards:S.shards||0, pity:S.pity||{p4:0,p5:0},
+  return {coins:S.coins, shards:S.shards||0, pity:S.pity||0,
           luckTier:S.luckTier||0, luckExtra:S.luckExtra||0, luckFloor:S.luckFloor||0,
           luckBoost:S.luckBoost||0, packs:S.packs, owned:S.owned, itemsOwned:S.itemsOwned||{},
           inventory:S.inventory||{}, wins:S.wins, losses:S.losses,
-          level:S.level||1, xp:S.xp||0, tier:S.tier||'bronze', ach:S.ach||{}, achievements:S.ach||{}, streak:S.streak||0, lastLogin:S.lastLogin||'',
-          starterGranted:!!S.starterGranted, founderBonusClaimed:!!S.founderBonusClaimed};
+          level:S.level||1, xp:S.xp||0, tier:S.tier||'bronze'};
 }
 function applyState(r){
   if(!r) return;
-  S.coins=r.coins??5000; S.shards=r.shards||0;
-  S.pity=(r.pity && typeof r.pity==='object') ? {p4:r.pity.p4||0, p5:r.pity.p5||0} : {p4:0,p5:0};
+  S.coins=r.coins??500; S.shards=r.shards||0; S.pity=r.pity||0;
   S.luckTier=r.luckTier||0; S.luckExtra=r.luckExtra||0; S.luckFloor=r.luckFloor||0;
   S.luckBoost=r.luckBoost||0; S.packs=r.packs??3; S.owned=r.owned||{};
   S.itemsOwned=r.itemsOwned||{}; S.inventory=r.inventory||{};
   S.wins=r.wins||0; S.losses=r.losses||0;
   S.level=r.level||1; S.xp=r.xp||0; S.tier=r.tier||'bronze';
-  S.ach=r.ach||{}; S.streak=r.streak||0; S.lastLogin=r.lastLogin||'';
-  S.starterGranted=!!r.starterGranted; S.founderBonusClaimed=!!r.founderBonusClaimed;
 }
 function save(){
   if(window.DuckSave && window.DuckSave.ready){ window.DuckSave.save(snapshot()); }
@@ -1654,21 +1574,14 @@ function buildCard(d,big){
   const wrap=document.createElement('div');
   wrap.className='dwrap';
   if(big) wrap.style.width='min(84vw,360px)';
-  const artSrc = d.isItem ? ('cards/items/'+d.art) : (ovrUrl(d.name)||('cards/ducks/'+d.hero));
-  const statsRow = d.isItem
-    ? `<span class="holotext" style="font-size:.72em;line-height:1.3">${d.text||d.effect||''}</span>`
-    : `<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span>`;
-  const moveRow = d.isItem
-    ? `<b class="holotext">${d.icon||'🧪'} ${d.familyLabel||d.family||'ITEM'}</b><span class="holotext">${d.effect&&d.effect!==d.text?d.effect:''}</span>`
-    : `<b class="holotext">${d.icon} ${d.badge}</b><span class="holotext">${d.move}</span>`;
   wrap.innerHTML=
     `<div class="dscene ${pr}" style="--foil:${foil};--fw:${fw}px;--neon:${neon}px;--shim:${shim}s;--gcol:${d.glow};--wash:${F.wash};--pat:${F.patt};--patsize:${F.size}px;--o1:${o1};--o2:${o2};--o3:${o3};--ocyc:${d.cycle||4.2}s;--edge:${edge};--t1:${t1};--t2:${t2};--t3:${t3}">`+
       `<div class="dcard">`+
-        `<div class="dart"><img loading="lazy" src="${artSrc}" alt="${d.name}">${EDGE}</div>`+
+        `<div class="dart"><img loading="lazy" src="${ovrUrl(d.name)||('cards/ducks/'+d.hero)}" alt="${d.name}">${EDGE}</div>`+
         `<div class="dname foilzone">${L}<span class="holotext">${d.name}</span></div>`+
-        `<div class="dstats foilzone">${L}${statsRow}</div>`+
+        `<div class="dstats foilzone">${L}<span class="holotext">ATK ${d.atk}</span><span class="holotext">DEF ${d.def}</span><span class="holotext">SPD ${d.spd}</span></div>`+
         `<div class="dstars foilzone">${L}<span class="holotext">${stars}</span></div>`+
-        `<div class="dmove foilzone">${L}${moveRow}</div>`+
+        `<div class="dmove foilzone">${L}<b class="holotext">${d.icon} ${d.badge}</b><span class="holotext">${d.move}</span></div>`+
         `<div class="dframe"></div>`+
       `</div>`+
     `</div>`;
@@ -1677,25 +1590,21 @@ function buildCard(d,big){
 }
 
 /* ---------------- data ---------------- */
-async function fetchJSONResilient(relPath){
-  // same-origin first; if the host's CDN/proxy chokes on this file (seen happening
-  // for the larger manifests on the custom domain), fall back to jsDelivr's GitHub mirror
-  try{
-    const r = await fetch(relPath+'?t='+Date.now());
-    if(r.ok) return await r.json();
-  }catch(e){}
-  try{
-    const r2 = await fetch('https://cdn.jsdelivr.net/gh/curiousstitches/rubber-duck-tcg@master/public/'+relPath+'?t='+Date.now());
-    if(r2.ok) return await r2.json();
-  }catch(e){}
-  return null;
-}
 async function loadDex(){
-  const j = await fetchJSONResilient('cards/ducks/manifest.json');
-  S.dex = j ? (j.ducks||[]).filter(d=>d.hero) : [];
-  const ji = await fetchJSONResilient('cards/items/items.json');
-  S.items = ji ? (ji.items||[]) : [];
-  VAR = await fetchJSONResilient('cards/ducks/variants.json');
+  try{
+    const r=await fetch('cards/ducks/manifest.json?t='+Date.now());
+    const j=await r.json();
+    S.dex=(j.ducks||[]).filter(d=>d.hero);
+  }catch(e){ S.dex=[]; }
+  try{
+    const ri=await fetch('cards/items/items.json?t='+Date.now());
+    const ji=await ri.json();
+    S.items=(ji.items||[]);
+  }catch(e){ S.items=[]; }
+  try{
+    const rv=await fetch('cards/ducks/variants.json?t='+Date.now());
+    VAR=await rv.json();
+  }catch(e){ VAR=null; }
   S.ready=true;
   if(!S.dex.length){
     $('#v-rip').innerHTML='<div class="empty"><b>No ducks found yet</b>'+
@@ -1707,34 +1616,6 @@ const byName=n=>S.dex.find(d=>d.name===n);
 
 /* weighted pull: rares are rare */
 const WEIGHT={1:46,2:27,3:16,4:8,5:3};
-
-/* pick a card whose rarity falls in [min,max], still weighted so the rarer
-   end of the band stays rarer — used by starter packs and the founder pack,
-   which need a guaranteed band/star instead of the usual difficulty odds() */
-function pullBand(min, max){
-  if(!S.dex.length) return null;
-  const band = S.dex.filter(d => d.rarity >= min && d.rarity <= max);
-  const pool = band.length ? band : S.dex;
-  const weighted = pool.map(d => [d, WEIGHT[d.rarity] || 10]);
-  const total = weighted.reduce((a,[,w]) => a + w, 0);
-  let n = Math.random() * total;
-  for(const [d,w] of weighted){ n -= w; if(n <= 0) return d; }
-  return pool[0];
-}
-
-/* same idea, but rolls a real item (from S.items) instead of a duck — used
-   to put a low-value item card in every pack rip */
-function pullItemBand(min, max){
-  if(!S.items || !S.items.length) return null;
-  const band = S.items.filter(it => it.rarity >= min && it.rarity <= max);
-  const pool = band.length ? band : S.items;
-  const weighted = pool.map(it => [it, WEIGHT[it.rarity] || 10]);
-  const total = weighted.reduce((a,[,w]) => a + w, 0);
-  let n = Math.random() * total;
-  for(const [it,w] of weighted){ n -= w; if(n <= 0) return it; }
-  return pool[0];
-}
-
 function pull(floor){
   const O = odds();
   // pick a rarity band from the difficulty table, then a card inside it
@@ -1775,15 +1656,10 @@ function paintPacks(){
   const row=$('#packRow'); row.innerHTML='';
   PACKS.forEach((p,i)=>{
     const el=document.createElement('div');
-    const locked = p.isDaily && (S.packs||0)<=0;
-    el.className='ptile'+(p.id===CHOSEN.id?' on':'')+(locked?' locked':'');
-    if(locked) el.style.opacity='.45';
-    const costLabel = p.isDaily ? `FREE · x${S.packs||0}` : `${priceOf(p)} 💩`;
+    el.className='ptile'+(p.id===CHOSEN.id?' on':'');
     el.innerHTML=`<span class="pf">${p.face}</span><div class="pn">${p.name}</div>`+
-                 `<div class="pc">${costLabel}</div>`;
-    el.onclick=()=>{
-      if(locked){ toast('No daily packs left — come back tomorrow'); return; }
-      SND.tap(); CHOSEN=p; paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad();
+                 `<div class="pc">${p.cost} 💩</div>`;
+    el.onclick=()=>{ SND.tap(); CHOSEN=p; paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad();
 $('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
 $('#pfBuild').onclick=()=>{ grabProfile(); toast('Player card updated'); SND.coin(); };
 $('#acctBtn').addEventListener('click',()=>{},{once:true}); };
@@ -1800,32 +1676,13 @@ function dressPack(){
   face.className='face'+(p.face.indexOf('★')>=0?' stars':'');
   $('#packTitle').textContent='GETTING DUCKED';
   $('#packSub').textContent=p.name+' PACK';
-
-  const addonBox=$('#itemAddonBox');
-  if(p.id==='single'){
-    addonBox.style.display='block';
-    $('#itemAddonCost').textContent=ITEM_ADDON_COST;
-    const chk=$('#itemAddonChk');
-    chk.checked=INCLUDE_ITEM;
-    chk.onchange=()=>{ INCLUDE_ITEM=chk.checked; dressPack(); };
-  } else {
-    addonBox.style.display='none';
-  }
-  const addon=(p.id==='single' && INCLUDE_ITEM) ? ITEM_ADDON_COST : 0;
-  const cost = p.isDaily ? 0 : (priceOf(p) + addon);
-  $('#ripCost').textContent = p.isDaily ? 'FREE' : cost;
-
+  $('#ripCost').textContent=p.cost;
   const extras=[];
   if(S.luckTier>0) extras.push('🍀 tier boost');
   if(S.luckFloor)  extras.push('✨ 4★ guaranteed');
   if(S.luckExtra>0)extras.push('+1 card');
   if((S.inventory&&S.inventory.reroll)>0) extras.push('🎲 '+S.inventory.reroll+' rerolls');
-  if(!S.pity || typeof S.pity!=='object') S.pity={p4:0,p5:0};
-  const p4left = Math.max(0, PITY_4_AT - (S.pity.p4||0));
-  const p5left = Math.max(0, PITY_5_AT - (S.pity.p5||0));
-  const pityTxt = `🎯 ${p4left} to guaranteed 4★+ · 👑 ${p5left} to guaranteed 5★`;
-  const line = extras.length ? extras.join(' · ') + ' · ' + pityTxt : p.blurb + ' · ' + pityTxt;
-  $('#ripHint').textContent = line;
+  $('#ripHint').textContent = extras.length ? extras.join(' · ') : p.blurb;
   pk.style.setProperty('--tear','0%');
 }
 
@@ -1870,86 +1727,54 @@ function sparkBurst(n, colors){
 }
 
 let queue=[], qi=0;
-/* pity: after enough duds without a rare, one is guaranteed. Two independent
-   tracks — a 4★+ pity that fires reasonably often, and a much longer 5★-only
-   pity so legendaries stay a real long-haul goal. */
-const PITY_4_AT = 15;
-const PITY_5_AT = 40;
-function bumpPity(rarity){
-  if(!S.pity || typeof S.pity!=='object') S.pity={p4:0,p5:0};
-  S.pity.p4 = (rarity>=4) ? 0 : (S.pity.p4||0)+1;
-  S.pity.p5 = (rarity>=5) ? 0 : (S.pity.p5||0)+1;
+/* pity: after enough duds you're guaranteed something good */
+const PITY_AT = 12;
+function bumpPity(gotGood){
+  S.pity = gotGood ? 0 : (S.pity||0)+1;
 }
 function doRip(){ ripPack(true); }
 
 function ripPack(alreadyTorn){
   if(!S.dex.length){ toast('No cards painted yet'); return; }
   const p=CHOSEN;
-  const addon = (p.id==='single' && INCLUDE_ITEM) ? ITEM_ADDON_COST : 0;
-  const cost = p.isDaily ? 0 : (priceOf(p) + addon);
-  if(p.isDaily){
-    if((S.packs||0) <= 0){ toast('No daily packs left — come back tomorrow'); return; }
-  } else if(S.coins < cost){
-    toast(`Need ${cost} droppings for that pack`); return;
-  }
-  if(p.isDaily){ S.packs--; } else { S.coins -= cost; }
-  purse(); save(); SND.rip();
+  if(S.coins < p.cost){ toast(`Need ${p.cost} droppings for that pack`); return; }
+  S.coins -= p.cost; purse(); save(); SND.rip();
 
   const pk=$('#pack');
   pk.classList.add('torn');
   $('#flashbang').classList.add('go');
-  const tearFx = cost>=3000 ? 90 : cost>=1200 ? 65 : 46;
-  sparkBurst(tearFx, ['#00fff2','#ff43e0','#ffd83d','#3dff9e','#ffffff']);
-  shake(cost>=1200);
+  sparkBurst(46, ['#00fff2','#ff43e0','#ffd83d','#3dff9e','#ffffff']);
+  shake(false);
 
   queue=[];
   for(let i=0;i<p.cards;i++){
-    const d = p.isDaily ? pullBand(1,2) : pull(p.floor);
+    const d = pull(p.floor);
     const v = rollVariant(d.name);
     queue.push(v ? Object.assign({}, d, {variant:v, hero:heroFor(d.name,v)}) : d);
   }
-  if(!p.isDaily && p.guarantee>0 && !queue.some(d=>d.rarity>=p.guarantee)){
+  if(p.guarantee>0 && !queue.some(d=>d.rarity>=p.guarantee)){
     const good=S.dex.filter(d=>d.rarity>=p.guarantee);
     if(good.length) queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
   }
-  // pity kicks in — legendary pity checked first since it's the rarer, bigger payoff.
-  // Daily packs are exempt: they're a free, capped 1-2★ freebie and never pull pity.
-  if(!S.pity || typeof S.pity!=='object') S.pity={p4:0,p5:0};
-  if(p.isDaily){
-    // still counts as "dud" progress toward pity, same as any low-rarity pull would
-  } else if((S.pity.p5||0) >= PITY_5_AT && !queue.some(d=>d.rarity>=5)){
-    const good=S.dex.filter(d=>d.rarity>=5);
-    if(good.length){
-      queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
-      S.pity.p5=0; S.pity.p4=0;
-      setTimeout(()=>toast('👑 Legendary pity — a 5★ was owed to you'),1200);
-    }
-  } else if((S.pity.p4||0) >= PITY_4_AT && !queue.some(d=>d.rarity>=4)){
+  // pity kicks in
+  if((S.pity||0) >= PITY_AT && !queue.some(d=>d.rarity>=4)){
     const good=S.dex.filter(d=>d.rarity>=4);
     if(good.length){
       queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
-      S.pity.p4=0;
-      setTimeout(()=>toast('🎯 Pity bonus — a rare was owed to you'),1200);
+      S.pity=0;
+      setTimeout(()=>toast('Pity bonus — a rare was owed to you'),1200);
     }
   }
-  // spend any pack-luck charms — reserved for paid packs, not the free daily one
-  if(!p.isDaily){
-    if(S.luckExtra>0){ queue.push(pull(p.floor)); S.luckExtra--; toast('Bonus card from your charm'); }
-    if(S.luckFloor){
-      const band=S.dex.filter(d=>d.rarity>=S.luckFloor);
-      if(band.length) queue[0]=band[Math.floor(Math.random()*band.length)];
-      S.luckFloor=0; toast('Golden Touch delivered');
-    }
-    if(S.luckTier>0){ S.luckTier--; }
-    if(S.luckBoost>0){ S.luckBoost=0; }
+  // spend any pack-luck charms
+  if(S.luckExtra>0){ queue.push(pull(p.floor)); S.luckExtra--; toast('Bonus card from your charm'); }
+  if(S.luckFloor){ 
+    const band=S.dex.filter(d=>d.rarity>=S.luckFloor);
+    if(band.length) queue[0]=band[Math.floor(Math.random()*band.length)];
+    S.luckFloor=0; toast('Golden Touch delivered');
   }
-  queue.forEach(d=>bumpPity(d.rarity));
-  // every pack except SINGLE includes a low-value item card at no extra cost;
-  // SINGLE only includes one if the player opted into the add-on
-  if(p.id!=='single' || INCLUDE_ITEM){
-    const it = pullItemBand(1,2);
-    if(it) queue.push(Object.assign({}, it, {isItem:true}));
-  }
+  if(S.luckTier>0){ S.luckTier--; }
+  if(S.luckBoost>0){ S.luckBoost=0; }
+  queue.forEach(d=>bumpPity(d.rarity>=4));
   qi=0;
   setTimeout(()=>{
     pk.classList.remove('torn');
@@ -1968,8 +1793,7 @@ function showNext(){
     return;
   }
   const d=queue[qi];
-  if(d.isItem){ S.itemsOwned[d.name] = (S.itemsOwned[d.name]||0)+1; }
-  else { S.owned[ownKey(d.name,d.variant)] = (S.owned[ownKey(d.name,d.variant)]||0)+1; }
+  S.owned[ownKey(d.name,d.variant)] = (S.owned[ownKey(d.name,d.variant)]||0)+1;
   const slot=$('#revealSlot'); slot.innerHTML='';
   const c=buildCard(d,true); c.classList.add('enter'); slot.appendChild(c);
   $('#rvCount').textContent=`CARD ${qi+1} OF ${queue.length}`;
@@ -2152,15 +1976,6 @@ function grantRandom(rarity){
   $('#viewer').classList.add('on');
   return d;
 }
-function grantRandomItem(rarity){
-  const band = (S.items||[]).filter(it => it.rarity === rarity);
-  if(!band.length){ toast('No items of that rarity yet'); return null; }
-  const it = band[Math.floor(Math.random()*band.length)];
-  S.itemsOwned[it.name] = (S.itemsOwned[it.name]||0)+1;
-  const s = $('#viewSlot'); s.innerHTML=''; s.appendChild(buildCard(Object.assign({},it,{isItem:true}),true));
-  $('#viewer').classList.add('on');
-  return it;
-}
 function renderStore(){
   if(!S.dex.length) return;
   const st = shopStock();
@@ -2208,8 +2023,10 @@ function renderStore(){
       `<b>${'★'.repeat(r)} item</b><span>A random ${r}-star item card.</span>`+
       `<div class="price">${price.toLocaleString()} 💩</div>`+
       `<button ${S.coins<price?'disabled':''}>Buy</button>`;
-    el.querySelector('button').onclick = () =>
-      buyCoins(price, `${'★'.repeat(r)} item claimed`, () => grantRandomItem(r));
+    el.querySelector('button').onclick = () => buyCoins(price, `${'★'.repeat(r)} item claimed`, () => {
+      const key = 'item'+r+'_'+Date.now();
+      S.itemsOwned[key] = (S.itemsOwned[key]||0)+1;
+    });
     is.appendChild(el);
   });
 
@@ -2410,20 +2227,6 @@ function grabProfile(){
 /* ---------------- leaderboard ---------------- */
 const FAKE=['Pondmaster','Quillfeather','Mallard Prime','Static Wren','Duke Driftwood',
  'Nebula Nine','Ashfoot','Silt & Silver','Grebe','Halcyon','Tidewalker','Bittern'];
-let REAL_BOARD = null;
-let _lbLoading=false;
-async function loadRealBoard(){
-  if(_lbLoading) return; _lbLoading=true;
-  try{
-    const sb = (typeof getDuckClient==='function') ? getDuckClient() : null;
-    if(!sb) return;
-    const { data, error } = await sb.from('players').select('handle,wins,losses,career_tier').order('wins',{ascending:false}).limit(15);
-    if(!error && data && data.length){
-      REAL_BOARD = data.filter(p=>(p.wins||0)>0).map(p=>({ name:p.handle||'Player', wins:p.wins||0, losses:p.losses||0, cards:0, legends:0, av:'🦆', me:false }));
-      renderBoard();
-    }
-  }catch(e){}
-}
 function fakeBoard(){
   return FAKE.map((n,i)=>({
     name:n, wins: 640 - i*47 - (i*i*2), cards: 700 - i*38, legends: 24 - i,
@@ -2432,7 +2235,7 @@ function fakeBoard(){
 }
 let LB='rank';
 function renderBoard(){
-  const rows=(REAL_BOARD&&REAL_BOARD.length)?REAL_BOARD:fakeBoard();
+  const rows=fakeBoard();
   const me={ name:(PROF.name||(window.DuckSave&&window.DuckSave.who?window.DuckSave.who():'You')),
              wins:S.wins, cards:Object.keys(S.owned||{}).filter(n=>S.owned[n]>0).length,
              legends:Object.keys(S.owned||{}).filter(n=>{const d=byName(n);return d&&d.rarity>=5;}).length,
@@ -2623,7 +2426,7 @@ $('#saveDeck').onclick=()=>{
 let NET=false;
 async function startOnline(){
   if(!window.DuckNet || !DuckNet.ready()){ toast('Accounts not set up yet'); return; }
-  if(!await DuckNet.signedIn()){ toast('Sign in to play online'); location.href='auth.html?next=game.html'; return; }
+  if(!await DuckNet.signedIn()){ toast('Sign in to play online'); location.href='auth.html'; return; }
   const deck=myPool().slice(0,45).map(c=>({name:c.name,hero:c.hero,art:c.art,
     atk:c.atk,def:c.def,spd:c.spd,rarity:c.rarity,theme:c.theme,isItem:!!c.isItem,
     icon:c.icon,value:c.value,behaviour:c.behaviour,effect:c.effect,
@@ -2652,45 +2455,28 @@ async function startOnline(){
 }
 
 /* ---------------- the arena ---------------- */
-const AI_MODES = [
+const MODES=[
+  {k:'online',   n:'ONLINE',    icon:'🌐', risk:false, note:'Live player vs player.'},
   {k:'ranked',   n:'RANKED',    icon:'🏆', risk:true,  note:'Cards on the line. Rank moves.'},
   {k:'unranked', n:'UNRANKED',  icon:'⚔️', risk:false, note:'Safe. Coins and the odd item.'},
   {k:'random',   n:'RANDOM',    icon:'🎲', risk:false, note:'Random opponent, safe stakes.'},
   {k:'norisk',   n:'NO RISK',   icon:'🕊️', risk:false, note:'Practice. Bragging rights only.'},
-  {k:'boss',    n:'WEEKLY BOSS', icon:'🐉', risk:false, note:'Tougher AI. Big payout.'},
 ];
-const ONLINE_MODES = [
-  {k:'online',   n:'ONLINE',    icon:'🌐', risk:false, note:'Live player vs player.'},
-];
-let modeTab = 'ai';
-let B = null;
+let B=null;
 function renderModes(){
-  const g = $('#modeGrid'); g.innerHTML = '';
-  const list = modeTab==='ai' ? AI_MODES : ONLINE_MODES;
-  list.forEach(m=>{
-    const el = document.createElement('div');
-    el.className = 'sitem';
-    const tag = m.k==='online' ? '👤 live player' : '🤖 AI opponent';
-    el.innerHTML = `<div class="si">${m.icon}</div><b>${m.n}</b><span>${m.note}</span>`+
-      `<div class="price">${tag}${m.risk?' ⚠️ cards at risk':''}</div><button>Enter</button>`;
-    el.querySelector('button').onclick = ()=>{
+  const g=$('#modeGrid'); g.innerHTML='';
+  MODES.forEach(m=>{
+    const el=document.createElement('div');
+    el.className='sitem';
+    el.innerHTML=`<div class="si">${m.icon}</div><b>${m.n}</b><span>${m.note}</span>`+
+      `<div class="price">${m.risk?'⚠️ cards at risk':'safe'}</div><button>Enter</button>`;
+    el.querySelector('button').onclick=()=>{
       if(m.k==='online') return startOnline();
       startArena(m);
     };
     g.appendChild(el);
   });
 }
-function wireModeTabs(){
-  const wrap = $('#modeTabs'); if(!wrap) return;
-  wrap.querySelectorAll('button').forEach(b=>{
-    b.onclick = ()=>{
-      modeTab = b.dataset.mt;
-      wrap.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
-      renderModes();
-    };
-  });
-}
-
 function myPool(){
   const pool=[];
   // your saved deck first
@@ -3287,13 +3073,8 @@ function finishArena(won){
   const m=B.mode;
   if(won){
     S.wins++; S.coins+=250; S.shards+=2; SND.win();
-    let bossBonus='';
-    if(m.k==='boss'){ S.coins+=750; S.shards+=8; bossBonus=' +750 💩 +8 💎 boss bonus'; }
-    logLine(`<span class="win">🏆 You win. +250 💩 +2 💎${bossBonus}</span>`);
+    logLine(`<span class="win">🏆 You win. +250 💩 +2 💎</span>`);
     if(m.risk){ showPrizes(); }
-    gainXP(m.k==='boss'?40:(m.k==='ranked'?25:15));
-    trackSeries(m.k, true);
-    checkAchievements();
   }else{
     S.losses++; SND.lose();
     logLine(`<span class="win">Defeat.</span>`);
@@ -3305,8 +3086,6 @@ function finishArena(won){
         logLine(`They take your weakest — <b>${lost}</b>.`);
       }
     }
-    gainXP(5);
-    trackSeries(m.k, false);
   }
   purse(); save(); renderAll(); paintPlayerCard(); renderBoard();
   logMatchLocal(m.k, won);
@@ -3319,99 +3098,6 @@ function finishArena(won){
   },wait);
   B=null;
 }
-
-function gainXP(n){
-  S.xp = (S.xp||0) + n;
-  const need = 100 + (S.level||1)*20;
-  while(S.xp >= need){ S.xp -= need; S.level = (S.level||1) + 1; toast(`⭐ Level up! Now level ${S.level}`); }
-  renderBattlePass();
-}
-let SERIES = {mode:null, w:0, l:0};
-function trackSeries(mode, won){
-  if(mode!=='ranked'){ SERIES = {mode:null,w:0,l:0}; return; }
-  if(SERIES.mode!=='ranked') SERIES = {mode:'ranked', w:0, l:0};
-  if(won) SERIES.w++; else SERIES.l++;
-  if(SERIES.w>=2 || SERIES.l>=2){
-    if(SERIES.w>=2){ S.coins+=300; S.shards+=3; toast('🏅 Series won! +300 💩 +3 💎'); }
-    else { toast('Series lost — next ranked win starts a fresh best-of-3.'); }
-    SERIES = {mode:null,w:0,l:0};
-  } else {
-    toast('Ranked series: ' + SERIES.w + '-' + SERIES.l);
-  }
-}
-const ACH = [
-  {id:'first_win', label:'First Victory', need:()=>S.wins>=1, coins:100, shards:1},
-  {id:'ten_wins', label:'10 Wins', need:()=>S.wins>=10, coins:500, shards:5},
-  {id:'fifty_wins', label:'50 Wins', need:()=>S.wins>=50, coins:2000, shards:20},
-  {id:'collector', label:'50 Cards Owned', need:()=>Object.keys(S.owned||{}).filter(n=>S.owned[n]>0).length>=50, coins:500, shards:5},
-  {id:'legendary', label:'Own a Legendary', need:()=>Object.keys(S.owned||{}).some(n=>S.owned[n]>0&&byName(n)&&byName(n).rarity>=5), coins:750, shards:8},
-  {id:'first_foil', label:'First Foil Fusion', need:()=>Object.keys(S.foil||{}).length>=1, coins:200, shards:2},
-];
-function checkAchievements(){
-  S.ach = S.ach || {};
-  let changed = false;
-  ACH.forEach(a=>{
-    if(!S.ach[a.id] && a.need()){
-      S.ach[a.id]=true; S.coins+=a.coins; S.shards+=a.shards;
-      toast(`🏆 Achievement: ${a.label}! +${a.coins} 💩 +${a.shards} 💎`);
-      changed = true;
-    }
-  });
-  if(changed){ purse(); }
-  renderAchievements();
-}
-function renderAchievements(){
-  const el = document.getElementById('achList'); if(!el) return;
-  S.ach = S.ach || {};
-  el.innerHTML = ACH.map(a=>{
-    const got = !!S.ach[a.id];
-    return `<div class="sitem" style="opacity:${got?1:.55}"><div class="si">${got?'🏆':'🔒'}</div><b>${a.label}</b><span>+${a.coins} 💩 +${a.shards} 💎</span></div>`;
-  }).join('');
-}
-function renderBattlePass(){
-  const lv = document.getElementById('bpLevel'); const bar = document.getElementById('bpBar'); const xt = document.getElementById('bpXpText');
-  if(!lv) return;
-  const need = 100 + (S.level||1)*20;
-  lv.textContent = S.level||1;
-  bar.style.width = Math.min(100, ((S.xp||0)/need)*100)+'%';
-  xt.textContent = (S.xp||0)+' / '+need+' XP';
-}
-function checkStreak(){
-  const sd0 = document.getElementById('streakDays'); if(sd0) sd0.textContent = S.streak||0;
-  const today = new Date().toISOString().slice(0,10);
-  const last = S.lastLogin;
-  if(last===today) return;
-  const y = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  S.streak = (last===y) ? (S.streak||0)+1 : 1;
-  S.lastLogin = today;
-  const reward = Math.min(20 + S.streak*10, 200);
-  S.coins += reward; S.shards += Math.min(1 + Math.floor(S.streak/3), 10);
-  const gotPack = (S.packs||0) < DAILY_PACK_CAP;
-  if(gotPack) S.packs = Math.min((S.packs||0)+1, DAILY_PACK_CAP);
-  toast(`🔥 Day ${S.streak} streak! +${reward} 💩${gotPack?' + 1 daily pack 🎁':''}`);
-  purse(); save();
-  if(typeof paintPacks==='function') paintPacks();
-  const chip = document.getElementById('streakDays'); if(chip) chip.textContent = S.streak;
-}
-function renderFusion(){
-  const el = document.getElementById('fuseGrid'); if(!el) return;
-  const names = Object.keys(S.owned||{}).filter(n=>S.owned[n]>=3);
-  el.innerHTML = names.length ? names.map(n=>{
-    const d = byName(n); if(!d) return '';
-    return `<div class="slot" data-r="${d.rarity}"><img loading="lazy" src="cards/ducks/${d.hero}" alt="${n}">`+
-      `<span class="qty">x${S.owned[n]}</span>`+
-      `<div class="cap"><span>${n}${S.foil&&S.foil[n]?' ✨x'+S.foil[n]:''}</span><button class="btn" data-fuse="${n}">Fuse x3</button></div></div>`;
-  }).join('') : '<p style="opacity:.6;padding:10px">Own 3+ copies of a card to fuse it into a Foil.</p>';
-  el.querySelectorAll('[data-fuse]').forEach(b=>{ b.onclick = ()=>doFuse(b.dataset.fuse); });
-}
-function doFuse(name){
-  if((S.owned[name]||0) < 3) return;
-  S.owned[name] -= 3;
-  S.foil = S.foil||{}; S.foil[name] = (S.foil[name]||0)+1;
-  S.coins += 150; S.shards += 2;
-  toast(`✨ Fused ${name} into a Foil! +150 💩 +2 💎`);
-  purse(); save(); renderCol(); renderFusion(); checkAchievements();
-}
 $('#leaveBattle').onclick=()=>{
   if(NET && window.DuckNet){ DuckNet.leave(); NET=false; }
   $('#battleLive').style.display='none';
@@ -3419,9 +3105,8 @@ $('#leaveBattle').onclick=()=>{
 };
 
 /* ---------------- wiring ---------------- */
-function renderAll(){ purse(); checkStreak(); paintPacks(); dressPack(); loadRealBoard(); renderCol(); renderOffers(); renderStore(); renderAchievements(); renderBattlePass(); renderFusion();
+function renderAll(){ purse(); renderCol(); renderOffers(); renderStore();
   if(typeof renderModes==='function') renderModes();
-  if(typeof wireModeTabs==='function') wireModeTabs();
   if(typeof paintPlayerCard==='function') paintPlayerCard();
   if(typeof renderBoard==='function') renderBoard();
   if(typeof renderHistory==='function') renderHistory();
@@ -3439,7 +3124,7 @@ $('#ripBtn').onclick=()=>ripPack();
 $('#rvNext').onclick=()=>{SND.tap();showNext();};
 $('#acctBtn').onclick=async function(){
   const who = window.DuckSave && window.DuckSave.who ? window.DuckSave.who() : null;
-  if(!who){ location.href='auth.html?next=game.html'; return; }
+  if(!who){ location.href='auth.html'; return; }
   if(confirm('Signed in as ' + who + '. Sign out?')){
     await window.DuckSave.save(snapshot(), true);
     await window.DuckSave.signOut();
@@ -3536,424 +3221,12 @@ paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad
 $('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
 $('#pfBuild').onclick=()=>{ grabProfile(); toast('Player card updated'); SND.coin(); };
 $('#acctBtn').addEventListener('click',()=>{},{once:true});
-/* ---------------- new-player onboarding ---------------- */
-// Starting bundle: every brand-new account gets enough to actually field a
-// legal 50-card deck (35 ducks + 15 items) — 5,000 droppings plus 5 free
-// packs (4 commons-only, 1 with a guaranteed 2-4★ card in every slot).
-const STARTER_COINS = 5000;
-const STARTER_PACK_PLAN = [
-  { count:4, cards:5, band:[1,1] },   // 4 packs — five 1★-only ducks each
-  { count:1, cards:5, band:[2,4] },   // 1 pack  — five ducks, each 2★-4★
-];
-// First 200 accounts ever created get an extra thank-you bonus on top.
-const FOUNDER_LIMIT = 200;
-const FOUNDER_BONUS_COINS = 5000;
-
-async function onboardNewPlayer(){
-  if(!S.dex.length) return false;
-  // NOTE: don't gate on S.lastLogin here — loadDex() already ran renderAll()
-  // -> checkStreak() once by the time we get here, which unconditionally
-  // stamps today's date onto S.lastLogin as its own (unrelated) side effect.
-  // starterGranted is the authoritative one-time flag; owned/wins/losses
-  // empty is the corroborating "this account has never actually played" check.
-  const untouched = !S.starterGranted &&
-                     Object.keys(S.owned||{}).length===0 &&
-                     Object.keys(S.itemsOwned||{}).length===0 &&
-                     !(S.wins>0) && !(S.losses>0);
-  if(!untouched) return false;
-
-  S.starterGranted = true;
-  S.coins = STARTER_COINS;
-
-  let starterCount = 0;
-  STARTER_PACK_PLAN.forEach(plan=>{
-    for(let p=0;p<plan.count;p++)
-      for(let i=0;i<plan.cards;i++){
-        const d = pullBand(plan.band[0], plan.band[1]);
-        if(d){ S.owned[d.name]=(S.owned[d.name]||0)+1; starterCount++; }
-      }
-  });
-
-  // save immediately (not debounced) so we can read back the DB-assigned
-  // signup_number the instant this account's row is first created
-  let signupNumber = null;
-  if(window.DuckSave && window.DuckSave.online){
-    try{
-      const res = await window.DuckSave.save(snapshot(), true);
-      if(res) signupNumber = res.signupNumber;
-    }catch(e){}
-  } else {
-    save();
-  }
-
-  renderAll();
-  toast(`🎁 Starter bundle: ${STARTER_COINS.toLocaleString()} 💩 + ${starterCount} cards added!`);
-
-  if(signupNumber && signupNumber <= FOUNDER_LIMIT && !S.founderBonusClaimed){
-    S.founderBonusClaimed = true;
-    S.coins += FOUNDER_BONUS_COINS;
-    const founderCards = [];
-    [2,3,4,5].forEach(r=>{
-      const d = pullBand(r,r);
-      if(d){ S.owned[d.name]=(S.owned[d.name]||0)+1; founderCards.push(d); }
-    });
-    save();
-    renderAll();
-    setTimeout(()=>showFounderModal(signupNumber, founderCards), 700);
-  } else {
-    save();
-  }
-  return true;
-}
-
-function showFounderModal(num, cards){
-  const old = document.getElementById('founderModal'); if(old) old.remove();
-  const wrap = document.createElement('div');
-  wrap.id = 'founderModal';
-  wrap.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(3,5,11,.86);'+
-    'display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)';
-  const cardsHtml = cards.map(d =>
-    `<div style="text-align:center;flex:1;min-width:0">`+
-      `<img src="cards/ducks/${d.hero}" alt="${d.name}" style="width:100%;aspect-ratio:5/7;object-fit:cover;border-radius:10px;border:1px solid #26305a">`+
-      `<div style="font-size:.7rem;margin-top:4px;color:#ffd166">${'★'.repeat(d.rarity)}</div>`+
-    `</div>`
-  ).join('');
-  wrap.innerHTML =
-    `<div style="max-width:420px;width:100%;background:rgba(20,27,51,.94);border:1px solid #26305a;`+
-    `border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7);`+
-    `font-family:'Outfit',system-ui,sans-serif;color:#eaeeff">`+
-      `<div style="font-size:2.6rem;margin-bottom:6px">🦆</div>`+
-      `<div style="font-family:'Chakra Petch',system-ui;font-size:1.25rem;text-transform:uppercase;`+
-        `letter-spacing:.03em;margin-bottom:8px">Welcome to `+
-        `<span style="background:linear-gradient(94deg,#00fff2,#ff43e0 52%,#ffd83d);`+
-        `-webkit-background-clip:text;background-clip:text;color:transparent">Getting Ducked</span></div>`+
-      `<div style="font-size:.95rem;color:#dfe4ff;margin-bottom:4px">You are player number `+
-        `<b style="color:#ffd83d">#${num}</b> to join.</div>`+
-      `<div style="font-size:.86rem;color:#8b95bd;margin-bottom:18px">Thank you for being here. Here's an extra bonus.</div>`+
-      `<div style="background:#141b33;border:1px solid #26305a;border-radius:14px;padding:14px;margin-bottom:18px">`+
-        `<div style="font:700 .74rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;`+
-          `color:#00fff2;margin-bottom:10px">Founder's Bonus</div>`+
-        `<div style="font-size:.9rem;margin-bottom:12px">+${FOUNDER_BONUS_COINS.toLocaleString()} 💩 Duck Droppings</div>`+
-        `<div style="display:flex;gap:8px">${cardsHtml}</div>`+
-      `</div>`+
-      `<button id="founderModalClose" style="width:100%;border:0;border-radius:14px;padding:15px;`+
-        `font:800 .92rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;color:#06070d;`+
-        `background:linear-gradient(96deg,#00fff2,#3dff9e 48%,#ffd83d);cursor:pointer">Let's play</button>`+
-    `</div>`;
-  document.body.appendChild(wrap);
-  document.getElementById('founderModalClose').onclick = () => wrap.remove();
-}
-
 (async function boot(){
   const info = await load();
+  await loadLivePrices();
   purse();
   await loadDex();
-  const onboarded = await onboardNewPlayer();
-  if(!onboarded && info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
+  if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
 </script>
-
-<!-- ==== Friend Challenges widget (self-contained, additive) ==== -->
-<div id="friendChalBtn" title="Challenge a friend" style="position:fixed;right:14px;bottom:90px;z-index:9000;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#00fff2,#ff43e0);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.5)">DUCK</div>
-<div id="friendChalBadge" style="position:fixed;right:10px;bottom:128px;z-index:9001;background:#ff3d5a;color:#fff;font:700 11px/1 sans-serif;padding:3px 6px;border-radius:10px;display:none">0</div>
-<div id="friendChalPanel" style="display:none;position:fixed;right:14px;bottom:150px;z-index:9000;width:280px;max-height:60vh;overflow:auto;background:#0c0f1b;border:1px solid #28325a;border-radius:14px;padding:14px;box-shadow:0 16px 46px rgba(0,0,0,.7);font-family:Outfit,sans-serif;color:#e8ecf5">
-  <h3 style="margin:0 0 8px;font-size:15px">Friend Challenges</h3>
-  <div style="display:flex;gap:6px;margin-bottom:10px">
-    <input id="fcHandle" placeholder="friend's handle" style="flex:1;min-width:0;background:#141a2e;border:1px solid #28325a;border-radius:8px;padding:8px;color:inherit">
-    <button id="fcSend" style="background:#00fff2;border:none;border-radius:8px;padding:8px 10px;font-weight:700;cursor:pointer">Send</button>
-  </div>
-  <div id="fcIncoming"></div>
-  <div id="fcSentNote" style="font-size:12px;opacity:.7;margin-top:6px"></div>
-</div>
-<script>
-(function(){
-  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  ready(function(){
-    var btn = document.getElementById('friendChalBtn');
-    var panel = document.getElementById('friendChalPanel');
-    var badge = document.getElementById('friendChalBadge');
-    var incomingEl = document.getElementById('fcIncoming');
-    var note = document.getElementById('fcSentNote');
-    var sendBtn = document.getElementById('fcSend');
-    if(!btn || !panel || !window.DuckNet) return;
-
-    function myState(){
-      try { return JSON.parse(localStorage.getItem('duck_tcg_save_v1')) || {}; } catch(e){ return {}; }
-    }
-    function myDeckAndHandle(){
-      var deck = [];
-      try { deck = JSON.parse(localStorage.getItem('duck_deck_v1')) || []; } catch(e){ deck = []; }
-      var handle = 'duck';
-      try {
-        if(window.DuckNet.me && window.DuckNet.me.user_metadata && window.DuckNet.me.user_metadata.full_name){
-          handle = window.DuckNet.me.user_metadata.full_name;
-        } else if(window.DuckNet.me && window.DuckNet.me.email){
-          handle = window.DuckNet.me.email.split('@')[0];
-        }
-      } catch(e){}
-      return { deck: deck, handle: handle };
-    }
-
-    btn.addEventListener('click', function(){
-      panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
-    });
-
-    if(sendBtn) sendBtn.addEventListener('click', async function(){
-      var input = document.getElementById('fcHandle');
-      var handle = input ? input.value.trim() : '';
-      if(!handle) return;
-      var me = myDeckAndHandle();
-      note.textContent = 'Sending...';
-      var res = await window.DuckNet.challengeFriend(handle, me.handle, me.deck);
-      note.textContent = res.error ? ('Error: ' + res.error) : ('Challenge sent to ' + handle + '!');
-    });
-
-    function renderIncoming(list){
-      if(!list || !list.length){ incomingEl.innerHTML = ''; badge.style.display='none'; return; }
-      badge.style.display = 'block';
-      badge.textContent = String(list.length);
-      var html = '';
-      for(var i=0;i<list.length;i++){
-        var c = list[i];
-        html += '<div style="border-top:1px solid #28325a;padding:8px 0">' +
-          '<div style="font-size:13px;margin-bottom:6px">' + c.challenger_handle + ' challenged you!</div>' +
-          '<button data-accept="' + c.id + '" style="background:#3dff9e;border:none;border-radius:6px;padding:5px 9px;font-weight:700;cursor:pointer;margin-right:6px">Accept</button>' +
-          '<button data-decline="' + c.id + '" style="background:#ff3d5a;border:none;border-radius:6px;padding:5px 9px;font-weight:700;color:#fff;cursor:pointer">Decline</button>' +
-          '</div>';
-      }
-      incomingEl.innerHTML = html;
-      var accBtns = incomingEl.querySelectorAll('[data-accept]');
-      for(var j=0;j<accBtns.length;j++){
-        accBtns[j].addEventListener('click', async function(ev){
-          var id = Number(ev.target.getAttribute('data-accept'));
-          var me = myDeckAndHandle();
-          var res = await window.DuckNet.acceptChallenge(id, me.deck);
-          note.textContent = res.error ? ('Error: ' + res.error) : 'Match ready! Open Battle to play.';
-          if(!res.error) panel.style.display = 'none';
-          refresh();
-        });
-      }
-      var decBtns = incomingEl.querySelectorAll('[data-decline]');
-      for(var k=0;k<decBtns.length;k++){
-        decBtns[k].addEventListener('click', async function(ev){
-          var id = Number(ev.target.getAttribute('data-decline'));
-          await window.DuckNet.declineChallenge(id);
-          refresh();
-        });
-      }
-    }
-
-    async function refresh(){
-      if(!window.DuckNet.signedIn) return;
-      var signedIn = await window.DuckNet.signedIn();
-      if(!signedIn) return;
-      var list = await window.DuckNet.myPendingChallenges();
-      renderIncoming(list);
-    }
-
-    refresh();
-    setInterval(refresh, 15000);
-
-    window.DuckNet.onChallengeAccepted = function(c){
-      note.textContent = (c.opponent_handle||'Your friend') + ' accepted! Open Battle to play.';
-    };
-
-    if(window.DuckNet.signedIn){
-      window.DuckNet.signedIn().then(function(ok){
-        if(ok && window.DuckNet.watchChallenges) window.DuckNet.watchChallenges(function(){ refresh(); });
-      });
-    }
-  });
-})();
-</script>
-
-<!-- ==== DECK_CLOUD_SYNC_V1: backs up the single active deck to Supabase and restores it on a fresh device ==== -->
-<script>
-(function(){
-  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  ready(function(){
-    if(!window.DuckSave) return;
-    var DECK_KEY = 'duck_deck_v1';
-    var lastPushed = null;
-
-    function waitForDuckSave(){
-      var tries = 0;
-      return new Promise(function(resolve){
-        (function poll(){
-          tries++;
-          if(window.DuckSave.ready || tries>20){ resolve(!!window.DuckSave.ready); return; }
-          setTimeout(poll, 300);
-        })();
-      });
-    }
-
-    async function seedFromCloudIfEmpty(){
-      if(!window.DuckSave.online) return;
-      var local = null;
-      try{ local = JSON.parse(localStorage.getItem(DECK_KEY)); }catch(e){}
-      if(local && local.length) return;
-      try {
-        var state = await window.DuckSave.load();
-        var decks = (state && state.decks) || [];
-        var active = null;
-        for(var i=0;i<decks.length;i++){ if(decks[i].is_active){ active = decks[i]; break; } }
-        if(!active && decks.length) active = decks[0];
-        if(active && active.cards && active.cards.length){
-          localStorage.setItem(DECK_KEY, JSON.stringify(active.cards));
-          lastPushed = JSON.stringify(active.cards);
-        }
-      } catch(e){}
-    }
-
-    function pushIfChanged(){
-      if(!window.DuckSave.online) return;
-      var raw = localStorage.getItem(DECK_KEY);
-      if(!raw || raw === lastPushed) return;
-      lastPushed = raw;
-      var cards;
-      try{ cards = JSON.parse(raw); }catch(e){ return; }
-      if(!cards || !cards.length) return;
-      window.DuckSave.saveDeck('active', cards, true).catch(function(){});
-    }
-
-    waitForDuckSave().then(function(ok){
-      if(!ok) return;
-      seedFromCloudIfEmpty();
-      setInterval(pushIfChanged, 5000);
-    });
-  });
-})();
-</script>
-
-<!-- ==== WEEKLY_BOSS_LOCK_V1: enforces the "weekly" in Weekly Boss for signed-in players (cloud-checked) ==== -->
-<script>
-(function(){
-  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-
-  function mondayStart(d){
-    d = new Date(d);
-    var day = d.getDay();
-    var diff = (day===0 ? -6 : 1-day);
-    d.setHours(0,0,0,0);
-    d.setDate(d.getDate()+diff);
-    return d;
-  }
-  function nextMonday(d){ var m = mondayStart(d); return new Date(m.getTime() + 7*24*60*60*1000); }
-  function fmtCountdown(ms){
-    if(ms<0) ms=0;
-    var h = Math.floor(ms/3600000);
-    var d = Math.floor(h/24); h = h%24;
-    var m = Math.floor((ms%3600000)/60000);
-    if(d>0) return d+'d '+h+'h';
-    if(h>0) return h+'h '+m+'m';
-    return m+'m';
-  }
-
-  function findBossCard(){
-    var heads = document.querySelectorAll('div,h2,h3,h4,span,b');
-    for(var i=0;i<heads.length;i++){
-      var el = heads[i];
-      if(el.children.length===0 && /weekly\s*boss/i.test(el.textContent||'')){
-        var card = el.closest('div');
-        // walk up until we find a container that also has a button inside (the mode card)
-        var hops = 0;
-        while(card && !card.querySelector('button') && hops<6){ card = card.parentElement; hops++; }
-        if(card && card.querySelector('button')) return card;
-      }
-    }
-    return null;
-  }
-
-  var lockedNote = null;
-
-  function applyLock(card, locked, resetAt){
-    var btn = card.querySelector('button');
-    if(!btn) return;
-    if(locked){
-      btn.dataset.weeklyLocked = '1';
-      btn.style.opacity = '0.45';
-      btn.style.filter = 'grayscale(1)';
-      btn.textContent = 'CLEARED';
-      card.style.opacity = '0.7';
-      if(!card.querySelector('.weeklyBossNote')){
-        var note = document.createElement('div');
-        note.className = 'weeklyBossNote';
-        note.style.cssText = 'font-size:11px;opacity:.8;margin-top:4px;color:#ffd83d';
-        note.textContent = 'Resets in ' + fmtCountdown(resetAt - Date.now());
-        card.appendChild(note);
-      } else {
-        card.querySelector('.weeklyBossNote').textContent = 'Resets in ' + fmtCountdown(resetAt - Date.now());
-      }
-    } else {
-      if(btn.dataset.weeklyLocked){
-        delete btn.dataset.weeklyLocked;
-        btn.style.opacity = '';
-        btn.style.filter = '';
-        btn.textContent = 'ENTER';
-        card.style.opacity = '';
-        var n = card.querySelector('.weeklyBossNote');
-        if(n) n.remove();
-      }
-    }
-  }
-
-  function armBlocker(card){
-    var btn = card.querySelector('button');
-    if(!btn || btn.dataset.weeklyBlockerArmed) return;
-    btn.dataset.weeklyBlockerArmed = '1';
-    btn.addEventListener('click', function(e){
-      if(btn.dataset.weeklyLocked){
-        e.preventDefault(); e.stopImmediatePropagation();
-        var t = document.getElementById('toast');
-        if(t){ t.textContent = 'Weekly Boss already cleared \u2014 check back next week!'; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); }, 2200); }
-      }
-    }, true);
-  }
-
-  async function checkAndApply(){
-    if(!window.DuckSave || !window.DuckSave.online || !window.DuckSave.sb || !window.DuckSave.user) return;
-    var card = findBossCard();
-    if(!card) return;
-    armBlocker(card);
-    try{
-      var monday = mondayStart(new Date()).toISOString();
-      var { data } = await window.DuckSave.sb.from('matches')
-        .select('id').eq('player_id', window.DuckSave.user.id)
-        .eq('mode','boss').eq('won', true).gte('played_at', monday).limit(1);
-      var locked = !!(data && data.length);
-      applyLock(card, locked, nextMonday(new Date()).getTime());
-    } catch(e){}
-  }
-
-  ready(function(){
-    setTimeout(checkAndApply, 1500);
-    setInterval(checkAndApply, 60000);
-  });
-})();
-</script>
-</body><script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
-}
-let __deferredInstall = null;
-window.addEventListener('beforeinstallprompt', (e)=>{
-  e.preventDefault();
-  __deferredInstall = e;
-  const btn = document.getElementById('pwaInstall');
-  if(btn) btn.style.display = 'flex';
-});
-document.addEventListener('DOMContentLoaded', ()=>{
-  const btn = document.getElementById('pwaInstall');
-  if(btn) btn.onclick = async ()=>{
-    if(!__deferredInstall) return;
-    __deferredInstall.prompt();
-    await __deferredInstall.userChoice;
-    __deferredInstall = null;
-    btn.style.display = 'none';
-  };
-});
-window.addEventListener('appinstalled', ()=>{
-  const btn = document.getElementById('pwaInstall'); if(btn) btn.style.display='none';
-});
-</script>
-</html>
+</body></html>
