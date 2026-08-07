@@ -2,12 +2,37 @@
 """
 fix_duck_art.py -- Getting Ducked art repair tool
 
-Regenerates broken Shiny/Evolved duck art using the exact same style
-system as hero art (duckdna.py + duckai.py). No fake "holographic/chrome"
-material is painted into the image -- that shine effect is drawn by the
-website itself over the card frame, never touching the artwork. Shiny is
-simply alternate-art (same duck, different pose). Evolved keeps its real
-content difference: upgraded gear and final battle form.
+What this does
+---------------
+408 ducks have a broken SHINY card (they all show the same recolored
+placeholder instead of unique art). 128 designed ducks have a broken
+EVOLVED card (2 recycled templates instead of unique art). This script
+regenerates every one of those 536 images using the same free Pollinations
+AI image service Studio already uses in your browser, and saves them
+straight into public/cards/ducks/ with the correct filename.
+
+Art style: this reuses duckdna.py and duckai.py from your duck-toolkit2
+folder -- the exact same weapon phrasing, element language, scene, and
+style tail used to generate every other card in the game -- so shiny and
+evolved cards match the rest of the collection instead of using their own
+separate look.
+
+Run it from inside your rubber-duck-tcg repo, then commit + push as usual
+-- or let it auto-commit for you (see --commit below).
+
+Usage
+-----
+    python3 scripts/fix_duck_art.py                 # fix everything (536 images)
+    python3 scripts/fix_duck_art.py --only shiny     # just the 408 broken shiny cards
+    python3 scripts/fix_duck_art.py --only evolved   # just the 128 broken evolved cards
+    python3 scripts/fix_duck_art.py --limit 5        # test run: only first 5, no commit
+    python3 scripts/fix_duck_art.py --commit         # auto git add/commit/push when done
+    python3 scripts/fix_duck_art.py --dry-run        # print what it would do, fetch nothing
+    python3 scripts/fix_duck_art.py --reroll NAME --tag shiny --commit   # redo one dud
+
+Safe to stop (Ctrl+C) and re-run anytime -- already-fixed files are
+skipped, and skipped ones print as one compact line instead of spamming
+your terminal.
 """
 
 import argparse
@@ -59,9 +84,6 @@ def seed_for(name, tag):
 
 
 def shiny_prompt(name):
-    """Alternate-art version of the exact same duck -- same style, same
-    everything, just a different shot/angle so it's genuinely a new piece
-    of art rather than a duplicate. No special finish painted in."""
     d = duckdna.dna(name)
     weapon = duckai.WEAPON_ART.get(d["weapon"], "wielding a gleaming sword")
     other_shots = [s for s in duckdna.SHOTS if s != d["shot"]]
@@ -74,9 +96,6 @@ def shiny_prompt(name):
 
 
 def evolved_prompt(name):
-    """Same duck, genuinely upgraded -- final battle form, better gear,
-    stronger elemental power. A real content change, still the same
-    style system as everything else."""
     d = duckdna.dna(name)
     weapon = duckai.WEAPON_ART.get(d["weapon"], "wielding a gleaming sword")
     return (f"a heroic battle rubber duck warrior named {name}, evolved into "
@@ -113,13 +132,15 @@ def fetch(url, dest, retries=3):
 
 
 def main():
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="Regenerate broken Shiny/Evolved duck art.")
     ap.add_argument("--only", choices=["shiny", "evolved"])
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--commit", action="store_true")
     ap.add_argument("--sleep", type=float, default=1.0)
+    ap.add_argument("--reroll", help="regenerate ONE duck with a fresh random variation")
+    ap.add_argument("--tag", choices=["shiny", "evolved"], default="shiny", help="which variant to reroll")
     args = ap.parse_args()
 
     root = find_repo_root()
@@ -128,6 +149,26 @@ def main():
         sys.exit(1)
     os.chdir(root)
     print(f"Repo root: {root}")
+
+    if args.reroll:
+        name = args.reroll
+        tag = args.tag
+        fname = f"{name}_{tag}.png"
+        dest = os.path.join(DUCKS_DIR, fname)
+        prompt_fn = shiny_prompt if tag == "shiny" else evolved_prompt
+        bump = int(time.time()) % 100000
+        seed = (seed_for(name, tag) + bump) % 900000 + 1
+        print(f"Rerolling {fname} with a fresh variation...")
+        ok = fetch(pollinations_url(prompt_fn(name), seed), dest)
+        if ok:
+            print(f"    saved ({os.path.getsize(dest)} bytes)")
+            if args.commit:
+                subprocess.run(["git", "add", dest], check=False)
+                subprocess.run(["git", "commit", "-m", f"Reroll {fname}"], check=False)
+                subprocess.run(["git", "push"], check=False)
+        else:
+            print("    FAILED -- try again")
+        return
 
     manifest = load_json(MANIFEST)
     variants = load_json(VARIANTS)
@@ -164,18 +205,23 @@ def main():
         return
 
     done, skipped, failed = 0, 0, 0
+    pending = 0
     for i, (name, tag, fname, prompt_fn) in enumerate(jobs, 1):
         if name not in ducks_by_name:
-            print(f"[{i}/{len(jobs)}] SKIP {fname} -- not found in manifest")
             skipped += 1
+            pending += 1
             continue
         dest = os.path.join(DUCKS_DIR, fname)
         if os.path.isfile(dest) and not args.force:
             size = os.path.getsize(dest)
             if size > 150_000:
-                print(f"[{i}/{len(jobs)}] SKIP {fname} -- already {size} bytes")
                 skipped += 1
+                pending += 1
                 continue
+
+        if pending:
+            print(f"(skipped {pending} already-fixed image(s))")
+            pending = 0
 
         prompt = prompt_fn(name)
         seed = seed_for(name, tag)
@@ -189,6 +235,9 @@ def main():
             failed += 1
             print(f"    FAILED after retries -- left untouched")
         time.sleep(args.sleep)
+
+    if pending:
+        print(f"(skipped {pending} already-fixed image(s) -- nothing left to do)")
 
     print(f"\nDone. {done} saved, {skipped} skipped, {failed} failed.")
 
