@@ -143,6 +143,19 @@ h1 b{background-size:220% auto;animation:brandFlow 6s linear infinite}
     <button class="back" id="btnBack2">← Use a different email</button>
   </div>
 
+  <!-- ---------- STEP 5: banned ---------- -->
+  <div class="step" id="s-banned">
+    <div class="msg on err" id="banMsg"></div>
+    <div class="link">If you believe this is a mistake, contact support.</div>
+  </div>
+
+  <!-- ---------- STEP 6: must-accept warning ---------- -->
+  <div class="step" id="s-flag">
+    <label>A message from the team</label>
+    <div class="msg on info" id="flagMsg"></div>
+    <button class="btn" id="btnAckFlag">I understand, continue</button>
+  </div>
+
   <div class="link" id="foot"></div>
 </div>
 
@@ -190,7 +203,6 @@ function busy(btn, on, label){
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   $('#foot').innerHTML = '<a href="game.html">Play without an account →</a>';
 
-  // already signed in? go straight through (staff get routed to the chooser)
   sb.auth.getSession().then(({data}) => {
     if(data.session) redirectAfterLogin();
   });
@@ -199,15 +211,49 @@ function busy(btn, on, label){
 async function redirectAfterLogin(){
   try{
     const { data: { user } } = await sb.auth.getUser();
-    if(user){
-      const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
-      if(staffRow){ location.href = 'staff.html'; return; }
+    if(!user){ location.href = 'game.html'; return; }
+
+    const { data: status, error } = await sb.rpc('check_login_status', { target_player: user.id });
+    if(error) throw error;
+
+    if(status.banned){
+      const until = status.ban_expires ? new Date(status.ban_expires).toLocaleString() : 'until further notice';
+      $('#banMsg').innerHTML = `<b>Your account is suspended.</b><br>Reason: ${status.ban_reason || 'Not specified'}<br>Duration: ${until}`;
+      step('banned');
+      await sb.auth.signOut();
+      return;
     }
+
+    if(status.pending_flags && status.pending_flags.length){
+      showFlag(status.pending_flags, 0);
+      return;
+    }
+
+    const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
+    if(staffRow){ location.href = 'staff.html'; return; }
   }catch(e){ /* fall through to game if the check fails */ }
   location.href = 'game.html';
 }
 
-/* ---------- step 1: does this email exist? ---------- */
+function showFlag(flags, i){
+  if(i >= flags.length){ finishAfterFlags(); return; }
+  $('#flagMsg').textContent = flags[i].message;
+  step('flag');
+  $('#btnAckFlag').onclick = async () => {
+    busy($('#btnAckFlag'), true, 'Continuing…');
+    try{ await sb.rpc('acknowledge_flag', { flag_id: flags[i].id }); }catch(e){}
+    busy($('#btnAckFlag'), false);
+    showFlag(flags, i + 1);
+  };
+}
+
+async function finishAfterFlags(){
+  const { data: { user } } = await sb.auth.getUser();
+  const { data: staffRow } = await sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
+  if(staffRow){ location.href = 'staff.html'; return; }
+  location.href = 'game.html';
+}
+
 $('#btnContinue').onclick = async () => {
   const email = $('#email').value.trim().toLowerCase();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg('That email doesn\'t look right.', 'err'); return; }
@@ -227,7 +273,6 @@ $('#btnContinue').onclick = async () => {
   busy($('#btnContinue'), false);
 };
 
-/* ---------- step 2: verify the code ---------- */
 $('#btnVerify').onclick = async () => {
   const token = $('#code').value.trim();
   if(token.length !== 6){ msg('Enter all six digits.', 'err'); return; }
@@ -257,7 +302,6 @@ $('#btnResend').onclick = async () => {
   busy($('#btnResend'), false);
 };
 
-/* ---------- step 3: set the password ---------- */
 $('#btnSetPass').onclick = async () => {
   const a = $('#np').value, b = $('#np2').value;
   if(a.length < 8){ msg('Password needs at least 8 characters.', 'err'); return; }
@@ -272,7 +316,6 @@ $('#btnSetPass').onclick = async () => {
   }catch(e){ msg(friendly(e), 'err'); busy($('#btnSetPass'), false); }
 };
 
-/* ---------- step 4: returning user ---------- */
 $('#btnLogin').onclick = async () => {
   busy($('#btnLogin'), true, 'Signing in…');
   try{
@@ -295,7 +338,6 @@ $('#btnForgot').onclick = async () => {
   busy($('#btnForgot'), false);
 };
 
-/* ---------- google ---------- */
 $('#btnGoogle').onclick = async () => {
   busy($('#btnGoogle'), true, 'Opening Google…');
   try{
@@ -307,7 +349,6 @@ $('#btnGoogle').onclick = async () => {
   }catch(e){ msg(friendly(e), 'err'); busy($('#btnGoogle'), false); }
 };
 
-/* ---------- misc ---------- */
 $('#btnBack1').onclick = () => { $('#sub').textContent='Sign in to save your collection'; step('email'); };
 $('#btnBack2').onclick = () => { $('#sub').textContent='Sign in to save your collection'; step('email'); };
 $('#code').addEventListener('input', e => {
