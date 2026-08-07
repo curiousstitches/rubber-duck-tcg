@@ -92,6 +92,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
     <div class="tab active" data-p="dash">Dashboard</div>
     <div class="tab" data-p="staff">Staff</div>
     <div class="tab" data-p="players">Players</div>
+    <div class="tab" data-p="moderation">Moderation</div>
     <div class="tab" data-p="suggestions">Suggestions</div>
     <div class="tab" data-p="broadcast">Broadcast</div>
     <div class="tab" data-p="log">Action Log</div>
@@ -99,6 +100,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
 
   <div class="wrap">
 
+    <!-- DASHBOARD -->
     <div class="panel on" id="p-dash">
       <div class="card">
         <h2>Live Pulse</h2>
@@ -111,6 +113,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
       </div>
     </div>
 
+    <!-- STAFF -->
     <div class="panel" id="p-staff">
       <div class="card">
         <h2>Add / Change Staff</h2>
@@ -130,14 +133,45 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
       </div>
     </div>
 
+    <!-- PLAYERS -->
     <div class="panel" id="p-players">
       <div class="card">
-        <h2>Player Lookup</h2>
-        <input id="playerSearch" placeholder="Search by handle…">
-        <div id="playerResults"><div class="empty">Search for a player above</div></div>
+        <h2>Players</h2>
+        <input id="playerSearch" placeholder="Search by handle… (leave blank to browse everyone)">
+        <label>Sort by</label>
+        <select id="playerSort">
+          <option value="newest">Newest signups first</option>
+          <option value="oldest">Oldest signups first</option>
+          <option value="az">Handle A → Z</option>
+          <option value="za">Handle Z → A</option>
+          <option value="level_high">Highest level first</option>
+          <option value="level_low">Lowest level first</option>
+          <option value="wins_high">Most wins first</option>
+          <option value="coins_high">Most coins first</option>
+        </select>
+        <div id="playerResults"><div class="empty">Loading…</div></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn ghost" id="btnLoadMore" style="display:none">Load 25 more</button>
+        </div>
       </div>
     </div>
 
+    <div class="panel" id="p-moderation">
+      <div class="card">
+        <h2>Active Bans</h2>
+        <div id="banList"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h2>Player Reports</h2>
+        <div id="reportList"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h2>Duplicate-Account Flags</h2>
+        <div id="dupList"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- SUGGESTIONS -->
     <div class="panel" id="p-suggestions">
       <div class="card">
         <h2>Player Suggestions</h2>
@@ -145,6 +179,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
       </div>
     </div>
 
+    <!-- BROADCAST -->
     <div class="panel" id="p-broadcast">
       <div class="card">
         <h2>Send a Message</h2>
@@ -166,6 +201,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
       </div>
     </div>
 
+    <!-- ACTION LOG -->
     <div class="panel" id="p-log">
       <div class="card">
         <h2>Recent Staff Actions</h2>
@@ -198,6 +234,7 @@ function timeAgo(iso){
   return Math.floor(s/86400) + 'd ago';
 }
 
+/* ---------- gate + boot ---------- */
 (async function(){
   if(typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL || SUPABASE_URL.includes('PASTE')){
     location.href = 'auth.html'; return;
@@ -219,15 +256,19 @@ function timeAgo(iso){
   loadLog();
 })();
 
+/* ---------- tabs ---------- */
 document.querySelectorAll('.tab').forEach(t => {
   t.onclick = () => {
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(x => x.classList.remove('on'));
     t.classList.add('active');
     $('#p-' + t.dataset.p).classList.add('on');
+    if(t.dataset.p === 'players' && !playerRowsSoFar.length) loadPlayers(true);
+    if(t.dataset.p === 'moderation') { loadBans(); loadReports(); loadDupFlags(); }
   };
 });
 
+/* ---------- dashboard ---------- */
 async function loadDashboard(){
   const [{count: players}, {count: staff}, {count: openSugg}, {count: matches}] = await Promise.all([
     sb.from('players').select('id', {count:'exact', head:true}),
@@ -239,6 +280,7 @@ async function loadDashboard(){
   document.querySelectorAll('#statGrid .n').forEach((el, i) => el.textContent = vals[i] ?? '–');
 }
 
+/* ---------- staff ---------- */
 async function loadStaff(){
   const { data, error } = await sb.from('staff').select('email, role, created_at').order('created_at', {ascending:false});
   const box = $('#staffList');
@@ -285,49 +327,242 @@ async function demote(email){
   loadStaff();
 }
 
+/* ---------- players ---------- */
+const SORTS = {
+  newest:     { column: 'created_at', ascending: false },
+  oldest:     { column: 'created_at', ascending: true  },
+  az:         { column: 'handle',     ascending: true  },
+  za:         { column: 'handle',     ascending: false },
+  level_high: { column: 'level',      ascending: false },
+  level_low:  { column: 'level',      ascending: true  },
+  wins_high:  { column: 'wins',       ascending: false },
+  coins_high: { column: 'coins',      ascending: false },
+};
+const PAGE_SIZE = 25;
+let playerOffset = 0;
+let playerRowsSoFar = [];
+
 let searchTimer = null;
 $('#playerSearch').addEventListener('input', e => {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => searchPlayers(e.target.value.trim()), 350);
+  searchTimer = setTimeout(() => loadPlayers(true), 350);
 });
+$('#playerSort').addEventListener('change', () => loadPlayers(true));
+$('#btnLoadMore').onclick = () => loadPlayers(false);
 
-async function searchPlayers(q){
+async function loadPlayers(reset){
   const box = $('#playerResults');
-  if(!q){ box.innerHTML = `<div class="empty">Search for a player above</div>`; return; }
-  box.innerHTML = `<div class="empty">Searching…</div>`;
-  const { data, error } = await sb.from('players').select('*').ilike('handle', `%${q}%`).limit(15);
-  if(error){ box.innerHTML = `<div class="empty">Search failed.</div>`; return; }
-  if(!data.length){ box.innerHTML = `<div class="empty">No players match "${esc(q)}".</div>`; return; }
-  box.innerHTML = data.map(p => `
+  const q = $('#playerSearch').value.trim();
+  const sort = SORTS[$('#playerSort').value] || SORTS.newest;
+
+  if(reset){ playerOffset = 0; playerRowsSoFar = []; box.innerHTML = `<div class="empty">Loading…</div>`; }
+
+  let query = sb.from('players').select('*').order(sort.column, { ascending: sort.ascending });
+  if(q) query = query.ilike('handle', `%${q}%`);
+  query = query.range(playerOffset, playerOffset + PAGE_SIZE - 1);
+
+  const { data, error } = await query;
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load players.</div>`; return; }
+
+  playerRowsSoFar = reset ? data : playerRowsSoFar.concat(data);
+  playerOffset += data.length;
+  $('#btnLoadMore').style.display = data.length === PAGE_SIZE ? 'block' : 'none';
+
+  if(!playerRowsSoFar.length){ box.innerHTML = `<div class="empty">No players found.</div>`; return; }
+
+  box.innerHTML = playerRowsSoFar.map(p => `
     <div class="list-item" id="p-row-${p.id}">
       <div class="top">
         <span class="name">${esc(p.handle)}</span>
         <span class="badge ${p.career_tier}">${p.career_tier}</span>
       </div>
-      <div class="muted">Lvl ${p.level} · ${p.wins}W-${p.losses}L · ${p.coins ?? 0} coins · ${p.shards ?? 0} shards · ${p.packs} packs</div>
+      <div class="muted">Lvl ${p.level} · ${p.wins}W-${p.losses}L · ${p.coins ?? 0} coins · ${p.shards ?? 0} shards · ${p.packs} packs · joined ${timeAgo(p.created_at)}</div>
       <div class="row" style="margin-top:8px">
         <button class="btn ghost" data-grant-packs="${p.id}">+3 packs</button>
         <button class="btn ghost" data-grant-currency="${p.id}">+500 coins</button>
+        <button class="btn ghost" data-mod-toggle="${p.id}">Moderate ▾</button>
       </div>
+      <div id="mod-${p.id}" style="display:none;margin-top:10px"></div>
     </div>
   `).join('');
   box.querySelectorAll('[data-grant-packs]').forEach(b => b.onclick = () => grantPacks(b.dataset.grantPacks));
   box.querySelectorAll('[data-grant-currency]').forEach(b => b.onclick = () => grantCurrency(b.dataset.grantCurrency));
+  box.querySelectorAll('[data-mod-toggle]').forEach(b => b.onclick = () => toggleModPanel(b.dataset.modToggle));
+}
+
+function toggleModPanel(playerId){
+  const box = $('#mod-' + playerId);
+  const opening = box.style.display === 'none';
+  box.style.display = opening ? 'block' : 'none';
+  if(opening && !box.dataset.loaded){
+    box.dataset.loaded = '1';
+    renderModPanel(playerId, box);
+  }
+}
+
+async function renderModPanel(playerId, box){
+  box.innerHTML = `<div class="empty">Loading…</div>`;
+  const { data: notes } = await sb.from('staff_notes').select('*').eq('player_id', playerId).order('created_at', {ascending:false});
+
+  box.innerHTML = `
+    <div class="card" style="margin-bottom:8px">
+      <label>Issue a warning (player must accept before playing again)</label>
+      <textarea id="flagText-${playerId}" placeholder="What are they being warned about?"></textarea>
+      <button class="btn ghost" data-send-flag="${playerId}">Send warning</button>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <label>Issue a ban</label>
+      <textarea id="banReason-${playerId}" placeholder="Reason for the ban…"></textarea>
+      <select id="banDuration-${playerId}">
+        <option value="24">24 hours</option>
+        <option value="72">3 days</option>
+        <option value="168">7 days</option>
+        <option value="720">30 days</option>
+        <option value="">Indefinite (until manually lifted)</option>
+      </select>
+      <button class="btn danger" data-send-ban="${playerId}">Ban player</button>
+    </div>
+    <div class="card">
+      <label>Staff notes (private, only staff can see these)</label>
+      <div id="notesList-${playerId}">
+        ${notes && notes.length ? notes.map(n => `
+          <div class="list-item"><div class="muted">${esc(n.staff_email)} · ${timeAgo(n.created_at)}</div>${esc(n.note)}</div>
+        `).join('') : '<div class="empty">No notes yet.</div>'}
+      </div>
+      <textarea id="noteText-${playerId}" placeholder="Add a note…" style="margin-top:8px"></textarea>
+      <button class="btn ghost" data-add-note="${playerId}">Add note</button>
+    </div>
+  `;
+  box.querySelector(`[data-send-flag="${playerId}"]`).onclick = () => sendFlag(playerId);
+  box.querySelector(`[data-send-ban="${playerId}"]`).onclick = () => sendBan(playerId);
+  box.querySelector(`[data-add-note="${playerId}"]`).onclick = () => addNote(playerId);
+}
+
+async function sendFlag(playerId){
+  const text = $('#flagText-' + playerId).value.trim();
+  if(!text) return;
+  const { error } = await sb.rpc('issue_flag', { target_player: playerId, warning_message: text });
+  if(error){ alert(error.message); return; }
+  $('#flagText-' + playerId).value = '';
+  alert('Warning sent — they\'ll see it next time they log in.');
+  loadLog();
+}
+
+async function sendBan(playerId){
+  const reason = $('#banReason-' + playerId).value.trim();
+  const durStr = $('#banDuration-' + playerId).value;
+  if(!reason){ alert('Enter a reason first.'); return; }
+  if(!confirm('Ban this player' + (durStr ? ` for ${durStr} hours` : ' indefinitely') + '?')) return;
+  const duration = durStr ? parseInt(durStr, 10) : null;
+  const { error } = await sb.rpc('issue_ban', { target_player: playerId, ban_reason: reason, duration_hours: duration });
+  if(error){ alert(error.message); return; }
+  $('#banReason-' + playerId).value = '';
+  alert('Player banned.');
+  loadLog();
+  loadBans();
+}
+
+async function addNote(playerId){
+  const text = $('#noteText-' + playerId).value.trim();
+  if(!text) return;
+  await sb.from('staff_notes').insert({ player_id: playerId, note: text, staff_id: ME.id, staff_email: ME.email });
+  $('#mod-' + playerId).dataset.loaded = '';
+  renderModPanel(playerId, $('#mod-' + playerId));
+}
+
+/* ---------- moderation tab ---------- */
+async function loadBans(){
+  const box = $('#banList');
+  const { data, error } = await sb.from('player_bans')
+    .select('*, players(handle)')
+    .eq('lifted', false)
+    .order('created_at', {ascending:false});
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load bans.</div>`; return; }
+  const active = (data || []).filter(b => !b.expires_at || new Date(b.expires_at) > new Date());
+  if(!active.length){ box.innerHTML = `<div class="empty">No active bans.</div>`; return; }
+  box.innerHTML = active.map(b => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(b.players?.handle || 'unknown')}</span>
+        <span class="muted">${b.expires_at ? 'until ' + new Date(b.expires_at).toLocaleDateString() : 'indefinite'}</span>
+      </div>
+      <div class="muted" style="margin:6px 0">${esc(b.reason)}</div>
+      <button class="btn ghost" data-lift="${b.id}">Lift ban</button>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-lift]').forEach(btn => btn.onclick = async () => {
+    if(!confirm('Lift this ban?')) return;
+    await sb.rpc('lift_ban', { ban_id: btn.dataset.lift });
+    loadBans();
+    loadLog();
+  });
+}
+
+async function loadReports(){
+  const box = $('#reportList');
+  const { data, error } = await sb.from('player_reports')
+    .select('*, reporter:reporter_id(handle), reported:reported_id(handle)')
+    .order('created_at', {ascending:false}).limit(50);
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load reports.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No reports yet.</div>`; return; }
+  box.innerHTML = data.map(r => `
+    <div class="list-item">
+      <div class="top">
+        <span class="name">${esc(r.reported?.handle || 'unknown')}</span>
+        <span class="badge ${r.status === 'new' ? 'new' : 'replied'}">${r.status}</span>
+      </div>
+      <div class="muted">Reported by ${esc(r.reporter?.handle || 'unknown')} · ${timeAgo(r.created_at)}</div>
+      <div class="muted" style="margin:6px 0">${esc(r.reason)}</div>
+      ${r.status === 'new' ? `<div class="row">
+        <button class="btn ghost" data-report-action="${r.id}" data-action="dismissed">Dismiss</button>
+        <button class="btn danger" data-report-action="${r.id}" data-action="actioned">Mark actioned</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-report-action]').forEach(b => b.onclick = async () => {
+    await sb.from('player_reports').update({
+      status: b.dataset.action, reviewed_by: ME.id, reviewed_at: new Date().toISOString()
+    }).eq('id', b.dataset.reportAction);
+    loadReports();
+  });
+}
+
+async function loadDupFlags(){
+  const box = $('#dupList');
+  const { data, error } = await sb.from('duplicate_flags')
+    .select('*, players(handle)').eq('status', 'open').order('created_at', {ascending:false});
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load flags.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No open duplicate-account flags.</div>`; return; }
+  box.innerHTML = data.map(d => `
+    <div class="list-item">
+      <div class="name">${esc(d.players?.handle || 'unknown')}</div>
+      <div class="muted" style="margin:6px 0">${esc(d.note)}</div>
+      <div class="row">
+        <button class="btn ghost" data-dup="${d.id}" data-status="cleared">Clear</button>
+        <button class="btn danger" data-dup="${d.id}" data-status="confirmed">Confirm</button>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-dup]').forEach(b => b.onclick = async () => {
+    await sb.from('duplicate_flags').update({ status: b.dataset.status }).eq('id', b.dataset.dup);
+    loadDupFlags();
+  });
 }
 
 async function grantPacks(playerId){
   const { data: p } = await sb.from('players').select('packs').eq('id', playerId).single();
   await sb.from('players').update({ packs: (p.packs || 0) + 3 }).eq('id', playerId);
   await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'grant_packs', target: playerId, detail: { amount: 3 } });
-  searchPlayers($('#playerSearch').value.trim());
+  loadPlayers(true);
 }
 async function grantCurrency(playerId){
   const { data: p } = await sb.from('players').select('coins').eq('id', playerId).single();
   await sb.from('players').update({ coins: (p.coins || 0) + 500 }).eq('id', playerId);
   await sb.from('staff_actions').insert({ actor_id: ME.id, actor_email: ME.email, action: 'grant_currency', target: playerId, detail: { amount: 500 } });
-  searchPlayers($('#playerSearch').value.trim());
+  loadPlayers(true);
 }
 
+/* ---------- suggestions ---------- */
 async function loadSuggestions(){
   const box = $('#suggList');
   const { data, error } = await sb.from('suggestions').select('*, players(handle)').order('created_at', {ascending:false}).limit(50);
@@ -360,6 +595,7 @@ async function replySuggestion(id){
   loadDashboard();
 }
 
+/* ---------- broadcast ---------- */
 $('#btnBroadcast').onclick = async () => {
   const target = $('#bcTarget').value;
   const subject = $('#bcSubject').value.trim();
@@ -375,6 +611,7 @@ $('#btnBroadcast').onclick = async () => {
   loadLog();
 };
 
+/* ---------- action log ---------- */
 async function loadLog(){
   const box = $('#logList');
   const { data, error } = await sb.from('staff_actions').select('*').order('created_at', {ascending:false}).limit(40);
