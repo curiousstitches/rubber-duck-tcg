@@ -13,12 +13,12 @@ straight into public/cards/ducks/ with the correct filename.
 
 Art style: this reuses duckdna.py and duckai.py from your duck-toolkit2
 folder -- the exact same weapon phrasing, element language, scene, and
-style tail used to generate every other card in the game -- so shiny and
-evolved cards match the rest of the collection instead of using their own
-separate look.
+style tail used to generate every other card in the game.
 
-Run it from inside your rubber-duck-tcg repo, then commit + push as usual
--- or let it auto-commit for you (see --commit below).
+Progress tracking: keeps a real log of exactly which images are done
+(scripts/.fix_duck_art_progress.json), instead of guessing from file
+size. Safe to stop (Ctrl+C) and restart anytime -- it picks up exactly
+where it left off.
 
 Usage
 -----
@@ -29,10 +29,6 @@ Usage
     python3 scripts/fix_duck_art.py --commit         # auto git add/commit/push when done
     python3 scripts/fix_duck_art.py --dry-run        # print what it would do, fetch nothing
     python3 scripts/fix_duck_art.py --reroll NAME --tag shiny --commit   # redo one dud
-
-Safe to stop (Ctrl+C) and re-run anytime -- already-fixed files are
-skipped, and skipped ones print as one compact line instead of spamming
-your terminal.
 """
 
 import argparse
@@ -48,6 +44,7 @@ import urllib.parse
 MANIFEST = "public/cards/ducks/manifest.json"
 VARIANTS = "public/cards/ducks/variants.json"
 DUCKS_DIR = "public/cards/ducks"
+PROGRESS_FILE = "scripts/.fix_duck_art_progress.json"
 POLLI = "https://image.pollinations.ai/prompt/"
 
 TOOLKIT = os.path.join(os.path.expanduser("~"), "duck-toolkit2")
@@ -76,6 +73,21 @@ def find_repo_root():
 def load_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def load_progress():
+    if os.path.isfile(PROGRESS_FILE):
+        try:
+            with open(PROGRESS_FILE) as f:
+                return set(json.load(f))
+        except Exception:
+            return set()
+    return set()
+
+
+def save_progress(done_set):
+    with open(PROGRESS_FILE, "w") as f:
+        json.dump(sorted(done_set), f)
 
 
 def seed_for(name, tag):
@@ -162,8 +174,11 @@ def main():
         ok = fetch(pollinations_url(prompt_fn(name), seed), dest)
         if ok:
             print(f"    saved ({os.path.getsize(dest)} bytes)")
+            progress = load_progress()
+            progress.add(f"{name}:{tag}")
+            save_progress(progress)
             if args.commit:
-                subprocess.run(["git", "add", dest], check=False)
+                subprocess.run(["git", "add", dest, PROGRESS_FILE], check=False)
                 subprocess.run(["git", "commit", "-m", f"Reroll {fname}"], check=False)
                 subprocess.run(["git", "push"], check=False)
         else:
@@ -204,6 +219,8 @@ def main():
             print(f"  ...and {len(jobs) - 10} more")
         return
 
+    progress = load_progress()
+
     done, skipped, failed = 0, 0, 0
     pending = 0
     for i, (name, tag, fname, prompt_fn) in enumerate(jobs, 1):
@@ -211,13 +228,11 @@ def main():
             skipped += 1
             pending += 1
             continue
-        dest = os.path.join(DUCKS_DIR, fname)
-        if os.path.isfile(dest) and not args.force:
-            size = os.path.getsize(dest)
-            if size > 150_000:
-                skipped += 1
-                pending += 1
-                continue
+        key = f"{name}:{tag}"
+        if key in progress and not args.force:
+            skipped += 1
+            pending += 1
+            continue
 
         if pending:
             print(f"(skipped {pending} already-fixed image(s))")
@@ -226,10 +241,13 @@ def main():
         prompt = prompt_fn(name)
         seed = seed_for(name, tag)
         url = pollinations_url(prompt, seed)
+        dest = os.path.join(DUCKS_DIR, fname)
         print(f"[{i}/{len(jobs)}] {fname} ...")
         ok = fetch(url, dest)
         if ok:
             done += 1
+            progress.add(key)
+            save_progress(progress)
             print(f"    saved ({os.path.getsize(dest)} bytes)")
         else:
             failed += 1
@@ -243,7 +261,7 @@ def main():
 
     if args.commit and done:
         print("\nCommitting...")
-        subprocess.run(["git", "add", DUCKS_DIR], check=False)
+        subprocess.run(["git", "add", DUCKS_DIR, PROGRESS_FILE], check=False)
         msg = f"Regenerate {done} broken Shiny/Evolved duck art files"
         r = subprocess.run(["git", "commit", "-m", msg], check=False)
         if r.returncode == 0:
