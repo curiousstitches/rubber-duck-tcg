@@ -186,6 +186,29 @@
 .dmove b{font:800 clamp(.66rem,3.2vw,.96rem)/1 system-ui,sans-serif}
 .dmove span{font:600 clamp(.6rem,2.9vw,.86rem)/1 system-ui,sans-serif}
 
+/* ---- rarity banner ribbon, 4-5 star cards only ---- */
+.rband{position:absolute;top:9%;left:-14%;width:48%;padding:4px 0;z-index:6;
+ transform:rotate(-40deg);text-align:center;pointer-events:none;
+ background:linear-gradient(100deg,var(--gcol,#ffd83d),#fff 50%,var(--gcol,#ffd83d));
+ background-size:220% 100%;
+ box-shadow:0 2px 12px rgba(0,0,0,.55);
+ font:800 .64rem 'Chakra Petch',system-ui,sans-serif;letter-spacing:.1em;color:#06070d;
+ text-transform:uppercase;
+ animation:rbandShine 2.4s linear infinite}
+@keyframes rbandShine{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+
+/* ---- staggered pop-in reveal ---- */
+@keyframes popIn{0%{opacity:0;transform:scale(.4) rotate(-6deg)}
+ 60%{opacity:1;transform:scale(1.12) rotate(1deg)}
+ 100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes artPopIn{0%{opacity:0;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+.dart.popin{animation:artPopIn .6s cubic-bezier(.2,1,.4,1) both}
+.dname.popin{animation:popIn .5s cubic-bezier(.2,1.4,.4,1) both}
+.dstats.popin{animation:popIn .5s cubic-bezier(.2,1.4,.4,1) .08s both}
+.dstars.popin{animation:popIn .5s cubic-bezier(.2,1.4,.4,1) .16s both}
+.dmove.popin{animation:popIn .5s cubic-bezier(.2,1.4,.4,1) .24s both}
+.rband.popin{animation:popIn .5s cubic-bezier(.2,1.4,.4,1) .3s both}
+
 
 :root{
   --void:#070a14; --deep:#0d1224; --panel:#141b33; --edge:#26305a;
