@@ -3,6 +3,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#070a14">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="game-version" content="ec0b2f6c8eea">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -472,7 +476,7 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
  background:linear-gradient(120deg,transparent 30%,rgba(0,255,242,.16),transparent 70%)}
 
 .packstage{display:flex;flex-direction:column;align-items:center;gap:16px;padding:6px 0 4px}
-.packwrap{position:relative;width:min(66vw,262px);aspect-ratio:5/7;perspective:900px;
+.packwrap{position:relative;width:min(33vw,131px);aspect-ratio:5/7;perspective:900px;
  touch-action:none}
 .pack{position:absolute;inset:0;border-radius:17px;overflow:hidden;cursor:grab;
  transform-style:preserve-3d;border:3px solid rgba(255,255,255,.55);
@@ -510,9 +514,11 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .pack .lbl small{position:relative;z-index:2;font-size:.6rem;letter-spacing:.22em;
  color:rgba(10,12,22,.72);margin-top:5px}
 /* the tear */
-.tearline{position:absolute;left:0;right:0;top:0;height:var(--tear,0%);
- overflow:hidden;pointer-events:none;
- -webkit-mask:linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0)}
+.tearline{position:absolute;left:50%;top:50%;width:150%;height:6px;
+  background:linear-gradient(90deg,transparent,#ffffff,#fff,transparent);
+  box-shadow:0 0 26px 6px rgba(255,255,255,.85);
+  transform:translate(-50%,-50%) rotate(var(--tear-angle,-90deg)) scaleX(var(--tear,0));
+  transform-origin:center;opacity:var(--tear,0);pointer-events:none}
 .tearline i{position:absolute;left:0;right:0;bottom:0;height:8px;
  background:repeating-linear-gradient(90deg,#fff 0 5px,transparent 5px 10px);
  filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 18px var(--cyan));opacity:.95}
@@ -1067,6 +1073,10 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2duelresult{width:100%;text-align:center;color:var(--ink);font:700 .88rem 'Chakra Petch';
   margin-top:12px;opacity:0;transition:opacity .6s ease 1.1s}
 .b2duelstage.clash .b2duelresult{opacity:1}
+@keyframes duelLunge{0%{transform:scale(1) translateX(0)}
+  45%{transform:scale(1.1) translateX(var(--lunge,0))}
+  100%{transform:scale(1) translateX(0)}}
+.b2duelcard.strike{animation:duelLunge .55s cubic-bezier(.3,.6,.3,1)}
 .b2mode.spent{position:absolute;bottom:2px;left:0;right:0;text-align:center;
   font:800 .5rem 'Chakra Petch';padding:1px 0;background:rgba(0,0,0,.7);color:#8b95bd}
 
@@ -1097,6 +1107,14 @@ body.in-battle header{display:none}
 body.in-battle nav{display:none}
 body.in-battle .navToggle{display:none}
 body.in-battle main{padding-top:0;min-height:100vh}
+body.in-rip header{display:none}
+body.in-rip nav{display:none}
+body.in-rip .navToggle{display:none}
+body.in-rip main{padding-top:0;min-height:100vh}
+body.in-rip .diffbox{display:none}
+body.in-rip .packrow{display:none}
+body.in-rip .packstage{min-height:80vh;justify-content:center}
+body.in-rip .packwrap{width:min(72vw,300px)!important}
 body.in-battle #v-battle{min-height:100vh;padding-top:env(safe-area-inset-top,10px)}
 
 /* ---- the battlefield: an actual table, not a sketch ---- */
@@ -1150,7 +1168,6 @@ body.in-battle #v-battle{min-height:100vh;padding-top:env(safe-area-inset-top,10
 
 /* ---- compact mode: short screens never need to scroll to reach the buttons ---- */
 @media (max-height:750px){
-  .packwrap{width:min(34vw,135px)!important}
   .packstage{gap:8px!important;padding:2px 0!important}
   .diffbox{margin-bottom:6px!important}
   .packrow{gap:6px!important;margin-bottom:6px!important}
@@ -1258,6 +1275,23 @@ input.search{width:100%;background:var(--panel);border:1px solid var(--edge);
 input.search:focus{border-color:var(--cyan)}
 </style>
 </head><body>
+<script>
+// ---- cache-busting: if this page is stale, force a real reload ----
+(function(){
+  var myVersion = "ec0b2f6c8eea";
+  fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r){ return r.text(); })
+    .then(function(latest){
+      latest = (latest||'').trim();
+      if(latest && latest !== myVersion){
+        var url = new URL(location.href);
+        url.searchParams.set('_v', latest);
+        location.replace(url.toString());
+      }
+    })
+    .catch(function(){});
+})();
+</script>
 <div id="sky"></div>
 <div id="motes"></div>
 <div id="grain"></div>
@@ -1343,7 +1377,7 @@ input.search:focus{border-color:var(--cyan)}
           </div>
           <div class="tearline" id="tearLine"><i></i></div>
         </div>
-        <div class="ripHintTxt" id="ripHintTxt">👆 swipe down across the pack to tear it</div>
+        <div class="ripHintTxt" id="ripHintTxt">👆 drag any direction across the pack to tear it open</div>
       </div>
       <button class="btn" id="ripBtn">Rip it open · <span id="ripCost">500</span> 💩</button>
     </div>
@@ -2063,26 +2097,6 @@ function b2CameraTo(x,y,z, lx,ly,lz, ms){
   requestAnimationFrame(step);
 }
 
-function b2PopAttack(side, laneIdx, cb){
-  const mesh = b2CardMeshes[side+laneIdx];
-  if(!mesh){ cb && cb(); return; }
-  const baseY = mesh.position.y, baseZ = mesh.position.z;
-  const targetZ = side==='my' ? baseZ-2.4 : baseZ+2.4;
-  const start = performance.now();
-  const DURATION = 620; // slowed down so players can actually see it
-  function step(now){
-    const t = Math.min(1, (now-start)/DURATION);
-    const k = Math.sin(t*Math.PI);
-    mesh.position.y = baseY + 1.1*k;
-    mesh.position.z = baseZ + (targetZ-baseZ)*k;
-    mesh.rotation.z = (side==='my'?-1:1)*0.35*k;
-    mesh.rotation.x += (side==='my'?-0.03:0.03);
-    if(t<1) requestAnimationFrame(step);
-    else{ mesh.position.y=baseY; mesh.position.z=baseZ; mesh.rotation.z=0; cb && cb(); }
-  }
-  requestAnimationFrame(step);
-}
-
 
 function b2SelectDuelist(i){
   if(B2.myReady) return;
@@ -2102,7 +2116,7 @@ function b2Ready(){
   if(!B2 || B2.myReady) return;
   B2.myReady = true;
   $('#b2Status').textContent = 'Waiting for opponent...';
-  if(!B2.foeReady) b2AIPickDuelist();
+  if(!B2.foeReady){ b2AIPlace(); b2AIPickDuelist(); }
   setTimeout(b2StartDuel, 500);
 }
 
@@ -2126,6 +2140,11 @@ function b2StartDuel(){
 
 function b2ResolveDuel(myCard, foeCard){
   const resultEl = $('#b2DuelResult');
+  const mineEl = $('#b2DuelMine'), foeEl = $('#b2DuelFoe');
+  if(mineEl) mineEl.style.setProperty('--lunge','24px');
+  if(foeEl) foeEl.style.setProperty('--lunge','-24px');
+  if(mineEl) mineEl.classList.add('strike');
+  if(foeEl) foeEl.classList.add('strike');
   if(myCard && foeCard){
     const eb = ELB(myCard.theme, foeCard.theme);
     const rA = rollD100('me'), rB = rollD100('foe');
@@ -2172,11 +2191,6 @@ function b2EndDuel(){
   $('#b2Field').style.display = '';
   $('#b2Hand').parentElement.style.display = '';
   b2NextTurn();
-}
-
-function b2CheckMatchEnd(){
-  if(B2.myHp<=0 || B2.foeHp<=0){ b2FinishMatch(B2.foeHp<=0); return true; }
-  return false;
 }
 
 function b2UpdateHpBars(){
@@ -2246,7 +2260,7 @@ function b2ShowCardInfo(card){
     body.innerHTML = `<b style="font:800 1rem 'Chakra Petch'">${card.name}</b>` +
       `<div style="margin-top:6px">ATK ${card.atk} · DEF ${card.def} · SPD ${card.spd}</div>` +
       `<div class="muted" style="margin-top:4px">${card.elementLabel || card.theme || ''} · ${'★'.repeat(card.rarity||1)}</div>` +
-      `<div class="muted" style="margin-top:6px">Tap an empty field slot to place it, then choose Attack or Defense.</div>`;
+      `<div class="muted" style="margin-top:6px">Tap an empty field slot to place it.</div>`;
   }
 }
 
@@ -2834,29 +2848,37 @@ function dressPack(){
   if(S.luckExtra>0)extras.push('+1 card');
   if((S.inventory&&S.inventory.reroll)>0) extras.push('🎲 '+S.inventory.reroll+' rerolls');
   $('#ripHint').textContent = extras.length ? extras.join(' · ') : p.blurb;
-  pk.style.setProperty('--tear','0%');
+  pk.style.setProperty('--tear','0');
 }
 
 /* --- finger tear --- */
 (function(){
   const wrap=$('#packWrap'); if(!wrap) return;
-  let dragging=false, startY=0, prog=0;
+  let dragging=false, startX=0, startY=0, prog=0;
   const pk=()=>$('#pack');
   wrap.addEventListener('pointerdown',e=>{
-    dragging=true; startY=e.clientY; prog=0;
+    dragging=true; startX=e.clientX; startY=e.clientY; prog=0;
+    document.body.classList.add('in-rip');
     try{wrap.setPointerCapture(e.pointerId);}catch(_){}
   });
   wrap.addEventListener('pointermove',e=>{
     if(!dragging) return;
-    const h=wrap.getBoundingClientRect().height;
-    prog=Math.max(0,Math.min(1,(e.clientY-startY)/(h*0.55)));
-    pk().style.setProperty('--tear',(prog*100).toFixed(1)+'%');
+    const r=wrap.getBoundingClientRect();
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const threshold=Math.max(r.width,r.height)*0.65;
+    prog=Math.max(0,Math.min(1,dist/threshold));
+    if(dist>4){
+      const angle=Math.atan2(dy,dx)*(180/Math.PI);
+      pk().style.setProperty('--tear-angle',angle.toFixed(1)+'deg');
+    }
+    pk().style.setProperty('--tear',prog.toFixed(3));
     if(prog>=1){ dragging=false; doRip(); }
     e.preventDefault();
   },{passive:false});
   function release(){
     if(!dragging) return; dragging=false;
-    if(prog<1) pk().style.setProperty('--tear','0%');
+    if(prog<1){ pk().style.setProperty('--tear','0'); document.body.classList.remove('in-rip'); }
   }
   wrap.addEventListener('pointerup',release);
   wrap.addEventListener('pointercancel',release);
@@ -2976,7 +2998,7 @@ function ripPack(alreadyTorn){
   qi=0;
   setTimeout(()=>{
     pk.classList.remove('torn');
-    pk.style.setProperty('--tear','0%');
+    pk.style.setProperty('--tear','0');
     $('#flashbang').classList.remove('go');
     $('#reveal').classList.add('on');
     showNext();
@@ -2986,6 +3008,7 @@ function ripPack(alreadyTorn){
 function showNext(){
   if(qi>=queue.length){
     $('#reveal').classList.remove('on');
+    document.body.classList.remove('in-rip');
     renderAll(); save();
     toast(`${queue.length} card${queue.length>1?'s':''} added`);
     return;
@@ -4512,6 +4535,18 @@ $('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
 $('#pfBuild').onclick=()=>{ grabProfile(); toast('Player card updated'); SND.coin(); };
 $('#acctBtn').addEventListener('click',()=>{},{once:true});
 (async function boot(){
+  setInterval(function(){
+    fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
+      .then(function(r){ return r.text(); })
+      .then(function(latest){
+        latest = (latest||'').trim();
+        var mine = document.querySelector('meta[name="game-version"]');
+        mine = mine ? mine.content : '';
+        if(latest && mine && latest !== mine && !B2 && !B){
+          location.reload();
+        }
+      }).catch(function(){});
+  }, 180000);
   const info = await load();
   await checkMaintenance();
   await loadLivePrices();
