@@ -1005,6 +1005,10 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
   display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
   background:rgba(0,0,0,.2)}
 .b2slot.filled{border-style:solid;border-color:#3a4570}
+.b2slot.filled.r5{border-color:#ff43e0;box-shadow:0 0 16px rgba(255,67,224,.5)}
+.b2slot.filled.r4{border-color:#ffd83d;box-shadow:0 0 12px rgba(255,216,61,.4)}
+.b2slot.filled{animation:b2Snap .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes b2Snap{0%{transform:scale(.7) rotate(-8deg);opacity:0}60%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0);opacity:1}}
 .b2slot img{width:100%;height:100%;object-fit:cover}
 .b2slot .b2mode{position:absolute;bottom:2px;left:0;right:0;text-align:center;
   font:800 .52rem 'Chakra Petch';padding:1px 0;background:rgba(0,0,0,.6)}
@@ -1024,6 +1028,10 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
   padding:14px;margin-bottom:10px;box-shadow:0 0 24px rgba(0,255,242,.25)}
 .b2status{text-align:center;color:var(--dim);font-size:.8rem;padding:6px 0;min-height:1.4em}
 #b2PlacementsLeft{color:#ffd83d;font-weight:700}
+body.b2win #v-battle2{animation:b2FlashWin .9s ease-out}
+body.b2lose #v-battle2{animation:b2FlashLose .9s ease-out}
+@keyframes b2FlashWin{0%{background:rgba(61,255,158,0)}15%{background:rgba(61,255,158,.35)}100%{background:rgba(61,255,158,0)}}
+@keyframes b2FlashLose{0%{background:rgba(255,90,90,0)}15%{background:rgba(255,90,90,.35)}100%{background:rgba(255,90,90,0)}}
 
 /* ---- collapsible bottom nav, more room for the player ---- */
 nav{transition:transform .3s cubic-bezier(.3,1,.4,1)}
@@ -1434,6 +1442,9 @@ input.search:focus{border-color:var(--cyan)}
     <div class="hd"><h2>⚔️ New Battle <span style="font-size:.6em;color:#ffd83d">TEST</span></h2>
       <span id="b2TurnLabel">Turn 1</span></div>
 
+    <div class="hpwrap"><span class="hpname">FOE</span><span class="hpbig"><i id="b2FoeHp" style="width:100%"></i></span><b id="b2FoeHpNum">800</b></div>
+    <div class="hpwrap"><span class="hpname">YOU</span><span class="hpbig"><i id="b2MyHp" style="width:100%"></i></span><b id="b2MyHpNum">800</b></div>
+
     <div class="b2card" id="b2Card" style="display:none">
       <button class="btn ghost" id="b2CardClose" style="float:right;padding:5px 10px">✕</button>
       <div id="b2CardBody"></div>
@@ -1842,6 +1853,7 @@ function b2Start(mode){
     myField: [null,null,null,null,null], foeField: [null,null,null,null,null],
     turn: 1, placementsThisTurn: 0, maxPlacements: 3,
     myReady: false, foeReady: false, selected: null,
+    myHp: maxHp(), foeHp: maxHp(),
   };
   for(let i=0;i<7;i++) b2DrawOne(true);
   for(let i=0;i<7;i++) b2DrawOne(false);
@@ -1850,6 +1862,7 @@ function b2Start(mode){
   $('#v-battle2').classList.add('on');
   document.body.classList.add('in-battle');
   $('#b2Log').innerHTML = '';
+  b2UpdateHpBars();
   b2Log(`<b>${mode.n}</b> begins. You drew 7 cards.`);
   b2Render();
 }
@@ -1868,6 +1881,76 @@ function b2Log(html){
   line.innerHTML = html;
   log.appendChild(line);
   log.scrollTop = log.scrollHeight;
+}
+
+function b2ResolveCombat(){
+  for(let i=0;i<5;i++){
+    const mine=B2.myField[i], foe=B2.foeField[i];
+    if(!mine && !foe) continue;
+    if(mine && !foe){
+      if(mine.mode==='atk'){
+        const roll=rollD100('me'); const dmg=Math.round(mine.card.atk*rollPower(roll).mult);
+        B2.foeHp-=dmg; b2Log(`⚔️ <b>${mine.card.name}</b> strikes unopposed for ${dmg} (roll ${roll}).`);
+      }
+      continue;
+    }
+    if(!mine && foe){
+      if(foe.mode==='atk'){
+        const roll=rollD100('foe'); const dmg=Math.round(foe.card.atk*rollPower(roll).mult);
+        B2.myHp-=dmg; b2Log(`⚔️ Their <b>${foe.card.name}</b> strikes unopposed for ${dmg} (roll ${roll}).`);
+      }
+      continue;
+    }
+    const a=mine.card, b=foe.card;
+    if(mine.mode==='atk' && foe.mode==='atk'){
+      const eb=ELB(a.theme,b.theme);
+      const rA=rollD100('me'), rB=rollD100('foe');
+      const pA=a.atk*(1+eb)*rollPower(rA).mult, pB=b.atk*rollPower(rB).mult;
+      if(pA>pB){ const dmg=Math.round(pA-pB); B2.foeHp-=dmg; B2.foeField[i]=null;
+        b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) beats <b>${b.name}</b> (roll ${rB}) — ${dmg} damage.`); }
+      else if(pB>pA){ const dmg=Math.round(pB-pA); B2.myHp-=dmg; B2.myField[i]=null;
+        b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) beats <b>${a.name}</b> (roll ${rA}) — ${dmg} damage.`); }
+      else { B2.myField[i]=null; B2.foeField[i]=null; b2Log(`⚔️ Tied roll — both destroyed.`); }
+    }else if(mine.mode==='atk' && foe.mode==='def'){
+      const eb=ELB(a.theme,b.theme);
+      const rA=rollD100('me'), rB=rollD100('foe');
+      const pA=a.atk*(1+eb)*rollPower(rA).mult, pB=b.def*rollPower(rB).mult;
+      if(pA>pB){ B2.foeField[i]=null; b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) breaks <b>${b.name}</b>'s defense (roll ${rB}).`); }
+      else { b2Log(`🛡️ <b>${b.name}</b> (roll ${rB}) holds against <b>${a.name}</b> (roll ${rA}).`); }
+    }else if(mine.mode==='def' && foe.mode==='atk'){
+      const eb=ELB(b.theme,a.theme);
+      const rA=rollD100('me'), rB=rollD100('foe');
+      const pB=b.atk*(1+eb)*rollPower(rB).mult, pA=a.def*rollPower(rA).mult;
+      if(pB>pA){ B2.myField[i]=null; b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) breaks <b>${a.name}</b>'s defense (roll ${rA}).`); }
+      else { b2Log(`🛡️ <b>${a.name}</b> (roll ${rA}) holds against <b>${b.name}</b> (roll ${rB}).`); }
+    }else{
+      b2Log(`🛡️ <b>${a.name}</b> and <b>${b.name}</b> both hold their ground -- no dice needed, nobody's attacking.`);
+    }
+  }
+  b2UpdateHpBars();
+  if(B2.myHp<=0 || B2.foeHp<=0){ b2FinishMatch(B2.foeHp<=0); return true; }
+  return false;
+}
+
+function b2UpdateHpBars(){
+  const max = maxHp();
+  const my = Math.max(0,Math.round(B2.myHp/max*100));
+  const foe = Math.max(0,Math.round(B2.foeHp/max*100));
+  const myBar=$('#b2MyHp'), foeBar=$('#b2FoeHp');
+  if(myBar) myBar.style.width = my+'%';
+  if(foeBar) foeBar.style.width = foe+'%';
+  const myNum=$('#b2MyHpNum'), foeNum=$('#b2FoeHpNum');
+  if(myNum) myNum.textContent = Math.max(0,Math.round(B2.myHp));
+  if(foeNum) foeNum.textContent = Math.max(0,Math.round(B2.foeHp));
+}
+
+function b2FinishMatch(won){
+  document.body.classList.add(won?'b2win':'b2lose');
+  if(won){ S.wins++; S.coins+=250; S.shards+=2; if(typeof SND!=='undefined') SND.win?.(); }
+  else{ S.losses++; if(typeof SND!=='undefined') SND.lose?.(); }
+  if(typeof save==='function') save();
+  b2Log(`<span class="win">${won?'🏆 Victory! +250 💩 +2 💎':'Defeat.'}</span>`);
+  setTimeout(()=>{ document.body.classList.remove('b2win','b2lose'); b2Exit(); },3000);
 }
 
 function b2CardArt(card){
@@ -1923,7 +2006,8 @@ function b2RenderFields(){
   B2.myField.forEach((slot, i) => {
     const el = document.createElement('div');
     const canTarget = B2.selected !== null && !slot;
-    el.className = 'b2slot' + (slot ? ' filled' : '') + (canTarget ? ' target' : '');
+    const rarityClass = slot ? ' r' + (slot.card.rarity || 1) : '';
+    el.className = 'b2slot' + (slot ? ' filled'+rarityClass : '') + (canTarget ? ' target' : '');
     if(slot){
       el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">` +
         `<div class="b2mode ${slot.mode}">${slot.mode === 'atk' ? '⚔️ ATK' : '🛡️ DEF'}</div>`;
@@ -1985,8 +2069,12 @@ function b2Ready(){
   if(!B2.foeReady) b2AIPlace();
   setTimeout(() => {
     b2Render();
-    b2Log(`<span class="win">Both sides ready — fields revealed.</span>`);
-    setTimeout(b2NextTurn, 2600);
+    b2Log(`<span class="win">Both sides ready — resolving combat.</span>`);
+    setTimeout(() => {
+      const over = b2ResolveCombat();
+      b2Render();
+      if(!over) setTimeout(b2NextTurn, 2200);
+    }, 900);
   }, 500);
 }
 
@@ -3427,6 +3515,7 @@ $('#rollBtn').onclick=()=>{
    scales your power from 65% to 135% */
 function rollD100(who){
   let r = 1 + Math.floor(Math.random()*100);
+  if(!B) return r; // called from the new battle system -- no item-modifier state to apply
   if(who==='me'){
     if(B.dieFloor) r = Math.max(r, B.dieFloor);
     if(B.dieBonus) r = Math.min(100, r + B.dieBonus);
