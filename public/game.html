@@ -1003,7 +1003,10 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 @keyframes dieRoll{0%{transform:rotate(0) scale(.6)}100%{transform:rotate(360deg) scale(1)}}
 .adBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 
-/* ---- Battle 2 (new mechanic) ---- */
+/* ---- 3D battle scene ---- */
+.b2scene{width:100%;height:180px;border-radius:14px;overflow:hidden;margin-bottom:10px;
+  background:radial-gradient(ellipse at 50% 30%,#1a2240,#070a14 75%);position:relative}
+.b2scene canvas{display:block;width:100%!important;height:100%!important}
 .b2field{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;transition:transform .5s cubic-bezier(.3,.8,.3,1)}
 .b2field.placing .b2side.mine{transform:scale(1.04)}
 .b2field.placing .b2side.foe{opacity:.5;transform:scale(.94)}
@@ -1129,6 +1132,19 @@ body.in-battle #v-battle{min-height:100vh;padding-top:env(safe-area-inset-top,10
   .dieBtn{padding:9px 0!important;font-size:.82rem!important}
   .pile{font-size:.42rem}
   .pile em{font-size:.85rem}
+  /* mode-select screen: this was the one still requiring scroll */
+  #battleSetup .panel{padding:10px 12px;margin-bottom:8px}
+  #battleSetup .panel h3{font-size:.82rem;margin-bottom:3px}
+  #battleSetup .panel p{display:none}
+  .grid{gap:7px}
+  .sitem{padding:10px}
+  .sitem .si{font-size:1.3rem;margin-bottom:3px}
+  .sitem b{font-size:.8rem}
+  .sitem span{font-size:.68rem;line-height:1.25}
+  .sitem .price{font-size:.6rem;margin:4px 0}
+  .sitem button{padding:7px 0!important;font-size:.72rem!important}
+  .modeGroupHead{margin:8px 2px 5px!important;font-size:.66rem!important}
+  #b2StaffLink{padding:8px!important;font-size:.7rem!important;margin-top:8px!important}
 }
 @media (max-height:640px){
   .arenaWrap{padding:4px}
@@ -1475,6 +1491,7 @@ input.search:focus{border-color:var(--cyan)}
       <div id="b2CardBody"></div>
     </div>
 
+    <div id="b2Scene" class="b2scene"></div>
     <div id="b2Field" class="b2field">
       <div class="b2side mine">
         <div class="b2label">Your Field</div>
@@ -1627,6 +1644,7 @@ input.search:focus{border-color:var(--cyan)}
 <div id="dice"></div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="ducksave.js"></script>
@@ -1890,6 +1908,7 @@ function b2Start(mode){
   $('#b2Log').innerHTML = '';
   b2UpdateHpBars();
   b2Log(`<b>${mode.n}</b> begins. You drew 7 cards.`);
+  b2InitScene();
   b2Render();
 }
 
@@ -1909,12 +1928,117 @@ function b2Log(html){
   log.scrollTop = log.scrollHeight;
 }
 
+/* ============ 3D BATTLE SCENE (Three.js, free/open-source) ============ */
+let b2Scene=null, b2Camera=null, b2Renderer=null, b2CardMeshes={}, b2Loader=null, b2Anim=null;
+
+function b2InitScene(){
+  const container = document.getElementById('b2Scene');
+  if(!container || typeof THREE === 'undefined') return;
+  const w = container.clientWidth || 320, h = container.clientHeight || 180;
+
+  b2Scene = new THREE.Scene();
+  b2Camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
+  b2Camera.position.set(0, 3.4, 4.8);
+  b2Camera.lookAt(0, 0, 0);
+
+  b2Renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  b2Renderer.setSize(w, h);
+  b2Renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+  container.innerHTML = '';
+  container.appendChild(b2Renderer.domElement);
+
+  b2Scene.add(new THREE.AmbientLight(0x8899ff, 0.65));
+  const key = new THREE.DirectionalLight(0x00fff2, 1.1); key.position.set(2,4,3); b2Scene.add(key);
+  const rim = new THREE.DirectionalLight(0xff43e0, 0.5); rim.position.set(-2,2,-3); b2Scene.add(rim);
+
+  const table = new THREE.Mesh(
+    new THREE.PlaneGeometry(9,5),
+    new THREE.MeshStandardMaterial({ color:0x141b33, roughness:0.85, metalness:0.1 })
+  );
+  table.rotation.x = -Math.PI/2.3;
+  table.position.y = -0.7;
+  b2Scene.add(table);
+
+  b2Loader = new THREE.TextureLoader();
+  if(!b2Anim) b2AnimateScene();
+}
+
+function b2AnimateScene(){
+  b2Anim = requestAnimationFrame(b2AnimateScene);
+  if(b2Renderer && b2Scene && b2Camera) b2Renderer.render(b2Scene, b2Camera);
+}
+
+function b2MakeCardMesh(imgUrl){
+  const tex = b2Loader.load(imgUrl);
+  const geo = new THREE.PlaneGeometry(0.95, 1.33);
+  const mat = new THREE.MeshStandardMaterial({ map:tex, side:THREE.DoubleSide, roughness:0.35, metalness:0.2 });
+  return new THREE.Mesh(geo, mat);
+}
+
+function b2SyncScene(){
+  if(!b2Scene) return;
+  Object.values(b2CardMeshes).forEach(m => b2Scene.remove(m));
+  b2CardMeshes = {};
+  const laneX = i => (i-2)*1.15;
+
+  (B2.myField||[]).forEach((slot,i) => {
+    if(!slot) return;
+    const mesh = b2MakeCardMesh(b2CardArt(slot.card));
+    mesh.position.set(laneX(i), 0, 1.35);
+    mesh.rotation.x = -0.18;
+    b2Scene.add(mesh);
+    b2CardMeshes['my'+i] = mesh;
+  });
+  (B2.foeField||[]).forEach((slot,i) => {
+    if(!slot) return;
+    const mesh = b2MakeCardMesh(b2CardArt(slot.card));
+    mesh.position.set(laneX(i), 0, -1.35);
+    mesh.rotation.x = 0.18;
+    mesh.rotation.y = Math.PI;
+    b2Scene.add(mesh);
+    b2CardMeshes['foe'+i] = mesh;
+  });
+}
+
+function b2CameraTo(x,y,z, lx,ly,lz, ms){
+  if(!b2Camera) return;
+  const sx=b2Camera.position.x, sy=b2Camera.position.y, sz=b2Camera.position.z;
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1, (now-start)/ms);
+    const k = 1-Math.pow(1-t, 3);
+    b2Camera.position.set(sx+(x-sx)*k, sy+(y-sy)*k, sz+(z-sz)*k);
+    b2Camera.lookAt(lx,ly,lz);
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function b2PopAttack(side, laneIdx, cb){
+  const mesh = b2CardMeshes[side+laneIdx];
+  if(!mesh){ cb && cb(); return; }
+  const baseY = mesh.position.y, baseZ = mesh.position.z;
+  const targetZ = side==='my' ? baseZ-1.6 : baseZ+1.6;
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1, (now-start)/650);
+    const k = Math.sin(t*Math.PI);
+    mesh.position.y = baseY + 0.7*k;
+    mesh.position.z = baseZ + (targetZ-baseZ)*k;
+    mesh.rotation.z = (side==='my'?-1:1)*0.25*k;
+    if(t<1) requestAnimationFrame(step);
+    else{ mesh.position.y=baseY; mesh.position.z=baseZ; mesh.rotation.z=0; cb && cb(); }
+  }
+  requestAnimationFrame(step);
+}
+
 function b2ResolveCombat(){
   for(let i=0;i<5;i++){
     const mine=B2.myField[i], foe=B2.foeField[i];
     if(!mine && !foe) continue;
     if(mine && !foe){
       if(mine.mode==='atk'){
+        b2PopAttack('my', i);
         const roll=rollD100('me'); const dmg=Math.round(mine.card.atk*rollPower(roll).mult);
         B2.foeHp-=dmg; b2Log(`⚔️ <b>${mine.card.name}</b> strikes unopposed for ${dmg} (roll ${roll}).`);
       }
@@ -1922,6 +2046,7 @@ function b2ResolveCombat(){
     }
     if(!mine && foe){
       if(foe.mode==='atk'){
+        b2PopAttack('foe', i);
         const roll=rollD100('foe'); const dmg=Math.round(foe.card.atk*rollPower(roll).mult);
         B2.myHp-=dmg; b2Log(`⚔️ Their <b>${foe.card.name}</b> strikes unopposed for ${dmg} (roll ${roll}).`);
       }
@@ -1929,6 +2054,7 @@ function b2ResolveCombat(){
     }
     const a=mine.card, b=foe.card;
     if(mine.mode==='atk' && foe.mode==='atk'){
+      b2PopAttack('my', i); b2PopAttack('foe', i);
       const eb=ELB(a.theme,b.theme);
       const rA=rollD100('me'), rB=rollD100('foe');
       const pA=a.atk*(1+eb)*rollPower(rA).mult, pB=b.atk*rollPower(rB).mult;
@@ -1938,12 +2064,14 @@ function b2ResolveCombat(){
         b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) beats <b>${a.name}</b> (roll ${rA}) — ${dmg} damage.`); }
       else { B2.myField[i]=null; B2.foeField[i]=null; b2Log(`⚔️ Tied roll — both destroyed.`); }
     }else if(mine.mode==='atk' && foe.mode==='def'){
+      b2PopAttack('my', i);
       const eb=ELB(a.theme,b.theme);
       const rA=rollD100('me'), rB=rollD100('foe');
       const pA=a.atk*(1+eb)*rollPower(rA).mult, pB=b.def*rollPower(rB).mult;
       if(pA>pB){ B2.foeField[i]=null; b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) breaks <b>${b.name}</b>'s defense (roll ${rB}).`); }
       else { b2Log(`🛡️ <b>${b.name}</b> (roll ${rB}) holds against <b>${a.name}</b> (roll ${rA}).`); }
     }else if(mine.mode==='def' && foe.mode==='atk'){
+      b2PopAttack('foe', i);
       const eb=ELB(b.theme,a.theme);
       const rA=rollD100('me'), rB=rollD100('foe');
       const pB=b.atk*(1+eb)*rollPower(rB).mult, pA=a.def*rollPower(rA).mult;
@@ -2098,6 +2226,7 @@ function b2Ready(){
     b2Log(`<span class="win">Both sides ready — resolving combat.</span>`);
     $('#b2Field').classList.remove('placing');
     $('#b2Field').classList.add('resolving');
+    b2CameraTo(0, 5.2, 6.2, 0,0,0, 700);
     setTimeout(() => {
       const over = b2ResolveCombat();
       b2Render();
@@ -2116,6 +2245,7 @@ function b2NextTurn(){
   $('#b2Status').textContent = '';
   $('#b2Field').classList.remove('resolving');
   $('#b2Field').classList.add('placing');
+  b2CameraTo(0, 3.4, 4.8, 0,0,0.5, 700);
   const drewMe = b2DrawOne(true);
   b2DrawOne(false);
   b2Log(`<b>Turn ${B2.turn}.</b> ${drewMe ? 'Drew 1 card.' : 'Deck is empty.'}`);
@@ -2125,6 +2255,7 @@ function b2NextTurn(){
 function b2Render(){
   b2RenderHand();
   b2RenderFields();
+  b2SyncScene();
   $('#b2ReadyBtn').disabled = B2.myReady;
 }
 
