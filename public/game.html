@@ -534,6 +534,14 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 #burst i{position:absolute;border-radius:2px;opacity:0}
 @keyframes shard{0%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}
  100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(.3)}}
+@keyframes fxFire{0%{opacity:1;transform:translate(0,0) scale(1)}
+ 60%{opacity:.9;transform:translate(calc(var(--dx)*.6),calc(var(--dy)*.6 - 14px)) scale(1.4)}
+ 100%{opacity:0;transform:translate(var(--dx),calc(var(--dy) - 34px)) scale(.2)}}
+@keyframes fxSplash{0%{opacity:1;transform:translate(0,0) scale(.4)}
+ 40%{opacity:1;transform:translate(calc(var(--dx)*.7),calc(var(--dy)*.7)) scale(1.1)}
+ 100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.6)}}
+.fxlayer{position:fixed;z-index:66;pointer-events:none}
+.fxlayer i{position:absolute;left:0;top:0;border-radius:50%;opacity:0}
 
 /* reveal */
 #reveal{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;
@@ -1037,6 +1045,28 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
   animation:attackerPulse .8s ease-in-out infinite}
 @keyframes attackerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .b2slot.spent{opacity:.45}
+.b2hidden{grid-column:1/-1;text-align:center;color:var(--dim);font-size:.78rem;padding:16px 0}
+
+/* ---- duel stage: everything else disappears, two cards take over ---- */
+.b2duelstage{display:flex;align-items:center;justify-content:center;gap:18px;
+  min-height:280px;padding:20px 10px;position:relative;flex-wrap:wrap}
+.b2duelcard{width:38vw;max-width:150px;aspect-ratio:5/7;border-radius:14px;overflow:hidden;
+  border:2px solid #3a4570;box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;
+  transform:scale(.6) translateY(20px);transition:all .8s cubic-bezier(.2,1,.3,1);
+  display:flex;flex-direction:column}
+.b2duelstage.clash .b2duelcard{opacity:1;transform:scale(1) translateY(0)}
+.b2duelcard img{width:100%;flex:1;object-fit:cover}
+.b2duelcard b{display:block;text-align:center;padding:6px;font:800 .8rem 'Chakra Petch';
+  background:rgba(0,0,0,.7)}
+.b2duelcard.mine{box-shadow:0 10px 30px rgba(0,255,242,.35),0 0 0 2px #00fff2}
+.b2duelcard.foe{box-shadow:0 10px 30px rgba(255,67,224,.35),0 0 0 2px #ff43e0}
+.b2duelempty{display:flex;align-items:center;justify-content:center;height:100%;
+  color:var(--dim);font-size:.75rem;text-align:center;padding:10px}
+.b2duelvs{font-size:2rem;opacity:0;transition:opacity .8s ease .4s}
+.b2duelstage.clash .b2duelvs{opacity:1}
+.b2duelresult{width:100%;text-align:center;color:var(--ink);font:700 .88rem 'Chakra Petch';
+  margin-top:12px;opacity:0;transition:opacity .6s ease 1.1s}
+.b2duelstage.clash .b2duelresult{opacity:1}
 .b2mode.spent{position:absolute;bottom:2px;left:0;right:0;text-align:center;
   font:800 .5rem 'Chakra Petch';padding:1px 0;background:rgba(0,0,0,.7);color:#8b95bd}
 
@@ -1120,6 +1150,10 @@ body.in-battle #v-battle{min-height:100vh;padding-top:env(safe-area-inset-top,10
 
 /* ---- compact mode: short screens never need to scroll to reach the buttons ---- */
 @media (max-height:750px){
+  .packwrap{width:min(34vw,135px)!important}
+  .packstage{gap:8px!important;padding:2px 0!important}
+  .diffbox{margin-bottom:6px!important}
+  .packrow{gap:6px!important;margin-bottom:6px!important}
   .arenaWrap{padding:6px 6px;margin-bottom:6px}
   .side.foe{margin-bottom:4px}
   .side.me{margin-top:4px}
@@ -1511,8 +1545,14 @@ input.search:focus{border-color:var(--cyan)}
       </div>
     </div>
 
+    <div id="b2DuelStage" class="b2duelstage" style="display:none">
+      <div class="b2duelcard mine" id="b2DuelMine"></div>
+      <div class="b2duelvs">⚔️</div>
+      <div class="b2duelcard foe" id="b2DuelFoe"></div>
+      <div class="b2duelresult" id="b2DuelResult"></div>
+    </div>
+
     <div class="b2status" id="b2Status"></div>
-    <button class="btn danger" id="b2AttackFace" style="display:none;margin-bottom:8px">💥 Attack their health directly</button>
 
     <div class="handhead">
       <span>YOUR HAND · <b id="b2HandCount">0</b></span>
@@ -1901,8 +1941,10 @@ function b2Start(mode){
     mode, myDeck: myPool(), foeDeck: foePool(mode),
     myHand: [], foeHand: [],
     myField: [null,null,null,null,null], foeField: [null,null,null,null,null],
+    myGrave: [], foeGrave: [],
     turn: 1, placementsThisTurn: 0, maxPlacements: 3,
-    myReady: false, foeReady: false, selected: null, phase: 'placing', attacker: null,
+    myReady: false, foeReady: false, selected: null,
+    myDuelist: null, foeDuelist: null,
     myHp: maxHp(), foeHp: maxHp(),
   };
   for(let i=0;i<7;i++) b2DrawOne(true);
@@ -2027,7 +2069,7 @@ function b2PopAttack(side, laneIdx, cb){
   const baseY = mesh.position.y, baseZ = mesh.position.z;
   const targetZ = side==='my' ? baseZ-2.4 : baseZ+2.4;
   const start = performance.now();
-  const DURATION = 320; // fast, punchy
+  const DURATION = 620; // slowed down so players can actually see it
   function step(now){
     const t = Math.min(1, (now-start)/DURATION);
     const k = Math.sin(t*Math.PI);
@@ -2041,107 +2083,100 @@ function b2PopAttack(side, laneIdx, cb){
   requestAnimationFrame(step);
 }
 
-function b2EnterAttackPhase(){
-  B2.phase = 'attacking';
-  B2.attacker = null;
-  b2CameraTo(0, 5.2, 6.2, 0,0,0, 350);
-  b2Log(`<span class="win">Attack phase — choose which card attacks, and what it attacks.</span>`);
-  b2Render();
-}
 
-function b2SelectAttacker(i){
-  if(B2.phase !== 'attacking') return;
+function b2SelectDuelist(i){
+  if(B2.myReady) return;
   const slot = B2.myField[i];
-  if(!slot || slot.attacked) return;
-  B2.attacker = (B2.attacker === i) ? null : i;
+  if(!slot) return;
+  B2.myDuelist = (B2.myDuelist === i) ? null : i;
   b2RenderFields();
 }
 
-function b2DeclareTarget(foeIdx){
-  if(B2.phase !== 'attacking' || B2.attacker === null) return;
-  b2ExecuteAttack(B2.attacker, foeIdx);
+function b2AIPickDuelist(){
+  const options = B2.foeField.map((s,i)=> s ? i : -1).filter(i=>i>=0);
+  B2.foeDuelist = options.length ? options[Math.floor(Math.random()*options.length)] : null;
+  B2.foeReady = true;
 }
 
-function b2ExecuteAttack(myIdx, foeIdx){
-  const mine = B2.myField[myIdx], foe = B2.foeField[foeIdx];
-  if(!mine || mine.attacked || !foe) return;
-  const a = mine.card, b = foe.card;
-  b2PopAttack('my', myIdx);
-  const eb = ELB(a.theme, b.theme);
-  const rA = rollD100('me'), rB = rollD100('foe');
-  const pA = a.atk*(1+eb)*rollPower(rA).mult, pB = b.def*rollPower(rB).mult;
-  mine.attacked = true;
-  if(pA>pB){ B2.foeField[foeIdx]=null; b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) breaks <b>${b.name}</b>'s defense (roll ${rB}).`); }
-  else { b2Log(`🛡️ <b>${b.name}</b> (roll ${rB}) holds against <b>${a.name}</b> (roll ${rA}).`); }
-  B2.attacker = null;
-  b2UpdateHpBars();
-  b2CheckMatchEnd();
-  b2Render();
+function b2Ready(){
+  if(!B2 || B2.myReady) return;
+  B2.myReady = true;
+  $('#b2Status').textContent = 'Waiting for opponent...';
+  if(!B2.foeReady) b2AIPickDuelist();
+  setTimeout(b2StartDuel, 500);
 }
 
-function b2AttackFace(){
-  if(B2.phase !== 'attacking' || B2.attacker === null) return;
-  const mine = B2.myField[B2.attacker];
-  if(!mine || mine.attacked) return;
-  const myIdx = B2.attacker;
-  b2PopAttack('my', myIdx);
-  const roll = rollD100('me');
-  const dmg = Math.round(mine.card.atk * rollPower(roll).mult);
-  B2.foeHp -= dmg;
-  mine.attacked = true;
-  b2Log(`💥 <b>${mine.card.name}</b> strikes their health directly for ${dmg} (roll ${roll}).`);
-  B2.attacker = null;
+function b2CardImgFor(card){ return card ? b2CardArt(card) : ''; }
+
+function b2StartDuel(){
+  const myCard = B2.myDuelist!==null ? B2.myField[B2.myDuelist].card : null;
+  const foeCard = B2.foeDuelist!==null ? B2.foeField[B2.foeDuelist].card : null;
+
+  $('#b2Field').style.display = 'none';
+  $('#b2Hand').parentElement.style.display = 'none';
+  const stage = $('#b2DuelStage');
+  stage.style.display = 'flex';
+  $('#b2DuelMine').innerHTML = myCard ? `<img src="${b2CardImgFor(myCard)}"><b>${myCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
+  $('#b2DuelFoe').innerHTML = foeCard ? `<img src="${b2CardImgFor(foeCard)}"><b>${foeCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
+  $('#b2DuelResult').textContent = '';
+  $('#b2DuelStage').classList.add('clash');
+
+  setTimeout(() => b2ResolveDuel(myCard, foeCard), 900);
+}
+
+function b2ResolveDuel(myCard, foeCard){
+  const resultEl = $('#b2DuelResult');
+  if(myCard && foeCard){
+    const eb = ELB(myCard.theme, foeCard.theme);
+    const rA = rollD100('me'), rB = rollD100('foe');
+    const pA = myCard.atk*(1+eb)*rollPower(rA).mult, pB = foeCard.atk*rollPower(rB).mult;
+    fxBurst(window.innerWidth/2, window.innerHeight/2, 'fire', 24);
+    if(pA>pB){
+      const dmg = Math.round(pA-pB); B2.foeHp -= dmg;
+      B2.foeGrave.push(B2.foeField[B2.foeDuelist].card); B2.foeField[B2.foeDuelist]=null;
+      resultEl.innerHTML = `<b>${myCard.name}</b> wins! (roll ${rA} vs ${rB}) — ${dmg} damage.`;
+      b2Log(`⚔️ <b>${myCard.name}</b> defeats <b>${foeCard.name}</b> — ${dmg} damage.`);
+    }else if(pB>pA){
+      const dmg = Math.round(pB-pA); B2.myHp -= dmg;
+      B2.myGrave.push(B2.myField[B2.myDuelist].card); B2.myField[B2.myDuelist]=null;
+      resultEl.innerHTML = `<b>${foeCard.name}</b> wins! (roll ${rB} vs ${rA}) — ${dmg} damage.`;
+      b2Log(`⚔️ Their <b>${foeCard.name}</b> defeats <b>${myCard.name}</b> — ${dmg} damage.`);
+    }else{
+      B2.myGrave.push(B2.myField[B2.myDuelist].card); B2.myField[B2.myDuelist]=null;
+      B2.foeGrave.push(B2.foeField[B2.foeDuelist].card); B2.foeField[B2.foeDuelist]=null;
+      resultEl.textContent = `Tied roll — both champions fall.`;
+      b2Log(`⚔️ Tied roll — both <b>${myCard.name}</b> and <b>${foeCard.name}</b> fall.`);
+    }
+  }else if(myCard && !foeCard){
+    const roll = rollD100('me'); const dmg = Math.round(myCard.atk*rollPower(roll).mult);
+    B2.foeHp -= dmg;
+    resultEl.innerHTML = `No opponent champion — <b>${myCard.name}</b> strikes their health for ${dmg}.`;
+    b2Log(`💥 <b>${myCard.name}</b> strikes unopposed for ${dmg}.`);
+  }else if(foeCard && !myCard){
+    const roll = rollD100('foe'); const dmg = Math.round(foeCard.atk*rollPower(roll).mult);
+    B2.myHp -= dmg;
+    resultEl.innerHTML = `No champion to defend — their <b>${foeCard.name}</b> strikes for ${dmg}.`;
+    b2Log(`💥 Their <b>${foeCard.name}</b> strikes unopposed for ${dmg}.`);
+  }else{
+    resultEl.textContent = `Neither side had a champion this turn.`;
+  }
   b2UpdateHpBars();
-  b2CheckMatchEnd();
-  b2Render();
+  const over = B2.myHp<=0 || B2.foeHp<=0;
+  if(over){ setTimeout(() => b2FinishMatch(B2.foeHp<=0), 1800); return; }
+  setTimeout(b2EndDuel, 2200);
+}
+
+function b2EndDuel(){
+  $('#b2DuelStage').classList.remove('clash');
+  $('#b2DuelStage').style.display = 'none';
+  $('#b2Field').style.display = '';
+  $('#b2Hand').parentElement.style.display = '';
+  b2NextTurn();
 }
 
 function b2CheckMatchEnd(){
   if(B2.myHp<=0 || B2.foeHp<=0){ b2FinishMatch(B2.foeHp<=0); return true; }
   return false;
-}
-
-function b2DoneAttacking(){
-  if(B2.phase !== 'attacking') return;
-  B2.attacker = null;
-  b2AIAttackPhase();
-}
-
-function b2AIAttackPhase(){
-  const attackers = B2.foeField.map((s,i)=> (s && !s.attacked) ? i : -1).filter(i=>i>=0);
-  let step = 0;
-  function next(){
-    if(step >= attackers.length || B2.myHp<=0 || B2.foeHp<=0){
-      setTimeout(b2NextTurn, 1200);
-      return;
-    }
-    const foeIdx = attackers[step]; step++;
-    const foeSlot = B2.foeField[foeIdx];
-    if(!foeSlot || foeSlot.attacked){ next(); return; }
-    const myTargets = B2.myField.map((s,i)=> s ? i : -1).filter(i=>i>=0);
-    b2PopAttack('foe', foeIdx);
-    if(myTargets.length && Math.random() < 0.7){
-      const myIdx = myTargets[Math.floor(Math.random()*myTargets.length)];
-      const mine = B2.myField[myIdx], b = foeSlot.card;
-      const eb = ELB(b.theme, mine.card.theme);
-      const rB = rollD100('foe'), rA = rollD100('me');
-      const pB = b.atk*(1+eb)*rollPower(rB).mult, pA = mine.card.def*rollPower(rA).mult;
-      foeSlot.attacked = true;
-      if(pB>pA){ B2.myField[myIdx]=null; b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) breaks <b>${mine.card.name}</b>'s defense (roll ${rA}).`); }
-      else { b2Log(`🛡️ <b>${mine.card.name}</b> (roll ${rA}) holds against their <b>${b.name}</b> (roll ${rB}).`); }
-    }else{
-      const roll = rollD100('foe');
-      const dmg = Math.round(foeSlot.card.atk * rollPower(roll).mult);
-      B2.myHp -= dmg;
-      foeSlot.attacked = true;
-      b2Log(`💥 Their <b>${foeSlot.card.name}</b> strikes your health for ${dmg} (roll ${roll}).`);
-    }
-    b2UpdateHpBars();
-    if(b2CheckMatchEnd()) return;
-    b2Render();
-    setTimeout(next, 420);
-  }
-  next();
 }
 
 function b2UpdateHpBars(){
@@ -2158,8 +2193,11 @@ function b2UpdateHpBars(){
 
 function b2FinishMatch(won){
   document.body.classList.add(won?'b2win':'b2lose');
-  if(won){ S.wins++; S.coins+=250; S.shards+=2; if(typeof SND!=='undefined') SND.win?.(); }
-  else{ S.losses++; if(typeof SND!=='undefined') SND.lose?.(); }
+  if(won){
+    S.wins++; S.coins+=250; S.shards+=2; if(typeof SND!=='undefined') SND.win?.();
+    fxBurst(window.innerWidth/2, window.innerHeight/2, 'fire', 30);
+    setTimeout(() => fxBurst(window.innerWidth/2, window.innerHeight/2, 'spark', 30), 150);
+  } else { S.losses++; if(typeof SND!=='undefined') SND.lose?.(); }
   if(typeof save==='function') save();
   b2Log(`<span class="win">${won?'🏆 Victory! +250 💩 +2 💎':'Defeat.'}</span>`);
   setTimeout(()=>{ document.body.classList.remove('b2win','b2lose'); b2Exit(); },3000);
@@ -2217,19 +2255,16 @@ function b2RenderFields(){
   myRow.innerHTML = '';
   B2.myField.forEach((slot, i) => {
     const el = document.createElement('div');
-    const canTarget = B2.selected !== null && !slot; // placing a hand card here
-    const canAttackWith = B2.phase === 'attacking' && slot && !slot.attacked;
-    const isAttacker = B2.attacker === i;
+    const canTarget = B2.selected !== null && !slot; // placing a hand/item card here
+    const canPickDuelist = !B2.myReady && slot;
+    const isDuelist = B2.myDuelist === i;
     const rarityClass = slot ? ' r' + (slot.card.rarity || 1) : '';
     el.className = 'b2slot' + (slot ? ' filled'+rarityClass : '') +
-      (canTarget ? ' target' : '') + (canAttackWith ? ' can-attack' : '') +
-      (isAttacker ? ' attacker' : '') + (slot && slot.attacked ? ' spent' : '');
-    if(slot){
-      el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">` +
-        (slot.attacked ? `<div class="b2mode spent">Attacked</div>` : '');
-    }
+      (canTarget ? ' target' : '') + (canPickDuelist ? ' can-attack' : '') +
+      (isDuelist ? ' attacker' : '');
+    if(slot) el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">`;
     if(canTarget) el.onclick = () => b2PlaceCard(i);
-    else if(canAttackWith) el.onclick = () => b2SelectAttacker(i);
+    else if(canPickDuelist) el.onclick = () => b2SelectDuelist(i);
     myRow.appendChild(el);
   });
 
@@ -2239,24 +2274,16 @@ function b2RenderFields(){
     foeRow.innerHTML = `<div class="b2hidden">🔒 Hidden until both players are ready</div>`;
   }else{
     foeRow.innerHTML = '';
-    const canTargetFoe = B2.phase === 'attacking' && B2.attacker !== null;
-    B2.foeField.forEach((slot,i) => {
+    B2.foeField.forEach(slot => {
       const el = document.createElement('div');
-      el.className = 'b2slot' + (slot ? ' filled' : '') + (canTargetFoe ? ' target' : '');
+      el.className = 'b2slot' + (slot ? ' filled' : '');
       if(slot) el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">`;
-      if(canTargetFoe) el.onclick = () => b2DeclareTarget(i);
       foeRow.appendChild(el);
     });
   }
 
-  const faceBtn = $('#b2AttackFace');
-  if(faceBtn) faceBtn.style.display = (B2.phase==='attacking' && B2.attacker!==null) ? 'block' : 'none';
-
-  if(B2.phase === 'attacking'){
-    $('#b2Status').textContent = B2.attacker===null
-      ? 'Tap one of your cards to attack with it.'
-      : 'Tap an opponent card to attack it, or attack their health directly.';
-  }
+  $('#b2Status').textContent = B2.myReady ? '' :
+    (B2.myDuelist===null ? 'Tap a card on your field to send it to the duel (or Ready with none).' : 'Champion selected — tap Ready to lock it in.');
 }
 
 function b2PlaceCard(slotIdx){
@@ -2269,6 +2296,8 @@ function b2PlaceCard(slotIdx){
   b2Log(`Placed <b>${card.name}</b> on the field.`);
   $('#b2Card').style.display = 'none';
   b2Render();
+  const slotEl = $('#b2MyRow').children[slotIdx];
+  if(slotEl) fxBurstAtEl(slotEl, 'splash', 14);
 }
 
 function b2AIPlace(){
@@ -2285,57 +2314,51 @@ function b2AIPlace(){
   B2.foeReady = true;
 }
 
-function b2Ready(){
-  if(!B2 || B2.myReady) return;
-  B2.myReady = true;
-  $('#b2Status').textContent = 'Waiting for opponent...';
-  if(!B2.foeReady) b2AIPlace();
-  setTimeout(() => {
-    $('#b2Field').classList.remove('placing');
-    $('#b2Field').classList.add('resolving');
-    b2EnterAttackPhase();
-  }, 500);
-}
-
 function b2NextTurn(){
   if(!B2) return;
   B2.turn++;
   B2.placementsThisTurn = 0;
   B2.myReady = false;
   B2.foeReady = false;
-  B2.phase = 'placing';
-  B2.attacker = null;
-  B2.myField.forEach(s => { if(s) s.attacked = false; });
-  B2.foeField.forEach(s => { if(s) s.attacked = false; });
+  B2.myDuelist = null;
+  B2.foeDuelist = null;
   $('#b2TurnLabel').textContent = 'Turn ' + B2.turn;
   $('#b2Status').textContent = '';
   $('#b2Field').classList.remove('resolving');
   $('#b2Field').classList.add('placing');
-  b2CameraTo(0, 3.4, 4.8, 0,0,0.5, 400);
+  b2CameraTo(0, 3.4, 4.8, 0,0,0.5, 800);
   const drewMe = b2DrawOne(true);
   b2DrawOne(false);
   b2Log(`<b>Turn ${B2.turn}.</b> ${drewMe ? 'Drew 1 card.' : 'Deck is empty.'}`);
   b2Render();
 }
 
+function b2UpdateFieldGradient(){
+  const el = $('#b2Field');
+  if(!el) return;
+  const cards = (B2.myField||[]).filter(s=>s).map(s=>s.card);
+  if(!cards.length){ el.style.background = ''; return; }
+  const colors = cards.map(c => c.glow || (c.palette && c.palette[1]) || '#3a4570');
+  const stops = colors.map((c,i) => `${c} ${Math.round(i/Math.max(1,colors.length-1)*100)}%`).join(', ');
+  el.style.background =
+    `linear-gradient(135deg, ${stops}),` +
+    `repeating-linear-gradient(115deg, rgba(255,255,255,.10) 0 2px, transparent 2px 8px),` +
+    `radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255,255,255,.12), transparent 60%)`;
+  el.style.backgroundBlendMode = 'overlay, normal, normal';
+}
+
 function b2Render(){
   b2RenderHand();
   b2RenderFields();
   b2SyncScene();
+  b2UpdateFieldGradient();
   const readyBtn = $('#b2ReadyBtn');
-  if(B2.phase === 'attacking'){
-    readyBtn.textContent = '➡️ Done Attacking'; readyBtn.disabled = false;
-  }else{
-    readyBtn.textContent = '✅ Ready'; readyBtn.disabled = B2.myReady;
-  }
+  readyBtn.textContent = '✅ Ready';
+  readyBtn.disabled = B2.myReady;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  $('#b2ReadyBtn')?.addEventListener('click', () => {
-    if(B2 && B2.phase === 'attacking') b2DoneAttacking();
-    else b2Ready();
-  });
-  $('#b2AttackFace')?.addEventListener('click', b2AttackFace);
+  $('#b2ReadyBtn')?.addEventListener('click', () => b2Ready());
   $('#b2Leave')?.addEventListener('click', b2Exit);
   $('#b2CardClose')?.addEventListener('click', () => { B2.selected = null; b2Render(); $('#b2Card').style.display='none'; });
   $('#b2StaffLink')?.addEventListener('click', () => b2Start({k:'test', n:'TEST', riskTier:0}));
@@ -2839,6 +2862,46 @@ function dressPack(){
   wrap.addEventListener('pointercancel',release);
 })();
 
+/* ---- positional particle FX: spark, fire, splash -- usable anywhere on screen ---- */
+function fxBurst(x, y, type, count){
+  count = count || 16;
+  const layer = document.createElement('div');
+  layer.className = 'fxlayer';
+  layer.style.left = x+'px';
+  layer.style.top = y+'px';
+
+  const palettes = {
+    spark:  { colors:['#63f7ff','#00fff2','#ffffff','#ffd83d'], anim:'shard',   dist:[60,150], size:[2,5] },
+    fire:   { colors:['#ff5a2e','#ff8a00','#ffd83d','#ff2e2e'], anim:'fxFire',  dist:[40,110], size:[4,9] },
+    splash: { colors:['#00c2ff','#63f7ff','#a0e9ff','#0090ff'], anim:'fxSplash',dist:[50,130], size:[3,7] },
+  };
+  const p = palettes[type] || palettes.spark;
+
+  let html = '';
+  for(let i=0;i<count;i++){
+    const a = Math.random()*Math.PI*2;
+    const d = p.dist[0] + Math.random()*(p.dist[1]-p.dist[0]);
+    const c = p.colors[i % p.colors.length];
+    const s = p.size[0] + Math.random()*(p.size[1]-p.size[0]);
+    const dx = (Math.cos(a)*d).toFixed(0), dy = (Math.sin(a)*d).toFixed(0);
+    const rot = (Math.random()*720-360).toFixed(0);
+    const dur = (0.45 + Math.random()*0.5).toFixed(2);
+    const delay = (Math.random()*0.1).toFixed(2);
+    html += `<i style="width:${s}px;height:${s}px;background:${c};box-shadow:0 0 8px ${c};
+      --dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;
+      animation:${p.anim} ${dur}s ease-out ${delay}s forwards"></i>`;
+  }
+  layer.innerHTML = html;
+  document.body.appendChild(layer);
+  setTimeout(() => layer.remove(), 1300);
+}
+
+function fxBurstAtEl(el, type, count){
+  if(!el) return;
+  const r = el.getBoundingClientRect();
+  fxBurst(r.left + r.width/2, r.top + r.height/2, type, count);
+}
+
 function sparkBurst(n, colors){
   const b=$('#burst'); let h='';
   for(let i=0;i<n;i++){
@@ -2948,6 +3011,8 @@ function showNext(){
   if(d.rarity>=5){
     SND.legendary();
     sparkBurst(80,['#ffd83d','#ffffff','#ff43e0','#ffe9b4']);
+    const rr=hit.getBoundingClientRect();
+    fxBurst(rr.left+rr.width/2, rr.top+rr.height/2, 'fire', 22);
     shake(true);
     $('#reveal').classList.add('legend');
   } else if(d.rarity>=4){
