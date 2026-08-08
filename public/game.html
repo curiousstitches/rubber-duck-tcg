@@ -1032,7 +1032,13 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2slot.target{border-color:#3dff9e;box-shadow:0 0 0 2px #3dff9e,0 0 14px rgba(61,255,158,.5);
   animation:targetPulse 1s ease-in-out infinite}
 @keyframes targetPulse{0%,100%{opacity:1}50%{opacity:.6}}
-.b2hidden{grid-column:1/-1;text-align:center;color:var(--dim);font-size:.78rem;padding:16px 0}
+.b2slot.can-attack{border-color:#ffd83d;box-shadow:0 0 0 2px #ffd83d;cursor:pointer}
+.b2slot.attacker{border-color:#00fff2;box-shadow:0 0 0 3px #00fff2,0 0 18px rgba(0,255,242,.6);
+  animation:attackerPulse .8s ease-in-out infinite}
+@keyframes attackerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.b2slot.spent{opacity:.45}
+.b2mode.spent{position:absolute;bottom:2px;left:0;right:0;text-align:center;
+  font:800 .5rem 'Chakra Petch';padding:1px 0;background:rgba(0,0,0,.7);color:#8b95bd}
 
 .hcard.selected{outline:3px solid transparent;
   border-image:linear-gradient(90deg,#ff5a5a,#ffd83d,#3dff9e,#00fff2,#a78bff,#ff5a5a) 1;
@@ -1506,6 +1512,7 @@ input.search:focus{border-color:var(--cyan)}
     </div>
 
     <div class="b2status" id="b2Status"></div>
+    <button class="btn danger" id="b2AttackFace" style="display:none;margin-bottom:8px">💥 Attack their health directly</button>
 
     <div class="handhead">
       <span>YOUR HAND · <b id="b2HandCount">0</b></span>
@@ -1895,7 +1902,7 @@ function b2Start(mode){
     myHand: [], foeHand: [],
     myField: [null,null,null,null,null], foeField: [null,null,null,null,null],
     turn: 1, placementsThisTurn: 0, maxPlacements: 3,
-    myReady: false, foeReady: false, selected: null,
+    myReady: false, foeReady: false, selected: null, phase: 'placing', attacker: null,
     myHp: maxHp(), foeHp: maxHp(),
   };
   for(let i=0;i<7;i++) b2DrawOne(true);
@@ -2018,72 +2025,123 @@ function b2PopAttack(side, laneIdx, cb){
   const mesh = b2CardMeshes[side+laneIdx];
   if(!mesh){ cb && cb(); return; }
   const baseY = mesh.position.y, baseZ = mesh.position.z;
-  const targetZ = side==='my' ? baseZ-1.6 : baseZ+1.6;
+  const targetZ = side==='my' ? baseZ-2.4 : baseZ+2.4;
   const start = performance.now();
+  const DURATION = 320; // fast, punchy
   function step(now){
-    const t = Math.min(1, (now-start)/650);
+    const t = Math.min(1, (now-start)/DURATION);
     const k = Math.sin(t*Math.PI);
-    mesh.position.y = baseY + 0.7*k;
+    mesh.position.y = baseY + 1.1*k;
     mesh.position.z = baseZ + (targetZ-baseZ)*k;
-    mesh.rotation.z = (side==='my'?-1:1)*0.25*k;
+    mesh.rotation.z = (side==='my'?-1:1)*0.35*k;
+    mesh.rotation.x += (side==='my'?-0.03:0.03);
     if(t<1) requestAnimationFrame(step);
     else{ mesh.position.y=baseY; mesh.position.z=baseZ; mesh.rotation.z=0; cb && cb(); }
   }
   requestAnimationFrame(step);
 }
 
-function b2ResolveCombat(){
-  for(let i=0;i<5;i++){
-    const mine=B2.myField[i], foe=B2.foeField[i];
-    if(!mine && !foe) continue;
-    if(mine && !foe){
-      if(mine.mode==='atk'){
-        b2PopAttack('my', i);
-        const roll=rollD100('me'); const dmg=Math.round(mine.card.atk*rollPower(roll).mult);
-        B2.foeHp-=dmg; b2Log(`⚔️ <b>${mine.card.name}</b> strikes unopposed for ${dmg} (roll ${roll}).`);
-      }
-      continue;
-    }
-    if(!mine && foe){
-      if(foe.mode==='atk'){
-        b2PopAttack('foe', i);
-        const roll=rollD100('foe'); const dmg=Math.round(foe.card.atk*rollPower(roll).mult);
-        B2.myHp-=dmg; b2Log(`⚔️ Their <b>${foe.card.name}</b> strikes unopposed for ${dmg} (roll ${roll}).`);
-      }
-      continue;
-    }
-    const a=mine.card, b=foe.card;
-    if(mine.mode==='atk' && foe.mode==='atk'){
-      b2PopAttack('my', i); b2PopAttack('foe', i);
-      const eb=ELB(a.theme,b.theme);
-      const rA=rollD100('me'), rB=rollD100('foe');
-      const pA=a.atk*(1+eb)*rollPower(rA).mult, pB=b.atk*rollPower(rB).mult;
-      if(pA>pB){ const dmg=Math.round(pA-pB); B2.foeHp-=dmg; B2.foeField[i]=null;
-        b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) beats <b>${b.name}</b> (roll ${rB}) — ${dmg} damage.`); }
-      else if(pB>pA){ const dmg=Math.round(pB-pA); B2.myHp-=dmg; B2.myField[i]=null;
-        b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) beats <b>${a.name}</b> (roll ${rA}) — ${dmg} damage.`); }
-      else { B2.myField[i]=null; B2.foeField[i]=null; b2Log(`⚔️ Tied roll — both destroyed.`); }
-    }else if(mine.mode==='atk' && foe.mode==='def'){
-      b2PopAttack('my', i);
-      const eb=ELB(a.theme,b.theme);
-      const rA=rollD100('me'), rB=rollD100('foe');
-      const pA=a.atk*(1+eb)*rollPower(rA).mult, pB=b.def*rollPower(rB).mult;
-      if(pA>pB){ B2.foeField[i]=null; b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) breaks <b>${b.name}</b>'s defense (roll ${rB}).`); }
-      else { b2Log(`🛡️ <b>${b.name}</b> (roll ${rB}) holds against <b>${a.name}</b> (roll ${rA}).`); }
-    }else if(mine.mode==='def' && foe.mode==='atk'){
-      b2PopAttack('foe', i);
-      const eb=ELB(b.theme,a.theme);
-      const rA=rollD100('me'), rB=rollD100('foe');
-      const pB=b.atk*(1+eb)*rollPower(rB).mult, pA=a.def*rollPower(rA).mult;
-      if(pB>pA){ B2.myField[i]=null; b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) breaks <b>${a.name}</b>'s defense (roll ${rA}).`); }
-      else { b2Log(`🛡️ <b>${a.name}</b> (roll ${rA}) holds against <b>${b.name}</b> (roll ${rB}).`); }
-    }else{
-      b2Log(`🛡️ <b>${a.name}</b> and <b>${b.name}</b> both hold their ground -- no dice needed, nobody's attacking.`);
-    }
-  }
+function b2EnterAttackPhase(){
+  B2.phase = 'attacking';
+  B2.attacker = null;
+  b2CameraTo(0, 5.2, 6.2, 0,0,0, 350);
+  b2Log(`<span class="win">Attack phase — choose which card attacks, and what it attacks.</span>`);
+  b2Render();
+}
+
+function b2SelectAttacker(i){
+  if(B2.phase !== 'attacking') return;
+  const slot = B2.myField[i];
+  if(!slot || slot.attacked) return;
+  B2.attacker = (B2.attacker === i) ? null : i;
+  b2RenderFields();
+}
+
+function b2DeclareTarget(foeIdx){
+  if(B2.phase !== 'attacking' || B2.attacker === null) return;
+  b2ExecuteAttack(B2.attacker, foeIdx);
+}
+
+function b2ExecuteAttack(myIdx, foeIdx){
+  const mine = B2.myField[myIdx], foe = B2.foeField[foeIdx];
+  if(!mine || mine.attacked || !foe) return;
+  const a = mine.card, b = foe.card;
+  b2PopAttack('my', myIdx);
+  const eb = ELB(a.theme, b.theme);
+  const rA = rollD100('me'), rB = rollD100('foe');
+  const pA = a.atk*(1+eb)*rollPower(rA).mult, pB = b.def*rollPower(rB).mult;
+  mine.attacked = true;
+  if(pA>pB){ B2.foeField[foeIdx]=null; b2Log(`⚔️ <b>${a.name}</b> (roll ${rA}) breaks <b>${b.name}</b>'s defense (roll ${rB}).`); }
+  else { b2Log(`🛡️ <b>${b.name}</b> (roll ${rB}) holds against <b>${a.name}</b> (roll ${rA}).`); }
+  B2.attacker = null;
   b2UpdateHpBars();
+  b2CheckMatchEnd();
+  b2Render();
+}
+
+function b2AttackFace(){
+  if(B2.phase !== 'attacking' || B2.attacker === null) return;
+  const mine = B2.myField[B2.attacker];
+  if(!mine || mine.attacked) return;
+  const myIdx = B2.attacker;
+  b2PopAttack('my', myIdx);
+  const roll = rollD100('me');
+  const dmg = Math.round(mine.card.atk * rollPower(roll).mult);
+  B2.foeHp -= dmg;
+  mine.attacked = true;
+  b2Log(`💥 <b>${mine.card.name}</b> strikes their health directly for ${dmg} (roll ${roll}).`);
+  B2.attacker = null;
+  b2UpdateHpBars();
+  b2CheckMatchEnd();
+  b2Render();
+}
+
+function b2CheckMatchEnd(){
   if(B2.myHp<=0 || B2.foeHp<=0){ b2FinishMatch(B2.foeHp<=0); return true; }
   return false;
+}
+
+function b2DoneAttacking(){
+  if(B2.phase !== 'attacking') return;
+  B2.attacker = null;
+  b2AIAttackPhase();
+}
+
+function b2AIAttackPhase(){
+  const attackers = B2.foeField.map((s,i)=> (s && !s.attacked) ? i : -1).filter(i=>i>=0);
+  let step = 0;
+  function next(){
+    if(step >= attackers.length || B2.myHp<=0 || B2.foeHp<=0){
+      setTimeout(b2NextTurn, 1200);
+      return;
+    }
+    const foeIdx = attackers[step]; step++;
+    const foeSlot = B2.foeField[foeIdx];
+    if(!foeSlot || foeSlot.attacked){ next(); return; }
+    const myTargets = B2.myField.map((s,i)=> s ? i : -1).filter(i=>i>=0);
+    b2PopAttack('foe', foeIdx);
+    if(myTargets.length && Math.random() < 0.7){
+      const myIdx = myTargets[Math.floor(Math.random()*myTargets.length)];
+      const mine = B2.myField[myIdx], b = foeSlot.card;
+      const eb = ELB(b.theme, mine.card.theme);
+      const rB = rollD100('foe'), rA = rollD100('me');
+      const pB = b.atk*(1+eb)*rollPower(rB).mult, pA = mine.card.def*rollPower(rA).mult;
+      foeSlot.attacked = true;
+      if(pB>pA){ B2.myField[myIdx]=null; b2Log(`⚔️ Their <b>${b.name}</b> (roll ${rB}) breaks <b>${mine.card.name}</b>'s defense (roll ${rA}).`); }
+      else { b2Log(`🛡️ <b>${mine.card.name}</b> (roll ${rA}) holds against their <b>${b.name}</b> (roll ${rB}).`); }
+    }else{
+      const roll = rollD100('foe');
+      const dmg = Math.round(foeSlot.card.atk * rollPower(roll).mult);
+      B2.myHp -= dmg;
+      foeSlot.attacked = true;
+      b2Log(`💥 Their <b>${foeSlot.card.name}</b> strikes your health for ${dmg} (roll ${roll}).`);
+    }
+    b2UpdateHpBars();
+    if(b2CheckMatchEnd()) return;
+    b2Render();
+    setTimeout(next, 420);
+  }
+  next();
 }
 
 function b2UpdateHpBars(){
@@ -2159,14 +2217,19 @@ function b2RenderFields(){
   myRow.innerHTML = '';
   B2.myField.forEach((slot, i) => {
     const el = document.createElement('div');
-    const canTarget = B2.selected !== null && !slot;
+    const canTarget = B2.selected !== null && !slot; // placing a hand card here
+    const canAttackWith = B2.phase === 'attacking' && slot && !slot.attacked;
+    const isAttacker = B2.attacker === i;
     const rarityClass = slot ? ' r' + (slot.card.rarity || 1) : '';
-    el.className = 'b2slot' + (slot ? ' filled'+rarityClass : '') + (canTarget ? ' target' : '');
+    el.className = 'b2slot' + (slot ? ' filled'+rarityClass : '') +
+      (canTarget ? ' target' : '') + (canAttackWith ? ' can-attack' : '') +
+      (isAttacker ? ' attacker' : '') + (slot && slot.attacked ? ' spent' : '');
     if(slot){
       el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">` +
-        `<div class="b2mode ${slot.mode}">${slot.mode === 'atk' ? '⚔️ ATK' : '🛡️ DEF'}</div>`;
+        (slot.attacked ? `<div class="b2mode spent">Attacked</div>` : '');
     }
     if(canTarget) el.onclick = () => b2PlaceCard(i);
+    else if(canAttackWith) el.onclick = () => b2SelectAttacker(i);
     myRow.appendChild(el);
   });
 
@@ -2176,27 +2239,34 @@ function b2RenderFields(){
     foeRow.innerHTML = `<div class="b2hidden">🔒 Hidden until both players are ready</div>`;
   }else{
     foeRow.innerHTML = '';
-    B2.foeField.forEach(slot => {
+    const canTargetFoe = B2.phase === 'attacking' && B2.attacker !== null;
+    B2.foeField.forEach((slot,i) => {
       const el = document.createElement('div');
-      el.className = 'b2slot' + (slot ? ' filled' : '');
-      if(slot){
-        el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">` +
-          `<div class="b2mode ${slot.mode}">${slot.mode === 'atk' ? '⚔️ ATK' : '🛡️ DEF'}</div>`;
-      }
+      el.className = 'b2slot' + (slot ? ' filled' : '') + (canTargetFoe ? ' target' : '');
+      if(slot) el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">`;
+      if(canTargetFoe) el.onclick = () => b2DeclareTarget(i);
       foeRow.appendChild(el);
     });
+  }
+
+  const faceBtn = $('#b2AttackFace');
+  if(faceBtn) faceBtn.style.display = (B2.phase==='attacking' && B2.attacker!==null) ? 'block' : 'none';
+
+  if(B2.phase === 'attacking'){
+    $('#b2Status').textContent = B2.attacker===null
+      ? 'Tap one of your cards to attack with it.'
+      : 'Tap an opponent card to attack it, or attack their health directly.';
   }
 }
 
 function b2PlaceCard(slotIdx){
   if(B2.selected === null || B2.myField[slotIdx]) return;
   const card = B2.myHand[B2.selected];
-  const mode = confirm(`Place ${card.name} in ATTACK mode? (Cancel = Defense)`) ? 'atk' : 'def';
-  B2.myField[slotIdx] = { card, mode };
+  B2.myField[slotIdx] = { card, attacked:false };
   B2.myHand.splice(B2.selected, 1);
   B2.selected = null;
   B2.placementsThisTurn++;
-  b2Log(`Placed <b>${card.name}</b> in ${mode === 'atk' ? 'Attack' : 'Defense'}.`);
+  b2Log(`Placed <b>${card.name}</b> on the field.`);
   $('#b2Card').style.display = 'none';
   b2Render();
 }
@@ -2209,8 +2279,7 @@ function b2AIPlace(){
     const slot = openSlots[Math.floor(Math.random()*openSlots.length)];
     const idx = Math.floor(Math.random()*B2.foeHand.length);
     const card = B2.foeHand.splice(idx,1)[0];
-    const mode = Math.random() < 0.6 ? 'atk' : 'def';
-    B2.foeField[slot] = { card, mode };
+    B2.foeField[slot] = { card, attacked:false };
     placed++;
   }
   B2.foeReady = true;
@@ -2222,16 +2291,9 @@ function b2Ready(){
   $('#b2Status').textContent = 'Waiting for opponent...';
   if(!B2.foeReady) b2AIPlace();
   setTimeout(() => {
-    b2Render();
-    b2Log(`<span class="win">Both sides ready — resolving combat.</span>`);
     $('#b2Field').classList.remove('placing');
     $('#b2Field').classList.add('resolving');
-    b2CameraTo(0, 5.2, 6.2, 0,0,0, 700);
-    setTimeout(() => {
-      const over = b2ResolveCombat();
-      b2Render();
-      if(!over) setTimeout(b2NextTurn, 2200);
-    }, 900);
+    b2EnterAttackPhase();
   }, 500);
 }
 
@@ -2241,11 +2303,15 @@ function b2NextTurn(){
   B2.placementsThisTurn = 0;
   B2.myReady = false;
   B2.foeReady = false;
+  B2.phase = 'placing';
+  B2.attacker = null;
+  B2.myField.forEach(s => { if(s) s.attacked = false; });
+  B2.foeField.forEach(s => { if(s) s.attacked = false; });
   $('#b2TurnLabel').textContent = 'Turn ' + B2.turn;
   $('#b2Status').textContent = '';
   $('#b2Field').classList.remove('resolving');
   $('#b2Field').classList.add('placing');
-  b2CameraTo(0, 3.4, 4.8, 0,0,0.5, 700);
+  b2CameraTo(0, 3.4, 4.8, 0,0,0.5, 400);
   const drewMe = b2DrawOne(true);
   b2DrawOne(false);
   b2Log(`<b>Turn ${B2.turn}.</b> ${drewMe ? 'Drew 1 card.' : 'Deck is empty.'}`);
@@ -2256,11 +2322,20 @@ function b2Render(){
   b2RenderHand();
   b2RenderFields();
   b2SyncScene();
-  $('#b2ReadyBtn').disabled = B2.myReady;
+  const readyBtn = $('#b2ReadyBtn');
+  if(B2.phase === 'attacking'){
+    readyBtn.textContent = '➡️ Done Attacking'; readyBtn.disabled = false;
+  }else{
+    readyBtn.textContent = '✅ Ready'; readyBtn.disabled = B2.myReady;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  $('#b2ReadyBtn')?.addEventListener('click', b2Ready);
+  $('#b2ReadyBtn')?.addEventListener('click', () => {
+    if(B2 && B2.phase === 'attacking') b2DoneAttacking();
+    else b2Ready();
+  });
+  $('#b2AttackFace')?.addEventListener('click', b2AttackFace);
   $('#b2Leave')?.addEventListener('click', b2Exit);
   $('#b2CardClose')?.addEventListener('click', () => { B2.selected = null; b2Render(); $('#b2Card').style.display='none'; });
   $('#b2StaffLink')?.addEventListener('click', () => b2Start({k:'test', n:'TEST', riskTier:0}));
