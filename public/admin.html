@@ -196,6 +196,28 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
         <h2>Duplicate-Account Flags</h2>
         <div id="dupList"><div class="empty">Loading…</div></div>
       </div>
+      <div class="card">
+        <h2>💬 Chat Moderation</h2>
+        <label>Blocked word</label>
+        <div class="row">
+          <input id="wordInput" placeholder="word to auto-censor" style="flex:1">
+          <button class="btn ghost" id="btnAddWord">Add</button>
+        </div>
+        <div id="wordList" style="margin:10px 0"><div class="empty">Loading…</div></div>
+        <label>Recent messages</label>
+        <div id="chatModList"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h2>⚡ Kick a Player Now</h2>
+        <div class="muted" style="margin-bottom:8px">Instantly removes them if online, and applies a 24hr ban.</div>
+        <input id="kickHandle" placeholder="Player handle">
+        <textarea id="kickReason" placeholder="Reason"></textarea>
+        <button class="btn danger" id="btnKick">Kick + Ban 24h</button>
+      </div>
+      <div class="card">
+        <h2>⚔️ Active Battle Lobbies</h2>
+        <div id="lobbyList"><div class="empty">Loading…</div></div>
+      </div>
     </div>
 
     <!-- SUGGESTIONS -->
@@ -387,7 +409,7 @@ document.querySelectorAll('.tab').forEach(t => {
     t.classList.add('active');
     $('#p-' + t.dataset.p).classList.add('on');
     if(t.dataset.p === 'players' && !playerRowsSoFar.length) loadPlayers(true);
-    if(t.dataset.p === 'moderation') { loadBans(); loadReports(); loadDupFlags(); }
+    if(t.dataset.p === 'moderation') { loadBans(); loadReports(); loadDupFlags(); loadBlockedWords(); loadChatMod(); loadLobbies(); }
     if(t.dataset.p === 'economy') { loadPacks(); loadSellback(); }
     if(t.dataset.p === 'keylinks') { loadKeyLinksAdmin(); }
     if(t.dataset.p === 'community') { loadSchedule(); }
@@ -766,6 +788,72 @@ async function loadDupFlags(){
     await sb.from('duplicate_flags').update({ status: b.dataset.status }).eq('id', b.dataset.dup);
     loadDupFlags();
   });
+}
+
+/* ---------- chat moderation ---------- */
+async function loadBlockedWords(){
+  const box = $('#wordList');
+  const { data, error } = await sb.from('chat_blocked_words').select('word').order('word');
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load.</div>`; return; }
+  box.innerHTML = (data||[]).map(w => `<span class="badge admin" style="margin:2px" data-word="${esc(w.word)}">${esc(w.word)} ✕</span>`).join(' ') || '<div class="empty">No blocked words yet.</div>';
+  box.querySelectorAll('[data-word]').forEach(el => el.onclick = async () => {
+    await sb.rpc('remove_blocked_word', { word_in: el.dataset.word });
+    loadBlockedWords();
+  });
+}
+$('#btnAddWord').onclick = async () => {
+  const w = $('#wordInput').value.trim();
+  if(!w) return;
+  await sb.rpc('add_blocked_word', { word_in: w });
+  $('#wordInput').value = '';
+  loadBlockedWords();
+};
+
+async function loadChatMod(){
+  const box = $('#chatModList');
+  const { data, error } = await sb.from('chat_messages').select('*').order('created_at',{ascending:false}).limit(30);
+  if(error){ box.innerHTML = `<div class="empty">Couldn't load chat.</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No messages yet.</div>`; return; }
+  box.innerHTML = data.map(m => `
+    <div class="list-item">
+      <div class="top"><span class="name">${esc(m.sender_handle)}</span><span class="muted">${timeAgo(m.created_at)}</span></div>
+      <div class="muted" style="margin:4px 0">${esc(m.body)}</div>
+      <button class="btn ghost" data-del-msg="${m.id}" style="padding:4px 10px">Delete</button>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-del-msg]').forEach(b => b.onclick = async () => {
+    await sb.rpc('delete_chat_message', { id_in: b.dataset.delMsg });
+    loadChatMod();
+  });
+}
+
+/* ---------- instant kick ---------- */
+$('#btnKick').onclick = async () => {
+  const handle = $('#kickHandle').value.trim();
+  const reason = $('#kickReason').value.trim() || 'Kicked by staff';
+  if(!handle){ alert('Enter a handle.'); return; }
+  const { data: p } = await sb.from('players').select('id').eq('handle', handle).maybeSingle();
+  if(!p){ alert('No player with that handle.'); return; }
+  const { error } = await sb.rpc('issue_ban', { target_player: p.id, ban_reason: reason, duration_hours: 24 });
+  if(error){ alert(error.message); return; }
+  await sb.channel('kicks').send({ type: 'broadcast', event: 'kick', payload: { handle } });
+  $('#kickHandle').value = ''; $('#kickReason').value = '';
+  alert(`${handle} kicked and banned 24h.`);
+  loadBans(); loadLog();
+};
+
+/* ---------- active lobbies ---------- */
+async function loadLobbies(){
+  const box = $('#lobbyList');
+  const { data, error } = await sb.rpc('list_active_matches', { limit_n: 30 });
+  if(error){ box.innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  if(!data.length){ box.innerHTML = `<div class="empty">No active battles right now.</div>`; return; }
+  box.innerHTML = data.map(m => `
+    <div class="list-item">
+      <div class="top"><span class="name">${esc(m.p1_handle)} vs ${esc(m.p2_handle)}</span><span class="muted">${timeAgo(m.created_at)}</span></div>
+      <div class="muted">HP ${m.p1_hp}–${m.p2_hp} · ${esc(m.state)}</div>
+    </div>
+  `).join('');
 }
 
 async function grantPacks(playerId){

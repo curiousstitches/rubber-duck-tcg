@@ -626,6 +626,14 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .notif-item.green{border-left-color:#3dff9e}
 .notif-item b{display:block;font:700 .92rem 'Chakra Petch';margin-bottom:4px}
 .notif-item span{color:var(--dim);font-size:.82rem}
+.chatinput{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--edge)}
+.chatinput input{flex:1;background:#0c1020;border:1px solid var(--edge);color:var(--ink);
+  border-radius:12px;padding:11px 13px;font-size:.9rem}
+.chatmsg{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:9px 12px}
+.chatmsg b{color:#00fff2;font:700 .8rem 'Chakra Petch'}
+.chatmsg .t{color:var(--dim);font-size:.68rem;margin-left:6px}
+.chatmsg .body{margin-top:2px;font-size:.86rem;word-break:break-word}
+.chatmsg .del{float:right;background:none;border:0;color:#ff5a5a;font-size:.7rem}
 
 /* trade + battle panels */
 .panel{background:var(--panel);border:1px solid var(--edge);border-radius:17px;
@@ -996,7 +1004,11 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .adBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 
 /* ---- Battle 2 (new mechanic) ---- */
-.b2field{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.b2field{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;transition:transform .5s cubic-bezier(.3,.8,.3,1)}
+.b2field.placing .b2side.mine{transform:scale(1.04)}
+.b2field.placing .b2side.foe{opacity:.5;transform:scale(.94)}
+.b2field.resolving{transform:scale(1)}
+.b2field.resolving .b2side{opacity:1;transform:scale(1)}
 .b2side{background:rgba(20,27,51,.6);border:1px solid var(--edge);border-radius:14px;padding:10px}
 .b2label{font:700 .68rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
   color:var(--dim);margin-bottom:8px}
@@ -1201,6 +1213,7 @@ input.search:focus{border-color:var(--cyan)}
     <div class="chip gold" title="Duck Droppings">💩 <span id="coins">0</span></div>
     <div class="chip shard" title="Diamond Shards">💎 <span id="shards">0</span></div>
     <div class="chip">📦 <span id="packs">0</span></div>
+    <div class="chip" id="chatBtn" style="cursor:pointer">💬</div>
     <div class="chip" id="notifBtn" style="cursor:pointer">🔔</div>
     <div class="chip" id="sfxBtn" style="cursor:pointer">🔊</div>
     <div class="chip" id="acctBtn" style="cursor:pointer">👤</div>
@@ -1227,6 +1240,18 @@ input.search:focus{border-color:var(--cyan)}
     <button id="notifClose" class="btn ghost">Close</button>
   </div>
   <div id="notifList" class="notiflist"></div>
+</div>
+
+<div id="chatPanel" class="notifpanel">
+  <div class="notifhead">
+    <h2>💬 Chat</h2>
+    <button id="chatClose" class="btn ghost">Close</button>
+  </div>
+  <div id="chatList" class="notiflist"></div>
+  <div class="chatinput">
+    <input id="chatInput" placeholder="Say something…" maxlength="300">
+    <button class="btn" id="chatSend">Send</button>
+  </div>
 </div>
 
 <main>
@@ -1451,11 +1476,11 @@ input.search:focus{border-color:var(--cyan)}
     </div>
 
     <div id="b2Field" class="b2field">
-      <div class="b2side">
+      <div class="b2side mine">
         <div class="b2label">Your Field</div>
         <div class="b2row" id="b2MyRow"></div>
       </div>
-      <div class="b2side" id="b2FoeSide">
+      <div class="b2side foe" id="b2FoeSide">
         <div class="b2label">Opponent's Field</div>
         <div class="b2row" id="b2FoeRow">
           <div class="b2hidden">🔒 Hidden until both players are ready</div>
@@ -1861,6 +1886,7 @@ function b2Start(mode){
   $('#battleSetup').style.display = 'none';
   $('#v-battle2').classList.add('on');
   document.body.classList.add('in-battle');
+  $('#b2Field').classList.add('placing');
   $('#b2Log').innerHTML = '';
   b2UpdateHpBars();
   b2Log(`<b>${mode.n}</b> begins. You drew 7 cards.`);
@@ -2070,6 +2096,8 @@ function b2Ready(){
   setTimeout(() => {
     b2Render();
     b2Log(`<span class="win">Both sides ready — resolving combat.</span>`);
+    $('#b2Field').classList.remove('placing');
+    $('#b2Field').classList.add('resolving');
     setTimeout(() => {
       const over = b2ResolveCombat();
       b2Render();
@@ -2086,6 +2114,8 @@ function b2NextTurn(){
   B2.foeReady = false;
   $('#b2TurnLabel').textContent = 'Turn ' + B2.turn;
   $('#b2Status').textContent = '';
+  $('#b2Field').classList.remove('resolving');
+  $('#b2Field').classList.add('placing');
   const drewMe = b2DrawOne(true);
   b2DrawOne(false);
   b2Log(`<b>Turn ${B2.turn}.</b> ${drewMe ? 'Drew 1 card.' : 'Deck is empty.'}`);
@@ -2103,6 +2133,79 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#b2Leave')?.addEventListener('click', b2Exit);
   $('#b2CardClose')?.addEventListener('click', () => { B2.selected = null; b2Render(); $('#b2Card').style.display='none'; });
   $('#b2StaffLink')?.addEventListener('click', () => b2Start({k:'test', n:'TEST', riskTier:0}));
+});
+
+/* ============ CHAT ============ */
+let chatChannel = null, chatLoaded = false;
+
+function chatEsc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function chatTimeAgo(iso){
+  const s = Math.floor((Date.now()-new Date(iso))/1000);
+  if(s<60) return 'now';
+  if(s<3600) return Math.floor(s/60)+'m';
+  return Math.floor(s/3600)+'h';
+}
+
+async function chatOpen(){
+  $('#chatPanel').classList.add('on');
+  if(!chatLoaded){ chatLoaded = true; await chatLoadHistory(); chatSubscribe(); }
+}
+
+async function chatLoadHistory(){
+  const box = $('#chatList');
+  if(!(window.DuckSave && window.DuckSave.sb)){
+    box.innerHTML = '<div class="empty"><b>Sign in to chat</b></div>'; return;
+  }
+  const { data, error } = await window.DuckSave.sb.from('chat_messages')
+    .select('*').eq('room','global').order('created_at',{ascending:false}).limit(50);
+  if(error || !data){ box.innerHTML = '<div class="empty">Could not load chat.</div>'; return; }
+  box.innerHTML = data.slice().reverse().map(chatRenderMsg).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function chatRenderMsg(m){
+  return `<div class="chatmsg" data-id="${m.id}"><b>${chatEsc(m.sender_handle)}</b><span class="t">${chatTimeAgo(m.created_at)}</span>`+
+    `<div class="body">${chatEsc(m.body)}</div></div>`;
+}
+
+function chatSubscribe(){
+  if(!(window.DuckSave && window.DuckSave.sb)) return;
+  chatChannel = window.DuckSave.sb.channel('chat-global')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'chat_messages', filter:'room=eq.global'}, (payload) => {
+      const box = $('#chatList');
+      box.insertAdjacentHTML('beforeend', chatRenderMsg(payload.new));
+      box.scrollTop = box.scrollHeight;
+    })
+    .subscribe();
+}
+
+async function chatSend(){
+  const input = $('#chatInput');
+  const text = input.value.trim();
+  if(!text || !(window.DuckSave && window.DuckSave.sb)) return;
+  input.value = '';
+  const { error } = await window.DuckSave.sb.rpc('send_chat_message', { room_in: 'global', body_in: text });
+  if(error) toast(error.message);
+}
+
+/* real-time kick: staff can force an active player straight to logout */
+function startKickListener(){
+  if(!(window.DuckSave && window.DuckSave.sb)) return;
+  const handle = window.DuckSave.who ? window.DuckSave.who() : null;
+  if(!handle) return;
+  window.DuckSave.sb.channel('kicks').on('broadcast', {event:'kick'}, (msg) => {
+    if(msg.payload && msg.payload.handle === handle){
+      alert('You have been removed from the game by staff.');
+      window.DuckSave.sb.auth.signOut().then(()=>location.href='auth.html');
+    }
+  }).subscribe();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('#chatBtn')?.addEventListener('click', chatOpen);
+  $('#chatClose')?.addEventListener('click', () => $('#chatPanel').classList.remove('on'));
+  $('#chatSend')?.addEventListener('click', chatSend);
+  $('#chatInput')?.addEventListener('keydown', e => { if(e.key==='Enter') chatSend(); });
 });
 
 async function checkMaintenance(){
@@ -4148,6 +4251,7 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
   renderTicker();
   renderReferral();
   startPresence();
+  startKickListener();
   checkStaffTestAccess();
   if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
