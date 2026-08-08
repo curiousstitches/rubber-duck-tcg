@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="ec0b2f6c8eea">
+<meta name="game-version" content="5215733b53e8">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -369,7 +369,16 @@ header{position:relative;z-index:2;padding:14px 16px 10px;display:flex;
 .purse{display:flex;gap:8px;align-items:center}
 .chip{background:var(--panel);border:1px solid var(--edge);border-radius:999px;
   padding:6px 12px;font-size:.8rem;font-weight:700;display:flex;gap:6px;align-items:center}
-.chip.gold{color:var(--gold);border-color:#5a4a12}
+@media (max-width:400px){
+  header{padding:10px 10px 8px}
+  .brand b{display:none}
+  .purse{gap:5px}
+  .chip{padding:5px 9px!important;font-size:.72rem!important;gap:4px!important}
+}
+@media (max-width:340px){
+  .chip:not(.gold){padding:5px 7px!important}
+  .chip:not(.gold) b, .chip:not(.gold) span{display:none}
+}
 
 /* stage */
 main{position:relative;z-index:1;flex:1;overflow-y:auto;padding:16px 14px 96px;
@@ -590,6 +599,32 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .slot[data-r="5"]{border-color:#7a6412;box-shadow:0 0 18px rgba(255,216,61,.24)}
 .slot[data-r="4"]{border-color:#5c3a72;box-shadow:0 0 15px rgba(255,67,224,.18)}
 .slot.sel{outline:2px solid var(--cyan);outline-offset:1px}
+.colCardSlot{position:relative;transition:.16s}
+.colCardSlot:active{transform:scale(.96)}
+.colCardSlot .qty{position:absolute;top:4px;right:4px;z-index:6;background:rgba(6,8,16,.88);
+  border:1px solid var(--edge);border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:800}
+.colCardSlot .sellbtn{position:relative;z-index:6;margin-top:4px;border-radius:8px}
+#colGrid.grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+.lbLive{display:flex;align-items:center;gap:7px;font:700 .74rem 'Chakra Petch';
+  color:var(--dim);margin:8px 0 10px}
+.lbLiveDot{width:8px;height:8px;border-radius:50%;background:#3dff9e;
+  box-shadow:0 0 8px #3dff9e;animation:lbPulse 1.6s ease-in-out infinite}
+@keyframes lbPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.lbrow.podium1{border-color:#ffd83d;box-shadow:0 0 16px rgba(255,216,61,.25)}
+.lbrow.podium2{border-color:#cfd8ff;box-shadow:0 0 14px rgba(207,216,255,.2)}
+.lbrow.podium3{border-color:#ffb46b;box-shadow:0 0 14px rgba(255,180,107,.2)}
+.lbrow .lbpos.podium{font-size:1.2rem}
+.avatarCurrent{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.avatarCurrent img{width:56px;height:56px;border-radius:50%;object-fit:cover;
+  border:2px solid var(--cyan);box-shadow:0 0 14px rgba(0,255,242,.35)}
+.avatarGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;
+  max-height:280px;overflow-y:auto}
+.avatarGrid img{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;cursor:pointer;
+  border:2px solid var(--edge);transition:.15s}
+.avatarGrid img:active{transform:scale(.9)}
+.avatarGrid img.sel{border-color:#00fff2;box-shadow:0 0 12px rgba(0,255,242,.5)}
+.playerAv{width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;
+  margin-right:5px;border:1px solid var(--edge)}
 .empty{text-align:center;padding:46px 20px;color:var(--dim)}
 .empty b{display:block;font:800 1.02rem/1.4 'Chakra Petch';color:var(--ink);margin-bottom:7px}
 
@@ -747,6 +782,7 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .lbrow:nth-child(2) .lbpos{color:#d8d8e8}
 .lbrow:nth-child(3) .lbpos{color:#e0a060}
 .lbav{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;
+  object-fit:cover;
  justify-content:center;font-size:1.25rem;flex:0 0 auto}
 .lbinfo{flex:1;min-width:0}
 .lbinfo b{display:block;font:800 .88rem 'Chakra Petch';text-transform:uppercase;
@@ -1115,6 +1151,10 @@ body.in-rip .diffbox{display:none}
 body.in-rip .packrow{display:none}
 body.in-rip .packstage{min-height:80vh;justify-content:center}
 body.in-rip .packwrap{width:min(72vw,300px)!important}
+.ripFloatTab{position:fixed;left:14px;bottom:78px;z-index:52;
+  border-radius:999px;padding:11px 18px!important;font-size:.82rem!important;
+  box-shadow:0 8px 22px rgba(0,255,242,.35)}
+body.in-rip .ripFloatTab{display:none}
 body.in-battle #v-battle{min-height:100vh;padding-top:env(safe-area-inset-top,10px)}
 
 /* ---- the battlefield: an actual table, not a sketch ---- */
@@ -1278,7 +1318,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "ec0b2f6c8eea";
+  var myVersion = "5215733b53e8";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1379,7 +1419,7 @@ input.search:focus{border-color:var(--cyan)}
         </div>
         <div class="ripHintTxt" id="ripHintTxt">👆 drag any direction across the pack to tear it open</div>
       </div>
-      <button class="btn" id="ripBtn">Rip it open · <span id="ripCost">500</span> 💩</button>
+      <button class="btn ripFloatTab" id="ripBtn">🦆 Rip · <span id="ripCost">500</span>💩</button>
     </div>
   </section>
 
@@ -1670,6 +1710,13 @@ input.search:focus{border-color:var(--cyan)}
     </div>
 
     <div class="panel">
+      <h3>🖼️ Your Avatar</h3>
+      <p>Pick a duck to represent you next to your name everywhere in the game.</p>
+      <div id="avatarCurrent" class="avatarCurrent"></div>
+      <div id="avatarGrid" class="avatarGrid"></div>
+    </div>
+
+    <div class="panel">
       <h3>🎁 Invite friends</h3>
       <p>Share your code — you both get 500 💩 and 2 packs the moment they join.</p>
       <div id="refCodeBox" class="muted">Sign in to get your code</div>
@@ -1682,6 +1729,7 @@ input.search:focus{border-color:var(--cyan)}
   <!-- ============ LEADERBOARD ============ -->
   <section class="view" id="v-ranks">
     <div class="hd"><h2>Leaderboard</h2><span id="lbNote">Gold and above</span></div>
+    <div class="lbLive" id="lbLive"><span class="lbLiveDot"></span>Connecting…</div>
     <div class="stabs" id="lbTabs">
       <button class="on" data-lb="rank">Rank</button>
       <button data-lb="wins">Wins</button>
@@ -1941,6 +1989,43 @@ document.addEventListener('DOMContentLoaded', () => {
     purse(); renderAll();
   });
 });
+
+let MY_AVATAR = null;
+function avatarArt(duckName){
+  const d = byName(duckName);
+  return d ? ('cards/ducks/'+d.hero) : 'cards/ducks/'+duckName+'_hero.png';
+}
+async function renderAvatarPicker(){
+  const grid = $('#avatarGrid'), cur = $('#avatarCurrent');
+  if(!grid || !cur) return;
+  if(!(window.DuckSave && window.DuckSave.sb)){
+    cur.innerHTML = '<span class="muted">Sign in to set an avatar</span>';
+    grid.innerHTML = '';
+    return;
+  }
+  const { data: { user } } = await window.DuckSave.sb.auth.getUser();
+  if(!user) return;
+  const { data } = await window.DuckSave.sb.from('players').select('avatar_duck').eq('id', user.id).maybeSingle();
+  MY_AVATAR = data ? data.avatar_duck : null;
+
+  cur.innerHTML = MY_AVATAR
+    ? `<img src="${avatarArt(MY_AVATAR)}" alt=""><div><b>${MY_AVATAR}</b><div class="muted">Your current avatar</div></div>`
+    : `<div class="muted">No avatar chosen yet — pick one below</div>`;
+
+  const pool = (S.dex||[]).slice(0, 50);
+  grid.innerHTML = pool.map(d =>
+    `<img src="cards/ducks/${d.hero}" alt="${d.name}" title="${d.name}"
+       class="${MY_AVATAR===d.name?'sel':''}" data-avname="${d.name}">`
+  ).join('');
+  grid.querySelectorAll('img').forEach(img => img.onclick = async () => {
+    const name = img.dataset.avname;
+    const { error } = await window.DuckSave.sb.rpc('set_my_avatar', { duck_name: name });
+    if(error){ toast(error.message); return; }
+    MY_AVATAR = name;
+    toast('Avatar updated!');
+    renderAvatarPicker();
+  });
+}
 
 let presenceChannel = null;
 function startPresence(){
@@ -2407,7 +2492,8 @@ async function chatLoadHistory(){
 }
 
 function chatRenderMsg(m){
-  return `<div class="chatmsg" data-id="${m.id}"><b>${chatEsc(m.sender_handle)}</b><span class="t">${chatTimeAgo(m.created_at)}</span>`+
+  const av = m.sender_avatar ? `<img class="playerAv" src="${avatarArt(m.sender_avatar)}" alt="">` : '';
+  return `<div class="chatmsg" data-id="${m.id}">${av}<b>${chatEsc(m.sender_handle)}</b><span class="t">${chatTimeAgo(m.created_at)}</span>`+
     `<div class="body">${chatEsc(m.body)}</div></div>`;
 }
 
@@ -2951,6 +3037,7 @@ function ripPack(alreadyTorn){
   if(!S.dex.length){ toast('No cards painted yet'); return; }
   const p=CHOSEN;
   if(S.coins < p.cost){ toast(`Need ${p.cost} droppings for that pack`); return; }
+  document.body.classList.add('in-rip');
   S.coins -= p.cost; purse(); save(); SND.rip();
 
   const pk=$('#pack');
@@ -3294,12 +3381,17 @@ function renderCol(){
     if(q && !n.includes(q)) continue;
     if(colFilter==='dupe' && S.owned[n]<2) continue;
     if(colFilter!=='all' && colFilter!=='dupe' && d.rarity!==+colFilter) continue;
+    const cardData = variant?Object.assign({},d,{variant,hero:heroFor(n,variant)}):d;
     const el=document.createElement('div');
-    el.className='slot'; el.dataset.r=d.rarity;
-    el.innerHTML=`<img loading="lazy" src="cards/ducks/${d.hero}" alt="${n}">`+
-      (S.owned[n]>1?`<span class="qty">x${S.owned[n]}</span>`:'')+
-      `<div class="cap"><span>${n}</span><b>${'\u2605'.repeat(d.rarity)}</b></div>`;
-    el.onclick=()=>openViewer(variant?Object.assign({},d,{variant,hero:heroFor(n,variant)}):d);
+    el.className='colCardSlot';
+    const cardEl = buildCard(cardData, false);
+    el.appendChild(cardEl);
+    if(S.owned[n]>1){
+      const qtyBadge=document.createElement('span');
+      qtyBadge.className='qty'; qtyBadge.textContent='x'+S.owned[n];
+      el.appendChild(qtyBadge);
+    }
+    el.onclick=()=>openViewer(cardData);
     if(S.owned[key]>1){
       const sb=document.createElement('button');
       sb.className='sellbtn';
@@ -3448,6 +3540,22 @@ function grabProfile(){
 
 /* ---------------- leaderboard ---------------- */
 let LB='rank';
+let lbLiveWired = false;
+function lbStartLive(){
+  const el = $('#lbLive');
+  if(!el) return;
+  if(!presenceChannel){ el.textContent = ''; return; }
+  const refresh = () => {
+    try{
+      const state = presenceChannel.presenceState();
+      const count = Object.values(state).flat().filter(p=>p.handle).length;
+      el.innerHTML = `<span class="lbLiveDot"></span>${count} player${count===1?'':'s'} online now`;
+    }catch(e){}
+  };
+  if(!lbLiveWired){ lbLiveWired = true; presenceChannel.on('presence', {event:'sync'}, refresh); }
+  refresh();
+}
+
 async function renderBoard(){
   const list=$('#lbList');
   if(!(window.DuckSave && window.DuckSave.sb)){
@@ -3464,9 +3572,14 @@ async function renderBoard(){
   rows.forEach((r,i)=>{
     const t=tierOf(r.wins);
     const isMe = myHandle && r.name === myHandle;
-    list.innerHTML+=`<div class="lbrow${isMe?' me':''}">`+
-      `<div class="lbpos">${i+1}</div>`+
-      `<div class="lbav" style="background:${t.col}22;color:${t.col}">🦆</div>`+
+    const podiumClass = i===0?' podium1':i===1?' podium2':i===2?' podium3':'';
+    const posDisplay = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+    const avHtml = r.avatar_duck
+      ? `<img class="lbav" src="${avatarArt(r.avatar_duck)}" alt="" style="border:2px solid ${t.col}">`
+      : `<div class="lbav" style="background:${t.col}22;color:${t.col}">🦆</div>`;
+    list.innerHTML+=`<div class="lbrow${isMe?' me':''}${podiumClass}">`+
+      `<div class="lbpos${podiumClass?' podium':''}">${posDisplay}</div>`+
+      avHtml+
       `<div class="lbinfo"><b>${r.name}</b><span style="color:${t.col}">${t.n}</span></div>`+
       `<div class="lbval">${(r.value||0).toLocaleString()}</div></div>`;
   });
@@ -3492,9 +3605,29 @@ $$('#lbTabs button').forEach(b=>b.onclick=()=>{
 const DECK_RULES = {total:50, ducks:35, items:15, maxCopies:2, maxLegend:1};
 let DECK = {ducks:{}, items:{}};   // key -> count
 const DECK_KEY='duck_deck_v1';
+async function deckCloudSync(){
+  if(!(window.DuckSave && window.DuckSave.sb)) return;
+  try{
+    const { data: { user } } = await window.DuckSave.sb.auth.getUser();
+    if(!user) return;
+    const { data } = await window.DuckSave.sb.from('players').select('deck').eq('id', user.id).maybeSingle();
+    if(data && data.deck && (Object.keys(data.deck.ducks||{}).length || Object.keys(data.deck.items||{}).length)){
+      DECK = data.deck;
+      DECK.ducks = DECK.ducks || {}; DECK.items = DECK.items || {};
+      try{ localStorage.setItem(DECK_KEY, JSON.stringify(DECK)); }catch(e){}
+      if(typeof renderDeck === 'function') renderDeck();
+    }
+  }catch(e){ /* cloud sync is a nice-to-have, local copy already loaded */ }
+}
+
 function deckLoad(){ try{ DECK=JSON.parse(localStorage.getItem(DECK_KEY))||{ducks:{},items:{}}; }catch(e){ DECK={ducks:{},items:{}}; }
   DECK.ducks=DECK.ducks||{}; DECK.items=DECK.items||{}; }
-function deckSave(){ try{ localStorage.setItem(DECK_KEY,JSON.stringify(DECK)); }catch(e){} }
+function deckSave(){
+  try{ localStorage.setItem(DECK_KEY,JSON.stringify(DECK)); }catch(e){}
+  if(window.DuckSave && window.DuckSave.sb){
+    window.DuckSave.sb.rpc('save_my_deck', { deck_in: DECK }).catch(()=>{});
+  }
+}
 function deckCount(kind){ const o=DECK[kind]||{}; return Object.keys(o).reduce((a,k)=>a+o[k],0); }
 function deckPower(){
   let p=0;
@@ -3635,6 +3768,7 @@ $$('#deckTabs button').forEach(b=>b.onclick=()=>{
 $('#deckSearch').oninput=renderDeck;
 $('#autoDeck').onclick=autoDeck;
 $('#clearDeck').onclick=()=>{ DECK={ducks:{},items:{}}; deckSave(); renderDeck(); toast('Deck cleared'); };
+$('#autoDeck').onclick=autoDeck;
 $('#saveDeck').onclick=()=>{
   deckSave();
   if(deckReady()){ toast('Deck saved and legal'); SND.coin(); }
@@ -3643,7 +3777,8 @@ $('#saveDeck').onclick=()=>{
 
 /* ---------------- live multiplayer ---------------- */
 let NET=false;
-async function startOnline(){
+async function startOnline(mode){
+  mode = mode || {k:'online', n:'ONLINE', icon:'🌐', riskTier:2, note:'Live player vs player.'};
   if(!window.DuckNet || !DuckNet.ready()){ toast('Accounts not set up yet'); return; }
   if(!await DuckNet.signedIn()){ toast('Sign in to play online'); location.href='auth.html'; return; }
   const deck=myPool().slice(0,45).map(c=>({name:c.name,hero:c.hero,art:c.art,
@@ -3661,7 +3796,7 @@ async function startOnline(){
     const foeName = side==='p1' ? (m.p2_handle||'Opponent') : (m.p1_handle||'Opponent');
     const foeDeck = (side==='p1' ? m.p2_deck : m.p1_deck)||[];
     toast('Matched with '+foeName);
-    startArena({k:'online',n:'ONLINE',icon:'🌐',risk:false,note:''}, foeDeck, foeName);
+    startArena(mode, foeDeck, foeName);
   };
   DuckNet.onEnd=(m)=>{
     NET=false;
@@ -3675,11 +3810,11 @@ async function startOnline(){
 
 /* ---------------- the arena ---------------- */
 const MODES=[
-  {k:'online',   n:'ONLINE',    icon:'🌐', group:'live', riskTier:2, note:'Live player vs player. Real stakes.'},
-  {k:'ranked',   n:'RANKED',    icon:'🏆', group:'bot',  riskTier:3, note:'Highest stakes. Cards on the line, rank moves.'},
-  {k:'unranked', n:'UNRANKED',  icon:'⚔️', group:'bot',  riskTier:1, note:'Light stakes. A little coin on the line.'},
-  {k:'random',   n:'RANDOM',    icon:'🎲', group:'bot',  riskTier:1, note:'Random opponent, light stakes.'},
-  {k:'norisk',   n:'NO RISK',   icon:'🕊️', group:'bot',  riskTier:0, note:'Practice. Bragging rights only.'},
+  {k:'norisk',    n:'NO RISK',        icon:'🕊️', group:'bot',  riskTier:0, note:'Practice. Bragging rights only.'},
+  {k:'ranked_ai', n:'RANKED PRACTICE',icon:'🏆', group:'bot',  riskTier:3, note:'Full stakes vs AI. Cards on the line.'},
+  {k:'casual',    n:'CASUAL',         icon:'⚔️', group:'live', riskTier:1, note:'Live player vs player. Light stakes.'},
+  {k:'random',    n:'RANDOM',         icon:'🎲', group:'live', riskTier:1, note:'Random live opponent, light stakes.'},
+  {k:'ranked',    n:'RANKED',         icon:'🌐', group:'live', riskTier:3, note:'Highest stakes. Cards on the line, rank moves.'},
 ];
 const RISK_LABEL = {0:'safe', 1:'⚠️ light stakes', 2:'⚠️ real stakes', 3:'⚠️⚠️ cards at risk'};
 let B=null;
@@ -3702,7 +3837,7 @@ function renderModes(){
       el.innerHTML=`<div class="si">${m.icon}</div><b>${m.n}</b><span>${m.note}</span>`+
         `<div class="price">${RISK_LABEL[m.riskTier||0]}</div><button>Enter</button>`;
       el.querySelector('button').onclick=()=>{
-        if(m.k==='online') return startOnline();
+        if(m.group==='live') return startOnline(m);
         startArena(m);
       };
       g.appendChild(el);
@@ -4428,6 +4563,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{
   $$('.view').forEach(v=>v.classList.remove('on'));
   $('#v-'+b.dataset.v).classList.add('on');
   document.querySelector('main').scrollTop=0;
+  if(b.dataset.v==='ranks'){ renderBoard(); renderHistory(); lbStartLive(); }
 });
 $('#ripBtn').onclick=()=>ripPack();
 
@@ -4559,6 +4695,8 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
   startPresence();
   startKickListener();
   checkStaffTestAccess();
+  deckCloudSync();
+  renderAvatarPicker();
   if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
 </script>
