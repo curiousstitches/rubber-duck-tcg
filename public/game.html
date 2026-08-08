@@ -995,6 +995,36 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 @keyframes dieRoll{0%{transform:rotate(0) scale(.6)}100%{transform:rotate(360deg) scale(1)}}
 .adBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 
+/* ---- Battle 2 (new mechanic) ---- */
+.b2field{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.b2side{background:rgba(20,27,51,.6);border:1px solid var(--edge);border-radius:14px;padding:10px}
+.b2label{font:700 .68rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--dim);margin-bottom:8px}
+.b2row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.b2slot{aspect-ratio:5/7;border-radius:8px;border:1.5px dashed var(--edge);
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  background:rgba(0,0,0,.2)}
+.b2slot.filled{border-style:solid;border-color:#3a4570}
+.b2slot img{width:100%;height:100%;object-fit:cover}
+.b2slot .b2mode{position:absolute;bottom:2px;left:0;right:0;text-align:center;
+  font:800 .52rem 'Chakra Petch';padding:1px 0;background:rgba(0,0,0,.6)}
+.b2slot .b2mode.atk{color:#ff5a5a}
+.b2slot .b2mode.def{color:#63f7ff}
+.b2slot.target{border-color:#3dff9e;box-shadow:0 0 0 2px #3dff9e,0 0 14px rgba(61,255,158,.5);
+  animation:targetPulse 1s ease-in-out infinite}
+@keyframes targetPulse{0%,100%{opacity:1}50%{opacity:.6}}
+.b2hidden{grid-column:1/-1;text-align:center;color:var(--dim);font-size:.78rem;padding:16px 0}
+
+.hcard.selected{outline:3px solid transparent;
+  border-image:linear-gradient(90deg,#ff5a5a,#ffd83d,#3dff9e,#00fff2,#a78bff,#ff5a5a) 1;
+  animation:rainbowSpin 2.5s linear infinite;transform:translateY(-6px) scale(1.05)}
+@keyframes rainbowSpin{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
+
+.b2card{background:rgba(8,11,22,.97);border:2px solid var(--cyan);border-radius:16px;
+  padding:14px;margin-bottom:10px;box-shadow:0 0 24px rgba(0,255,242,.25)}
+.b2status{text-align:center;color:var(--dim);font-size:.8rem;padding:6px 0;min-height:1.4em}
+#b2PlacementsLeft{color:#ffd83d;font-weight:700}
+
 /* ---- collapsible bottom nav, more room for the player ---- */
 nav{transition:transform .3s cubic-bezier(.3,1,.4,1)}
 nav.collapsed{transform:translateY(100%);pointer-events:none}
@@ -1342,6 +1372,7 @@ input.search:focus{border-color:var(--cyan)}
            A beaten duck goes to the graveyard and its own value comes off your health.</p>
       </div>
       <div class="grid" id="modeGrid"></div>
+      <button class="btn ghost" id="b2StaffLink" style="display:none;margin-top:14px">🧪 Test the new battle system (staff only)</button>
     </div>
 
     <div id="battleLive" style="display:none">
@@ -1398,7 +1429,44 @@ input.search:focus{border-color:var(--cyan)}
     </div>
   </section>
 
-  <!-- ============ DECK BUILDER ============ -->
+  <!-- ============ BATTLE 2 (test mode -- new mechanic) ============ -->
+  <section class="view" id="v-battle2">
+    <div class="hd"><h2>⚔️ New Battle <span style="font-size:.6em;color:#ffd83d">TEST</span></h2>
+      <span id="b2TurnLabel">Turn 1</span></div>
+
+    <div class="b2card" id="b2Card" style="display:none">
+      <button class="btn ghost" id="b2CardClose" style="float:right;padding:5px 10px">✕</button>
+      <div id="b2CardBody"></div>
+    </div>
+
+    <div id="b2Field" class="b2field">
+      <div class="b2side">
+        <div class="b2label">Your Field</div>
+        <div class="b2row" id="b2MyRow"></div>
+      </div>
+      <div class="b2side" id="b2FoeSide">
+        <div class="b2label">Opponent's Field</div>
+        <div class="b2row" id="b2FoeRow">
+          <div class="b2hidden">🔒 Hidden until both players are ready</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="b2status" id="b2Status"></div>
+
+    <div class="handhead">
+      <span>YOUR HAND · <b id="b2HandCount">0</b></span>
+      <span id="b2PlacementsLeft">3 placements left</span>
+    </div>
+    <div class="hand" id="b2Hand"></div>
+
+    <div class="adBtns" style="grid-template-columns:1fr">
+      <button class="btn" id="b2ReadyBtn">✅ Ready</button>
+    </div>
+
+    <div id="b2Log" style="margin-top:10px"></div>
+    <button class="btn ghost" id="b2Leave" style="margin-top:11px">Leave test battle</button>
+  </section>
   <section class="view" id="v-deck">
     <div class="hd"><h2>Your deck</h2><span id="deckCount">0 / 50</span></div>
 
@@ -1756,6 +1824,199 @@ function startPresence(){
   }catch(e){ /* presence is a nice-to-have, never block the game over it */ }
 }
 
+/* ============ BATTLE 2 -- new mechanic (test mode) ============ */
+let B2 = null;
+
+function b2DrawOne(fromMy){
+  const deck = fromMy ? B2.myDeck : B2.foeDeck;
+  const hand = fromMy ? B2.myHand : B2.foeHand;
+  if(!deck.length) return false;
+  hand.push(deck.pop());
+  return true;
+}
+
+function b2Start(mode){
+  B2 = {
+    mode, myDeck: myPool(), foeDeck: foePool(mode),
+    myHand: [], foeHand: [],
+    myField: [null,null,null,null,null], foeField: [null,null,null,null,null],
+    turn: 1, placementsThisTurn: 0, maxPlacements: 3,
+    myReady: false, foeReady: false, selected: null,
+  };
+  for(let i=0;i<7;i++) b2DrawOne(true);
+  for(let i=0;i<7;i++) b2DrawOne(false);
+
+  $('#battleSetup').style.display = 'none';
+  $('#v-battle2').classList.add('on');
+  document.body.classList.add('in-battle');
+  $('#b2Log').innerHTML = '';
+  b2Log(`<b>${mode.n}</b> begins. You drew 7 cards.`);
+  b2Render();
+}
+
+function b2Exit(){
+  $('#v-battle2').classList.remove('on');
+  $('#battleSetup').style.display = 'block';
+  document.body.classList.remove('in-battle');
+  B2 = null;
+}
+
+function b2Log(html){
+  const log = $('#b2Log');
+  if(!log) return;
+  const line = document.createElement('div');
+  line.innerHTML = html;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function b2CardArt(card){
+  return card.isItem ? ('cards/items/' + (card.art || (card.name.toLowerCase().replace(/\s+/g,'_')+'_item.png')))
+                      : ('cards/ducks/' + card.hero);
+}
+
+function b2RenderHand(){
+  const box = $('#b2Hand');
+  $('#b2HandCount').textContent = B2.myHand.length;
+  $('#b2PlacementsLeft').textContent = `${B2.maxPlacements - B2.placementsThisTurn} placements left`;
+  box.innerHTML = '';
+  B2.myHand.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'hcard' + (B2.selected === i ? ' selected' : '');
+    el.innerHTML = `<img loading="lazy" src="${b2CardArt(card)}" alt="${card.name}">`;
+    el.onclick = () => b2SelectCard(i);
+    box.appendChild(el);
+  });
+}
+
+function b2SelectCard(i){
+  if(B2.placementsThisTurn >= B2.maxPlacements){
+    b2Log(`<span class="win">No placements left this turn.</span>`);
+    return;
+  }
+  B2.selected = (B2.selected === i) ? null : i;
+  b2RenderHand();
+  b2ShowCardInfo(B2.selected === null ? null : B2.myHand[B2.selected]);
+  b2RenderFields();
+}
+
+function b2ShowCardInfo(card){
+  const box = $('#b2Card');
+  if(!card){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const body = $('#b2CardBody');
+  if(card.isItem){
+    body.innerHTML = `<b style="font:800 1rem 'Chakra Petch'">${card.name}</b>` +
+      `<div class="muted" style="margin-top:6px">${card.text || card.effect || 'Item card'}</div>` +
+      `<div class="muted" style="margin-top:6px">Tap an empty field slot to place it.</div>`;
+  }else{
+    body.innerHTML = `<b style="font:800 1rem 'Chakra Petch'">${card.name}</b>` +
+      `<div style="margin-top:6px">ATK ${card.atk} · DEF ${card.def} · SPD ${card.spd}</div>` +
+      `<div class="muted" style="margin-top:4px">${card.elementLabel || card.theme || ''} · ${'★'.repeat(card.rarity||1)}</div>` +
+      `<div class="muted" style="margin-top:6px">Tap an empty field slot to place it, then choose Attack or Defense.</div>`;
+  }
+}
+
+function b2RenderFields(){
+  const myRow = $('#b2MyRow');
+  myRow.innerHTML = '';
+  B2.myField.forEach((slot, i) => {
+    const el = document.createElement('div');
+    const canTarget = B2.selected !== null && !slot;
+    el.className = 'b2slot' + (slot ? ' filled' : '') + (canTarget ? ' target' : '');
+    if(slot){
+      el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">` +
+        `<div class="b2mode ${slot.mode}">${slot.mode === 'atk' ? '⚔️ ATK' : '🛡️ DEF'}</div>`;
+    }
+    if(canTarget) el.onclick = () => b2PlaceCard(i);
+    myRow.appendChild(el);
+  });
+
+  const foeRow = $('#b2FoeRow');
+  const reveal = B2.myReady && B2.foeReady;
+  if(!reveal){
+    foeRow.innerHTML = `<div class="b2hidden">🔒 Hidden until both players are ready</div>`;
+  }else{
+    foeRow.innerHTML = '';
+    B2.foeField.forEach(slot => {
+      const el = document.createElement('div');
+      el.className = 'b2slot' + (slot ? ' filled' : '');
+      if(slot){
+        el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">` +
+          `<div class="b2mode ${slot.mode}">${slot.mode === 'atk' ? '⚔️ ATK' : '🛡️ DEF'}</div>`;
+      }
+      foeRow.appendChild(el);
+    });
+  }
+}
+
+function b2PlaceCard(slotIdx){
+  if(B2.selected === null || B2.myField[slotIdx]) return;
+  const card = B2.myHand[B2.selected];
+  const mode = confirm(`Place ${card.name} in ATTACK mode? (Cancel = Defense)`) ? 'atk' : 'def';
+  B2.myField[slotIdx] = { card, mode };
+  B2.myHand.splice(B2.selected, 1);
+  B2.selected = null;
+  B2.placementsThisTurn++;
+  b2Log(`Placed <b>${card.name}</b> in ${mode === 'atk' ? 'Attack' : 'Defense'}.`);
+  $('#b2Card').style.display = 'none';
+  b2Render();
+}
+
+function b2AIPlace(){
+  let placed = 0;
+  while(placed < B2.maxPlacements && B2.foeHand.length){
+    const openSlots = B2.foeField.map((s,i)=>s?-1:i).filter(i=>i>=0);
+    if(!openSlots.length) break;
+    const slot = openSlots[Math.floor(Math.random()*openSlots.length)];
+    const idx = Math.floor(Math.random()*B2.foeHand.length);
+    const card = B2.foeHand.splice(idx,1)[0];
+    const mode = Math.random() < 0.6 ? 'atk' : 'def';
+    B2.foeField[slot] = { card, mode };
+    placed++;
+  }
+  B2.foeReady = true;
+}
+
+function b2Ready(){
+  if(!B2 || B2.myReady) return;
+  B2.myReady = true;
+  $('#b2Status').textContent = 'Waiting for opponent...';
+  if(!B2.foeReady) b2AIPlace();
+  setTimeout(() => {
+    b2Render();
+    b2Log(`<span class="win">Both sides ready — fields revealed.</span>`);
+    setTimeout(b2NextTurn, 2600);
+  }, 500);
+}
+
+function b2NextTurn(){
+  if(!B2) return;
+  B2.turn++;
+  B2.placementsThisTurn = 0;
+  B2.myReady = false;
+  B2.foeReady = false;
+  $('#b2TurnLabel').textContent = 'Turn ' + B2.turn;
+  $('#b2Status').textContent = '';
+  const drewMe = b2DrawOne(true);
+  b2DrawOne(false);
+  b2Log(`<b>Turn ${B2.turn}.</b> ${drewMe ? 'Drew 1 card.' : 'Deck is empty.'}`);
+  b2Render();
+}
+
+function b2Render(){
+  b2RenderHand();
+  b2RenderFields();
+  $('#b2ReadyBtn').disabled = B2.myReady;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('#b2ReadyBtn')?.addEventListener('click', b2Ready);
+  $('#b2Leave')?.addEventListener('click', b2Exit);
+  $('#b2CardClose')?.addEventListener('click', () => { B2.selected = null; b2Render(); $('#b2Card').style.display='none'; });
+  $('#b2StaffLink')?.addEventListener('click', () => b2Start({k:'test', n:'TEST', riskTier:0}));
+});
+
 async function checkMaintenance(){
   try{
     if(!(window.DuckSave && window.DuckSave.sb)) return;
@@ -1775,6 +2036,16 @@ async function checkMaintenance(){
       $('#maintBar').classList.add('on');
     }
   }catch(e){ /* fail open -- never block play on a check error */ }
+}
+
+async function checkStaffTestAccess(){
+  try{
+    if(!(window.DuckSave && window.DuckSave.sb)) return;
+    const { data: { user } } = await window.DuckSave.sb.auth.getUser();
+    if(!user) return;
+    const { data } = await window.DuckSave.sb.from('staff').select('role').eq('user_id', user.id).maybeSingle();
+    if(data) $('#b2StaffLink').style.display = 'block';
+  }catch(e){ /* not staff, or check failed -- link stays hidden either way */ }
 }
 
 async function renderPremiumShop(){
@@ -3788,6 +4059,7 @@ $('#acctBtn').addEventListener('click',()=>{},{once:true});
   renderTicker();
   renderReferral();
   startPresence();
+  checkStaffTestAccess();
   if(info && info.mode === 'cloud') toast('Welcome back, ' + window.DuckSave.who());
 })();
 </script>
