@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="7ee8d04bc7f9">
+<meta name="game-version" content="61e603679363">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -415,6 +415,10 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 
 /* ---- difficulty selector ---- */
 .chip.shard{color:#9fe8ff;border-color:#1e5566}
+.freePackBanner{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:linear-gradient(90deg,rgba(255,216,61,.18),rgba(255,67,224,.12));
+  border:1px solid #7a6412;border-radius:14px;padding:11px 14px;margin-bottom:10px;
+  font:700 .82rem 'Chakra Petch'}
 .diffbox{background:var(--panel);border:1px solid var(--edge);border-radius:15px;
  margin-bottom:12px;overflow:hidden}
 .dhead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
@@ -446,7 +450,15 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
  font:700 .74rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.05em}
 .stabs button.on{background:var(--cyan);color:#06070d;border-color:var(--cyan)}
 .stpane{display:none}.stpane.on{display:block}
-.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:10px}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+.shopCardSlot{position:relative}
+.shopCardSlot .dwrap{width:100%!important}
+.shopCardSlot .price{margin-top:4px;text-align:center;font:800 .68rem 'Chakra Petch';color:var(--gold)}
+.shopCardSlot button{width:100%;margin-top:4px;padding:7px 0;border-radius:8px;
+  background:var(--cyan);color:#06070d;font:800 .68rem 'Chakra Petch';border:0}
+.shopCardSlot button:disabled{opacity:.4}
+.shopCardSlot .sold{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.75);font:800 .8rem 'Chakra Petch';color:#ff5a5a;border-radius:14px}
 .sitem{background:var(--deep);border:1px solid var(--edge);border-radius:14px;
  padding:12px;display:flex;flex-direction:column;gap:7px;transition:.15s;position:relative}
 .sitem:active{transform:scale(.97)}
@@ -601,6 +613,7 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .slot.sel{outline:2px solid var(--cyan);outline-offset:1px}
 .colCardSlot{position:relative;transition:.16s}
 .colCardSlot:active{transform:scale(.96)}
+.colCardSlot .dwrap{width:100%!important}
 .colCardSlot .qty{position:absolute;top:4px;right:4px;z-index:6;background:rgba(6,8,16,.88);
   border:1px solid var(--edge);border-radius:999px;padding:2px 8px;font-size:.68rem;font-weight:800}
 .colCardSlot .sellbtn{position:relative;z-index:6;margin-top:4px;border-radius:8px}
@@ -1340,7 +1353,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "7ee8d04bc7f9";
+  var myVersion = "61e603679363";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1364,7 +1377,7 @@ input.search:focus{border-color:var(--cyan)}
   <div class="purse">
     <div class="chip gold" title="Duck Droppings">💩 <span id="coins">0</span></div>
     <div class="chip shard" title="Diamond Shards">💎 <span id="shards">0</span></div>
-    <div class="chip">📦 <span id="packs">0</span></div>
+    <div class="chip" id="packsChip" style="cursor:pointer">📦 <span id="packs">0</span></div>
     <div class="chip" id="chatBtn" style="cursor:pointer">💬</div>
     <div class="chip" id="notifBtn" style="cursor:pointer">🔔</div>
     <div class="chip" id="sfxBtn" style="cursor:pointer">🔊</div>
@@ -1410,6 +1423,10 @@ input.search:focus{border-color:var(--cyan)}
   <!-- ============ RIP ============ -->
   <section class="view on" id="v-rip">
     <div class="hd"><h2>Choose your pack</h2><span id="ripHint">Swipe down to rip</span></div>
+    <div id="freePackBanner" class="freePackBanner" style="display:none">
+      <span>🎁 <b id="freePackCount">0</b> free pack<span id="freePackPlural">s</span> waiting</span>
+      <button class="btn ghost" id="freePackOpen" style="padding:8px 16px">Open one</button>
+    </div>
 
     <div class="diffbox" id="diffBox">
       <div class="dhead" id="diffHead">
@@ -1635,15 +1652,15 @@ input.search:focus{border-color:var(--cyan)}
     </div>
     <div id="b2Scene" class="b2scene"></div>
     <div id="b2Field" class="b2field">
-      <div class="b2side mine">
-        <div class="b2label">Your Field</div>
-        <div class="b2row" id="b2MyRow"></div>
-      </div>
       <div class="b2side foe" id="b2FoeSide">
         <div class="b2label">Opponent's Field</div>
         <div class="b2row" id="b2FoeRow">
           <div class="b2hidden">🔒 Hidden until both players are ready</div>
         </div>
+      </div>
+      <div class="b2side mine">
+        <div class="b2label">Your Field</div>
+        <div class="b2row" id="b2MyRow"></div>
       </div>
     </div>
 
@@ -2097,6 +2114,7 @@ function b2Start(mode, foeDeck, foeName){
     myHand: [], foeHand: [],
     myField: [null,null,null,null,null], foeField: [null,null,null,null,null],
     myGrave: [], foeGrave: [],
+    foeKnownField: [null,null,null,null,null],
     turn: 1, placementsThisTurn: 0, maxPlacements: 3, placedThisTurn: [],
     myReady: false, foeReady: false, selected: null,
     myDuelist: null, foeDuelist: null,
@@ -2231,7 +2249,7 @@ function b2SelectDuelist(i){
 function b2AIPickDuelist(){
   const options = B2.foeField.map((s,i)=> s ? i : -1).filter(i=>i>=0);
   B2.foeDuelist = options.length ? options[Math.floor(Math.random()*options.length)] : null;
-  B2.foeReady = true;
+  B2.foeReady = true; b2SyncKnownField();
 }
 
 function b2Ready(){
@@ -2264,7 +2282,7 @@ async function b2OnlineSubmitAndWait(myRoll){
       const idx = B2.foeField.findIndex(s => s && s.card && s.card.name === foeMove.card.duelist.name);
       B2.foeDuelist = idx>=0 ? idx : null;
     }
-    B2.foeReady = true;
+    B2.foeReady = true; b2SyncKnownField();
     setTimeout(() => b2StartDuel(myRoll, foeMove.roll), 500);
   }, 1200);
 }
@@ -2464,14 +2482,20 @@ function b2RenderFields(){
 
   const foeRow = $('#b2FoeRow');
   const reveal = B2.myReady && B2.foeReady;
-  if(!reveal){
-    foeRow.innerHTML = `<div class="b2hidden">🔒 Hidden until both players are ready</div>`;
-  }else{
+  if(reveal){
     foeRow.innerHTML = '';
     B2.foeField.forEach(slot => {
       const el = document.createElement('div');
       el.className = 'b2slot' + (slot ? ' filled' : '');
       if(slot) el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">`;
+      foeRow.appendChild(el);
+    });
+  }else{
+    foeRow.innerHTML = '';
+    B2.foeKnownField.forEach(known => {
+      const el = document.createElement('div');
+      el.className = 'b2slot' + (known ? ' filled' : '');
+      el.innerHTML = known ? `<img src="${b2CardArt(known.card)}" alt="">` : '';
       foeRow.appendChild(el);
     });
   }
@@ -2504,6 +2528,10 @@ function b2PlaceCard(slotIdx){
   if(slotEl) fxBurstAtEl(slotEl, 'splash', 14);
 }
 
+function b2SyncKnownField(){
+  B2.foeKnownField = B2.foeField.map(s => s ? { card: s.card } : null);
+}
+
 function b2AIPlace(){
   let placed = 0;
   while(placed < B2.maxPlacements && B2.foeHand.length){
@@ -2519,7 +2547,7 @@ function b2AIPlace(){
       B2.maxPlacements++;
     }
   }
-  B2.foeReady = true;
+  B2.foeReady = true; b2SyncKnownField();
 }
 
 function b2NextTurn(){
@@ -2883,6 +2911,14 @@ function purse(){
   rollTo($('#coins'), S.coins|0);
   rollTo($('#shards'), S.shards|0);
   const pk=$('#packs'); if(pk) pk.textContent=S.packs;
+  const banner=$('#freePackBanner');
+  if(banner){
+    if((S.packs||0) > 0){
+      banner.style.display='flex';
+      $('#freePackCount').textContent = S.packs;
+      $('#freePackPlural').textContent = S.packs===1 ? '' : 's';
+    } else banner.style.display='none';
+  }
 }
 
 /* ---------------- foil system (matches the printed cards) ---------------- */
@@ -3161,12 +3197,18 @@ function bumpPity(gotGood){
 }
 function doRip(){ ripPack(true); }
 
-function ripPack(alreadyTorn){
+function ripPack(alreadyTorn, free){
   if(!S.dex.length){ toast('No cards painted yet'); return; }
   const p=CHOSEN;
-  if(S.coins < p.cost){ toast(`Need ${p.cost} droppings for that pack`); return; }
+  if(free){
+    if((S.packs||0) <= 0){ toast('No free packs to open'); return; }
+    S.packs--; purse(); save();
+  }else{
+    if(S.coins < p.cost){ toast(`Need ${p.cost} droppings for that pack`); return; }
+    S.coins -= p.cost; purse(); save();
+  }
   document.body.classList.add('in-rip');
-  S.coins -= p.cost; purse(); save(); SND.rip();
+  SND.rip();
 
   const pk=$('#pack');
   pk.classList.add('torn');
@@ -3423,13 +3465,23 @@ function renderStore(){
   st.picks.forEach((p,i) => {
     const sold = (st.sold||[]).indexOf(i) >= 0;
     const el = document.createElement('div');
-    el.className='sitem'; el.dataset.r=p.rarity;
-    el.innerHTML = `<img src="cards/ducks/${p.hero}" alt="" style="width:100%;aspect-ratio:5/7;object-fit:cover;border-radius:9px">`+
-      `<b>${p.name}</b><span>${'★'.repeat(p.rarity)}</span>`+
-      `<div class="price">${p.price.toLocaleString()} 💩</div>`+
-      `<button ${S.coins<p.price?'disabled':''}>Buy</button>`+
-      (sold?'<div class="sold">SOLD</div>':'');
-    if(!sold) el.querySelector('button').onclick = () => {
+    el.className='shopCardSlot'; el.dataset.r=p.rarity;
+    const cardEl = buildCard(p, false);
+    el.appendChild(cardEl);
+    const priceEl = document.createElement('div');
+    priceEl.className = 'price';
+    priceEl.textContent = p.price.toLocaleString() + ' 💩';
+    el.appendChild(priceEl);
+    const btn = document.createElement('button');
+    btn.textContent = 'Buy';
+    if(S.coins<p.price) btn.disabled = true;
+    el.appendChild(btn);
+    if(sold){
+      const soldEl = document.createElement('div');
+      soldEl.className = 'sold'; soldEl.textContent = 'SOLD';
+      el.appendChild(soldEl);
+    }
+    if(!sold) btn.onclick = () => {
       buyCoins(p.price, `${p.name} is yours`, () => {
         S.owned[p.name] = (S.owned[p.name]||0)+1;
         const cur = shopState(); cur.sold = (cur.sold||[]).concat([i]); shopSave(cur);
@@ -4701,6 +4753,14 @@ $$('nav button').forEach(b=>b.onclick=()=>{
   if(b.dataset.v==='ranks'){ renderBoard(); renderHistory(); lbStartLive(); }
 });
 $('#ripBtn').onclick=()=>ripPack();
+$('#packsChip')?.addEventListener('click', () => {
+  $$('nav button').forEach(x=>x.classList.remove('on'));
+  $('[data-v="rip"]')?.classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('on'));
+  $('#v-rip').classList.add('on');
+  document.querySelector('main').scrollTop=0;
+});
+$('#freePackOpen')?.addEventListener('click', () => ripPack(false, true));
 
 $('#rvNext').onclick=()=>{SND.tap();showNext();};
 $('#acctBtn').onclick=async function(){
