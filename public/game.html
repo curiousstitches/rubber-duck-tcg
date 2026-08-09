@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="7f5be53e121c">
+<meta name="game-version" content="9535683cf8ed">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1163,6 +1163,16 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2duelresult{width:100%;text-align:center;color:var(--ink);font:700 .88rem 'Chakra Petch';
   margin-top:12px;opacity:0;transition:opacity .6s ease 1.1s}
 .b2duelstage.clash .b2duelresult{opacity:1}
+.b2endpanel{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;padding:20px;
+  background:radial-gradient(circle at 50% 40%,rgba(24,14,58,.97),rgba(5,7,14,.99))}
+.b2endtitle{font:900 1.6rem 'Chakra Petch';text-transform:uppercase;letter-spacing:.04em}
+.b2endtitle.win{background:linear-gradient(120deg,#ffd83d,#3dff9e 60%,#00fff2);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.b2endtitle.lose{color:#ff8c9a}
+.b2endrewards{font:700 1rem 'Outfit';color:var(--gold);text-align:center}
+.b2endrow{display:flex;gap:10px;width:100%;max-width:340px}
+.b2endrow .btn{flex:1}
 @keyframes duelLunge{0%{transform:scale(1) translateX(0)}
   45%{transform:scale(1.1) translateX(var(--lunge,0))}
   100%{transform:scale(1) translateX(0)}}
@@ -1372,7 +1382,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "7f5be53e121c";
+  var myVersion = "9535683cf8ed";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1694,6 +1704,15 @@ input.search:focus{border-color:var(--cyan)}
       <div class="b2duelresult" id="b2DuelResult"></div>
     </div>
 
+    <div id="b2EndPanel" class="b2endpanel" style="display:none">
+      <div class="b2endtitle" id="b2EndTitle"></div>
+      <div class="b2endrewards" id="b2EndRewards"></div>
+      <div class="b2endrow">
+        <button class="btn ghost" id="b2EndExit">Exit</button>
+        <button class="btn" id="b2EndRematch">Rematch</button>
+      </div>
+    </div>
+
     <div class="b2status" id="b2Status"></div>
 
     <div class="handhead">
@@ -1707,7 +1726,7 @@ input.search:focus{border-color:var(--cyan)}
     </div>
 
     <div id="b2Log" style="margin-top:10px"></div>
-    <button class="btn ghost" id="b2Leave" style="margin-top:11px">Leave test battle</button>
+    <button class="btn danger" id="b2Concede" style="margin-top:11px">Concede match</button>
   </section>
   <section class="view" id="v-deck">
     <div class="hd"><h2>Your deck</h2><span id="deckCount">0 / 50</span></div>
@@ -2173,6 +2192,7 @@ function b2Start(mode, foeDeck, foeName){
 
 function b2Exit(){
   if(B2 && B2.online && window.DuckNet && DuckNet.match){ DuckNet.leave().catch(()=>{}); NET=false; }
+  const endPanel = document.getElementById('b2EndPanel'); if(endPanel) endPanel.style.display='none';
   $('#v-battle2').classList.remove('on');
   $('#battleSetup').style.display = 'block';
   document.body.classList.remove('in-battle');
@@ -2285,12 +2305,28 @@ function b2SelectDuelist(i){
 
 function b2AIPickDuelist(){
   const options = B2.foeField.map((s,i)=> s ? i : -1).filter(i=>i>=0);
-  B2.foeDuelist = options.length ? options[Math.floor(Math.random()*options.length)] : null;
+  if(!options.length){ B2.foeDuelist = null; B2.foeReady = true; b2SyncKnownField(); return; }
+  // known opposing field gives the AI something real to weigh against, not a blind guess
+  const knownFoes = B2.myField.filter(s=>s).map(s=>s.card);
+  let best = options[0], bestScore = -Infinity;
+  options.forEach(i => {
+    const card = B2.foeField[i].card;
+    let score = card.atk || 0;
+    if(knownFoes.length){
+      const avgAdvantage = knownFoes.reduce((sum,foe) => sum + ELB(card.theme, foe.theme), 0) / knownFoes.length;
+      score += avgAdvantage * 40;
+    }
+    if(score > bestScore){ bestScore = score; best = i; }
+  });
+  B2.foeDuelist = best;
   B2.foeReady = true; b2SyncKnownField();
 }
 
 function b2Ready(){
   if(!B2 || B2.myReady) return;
+  if(B2.myDuelist===null && B2.myField.some(s=>s)){
+    if(!confirm('You have no champion selected — your opponent may strike unopposed. Ready anyway?')) return;
+  }
   B2.myReady = true;
   $('#b2Status').textContent = 'Waiting for opponent...';
   const myRoll = rollD100('me');
@@ -2371,25 +2407,32 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
   if(mineEl) mineEl.classList.add('strike');
   if(foeEl) foeEl.classList.add('strike');
   if(myCard && foeCard){
-    const eb = ELB(myCard.theme, foeCard.theme);
-    const pA = myCard.atk*(1+eb)*rollPower(rA).mult, pB = foeCard.atk*rollPower(rB).mult;
+    const ebA = ELB(myCard.theme, foeCard.theme), ebB = ELB(foeCard.theme, myCard.theme);
+    let pA = myCard.atk*(1+ebA)*rollPower(rA).mult, pB = foeCard.atk*(1+ebB)*rollPower(rB).mult;
     const mR = mineEl.getBoundingClientRect(), fR = foeEl.getBoundingClientRect();
     fxBurst((mR.right+fR.left)/2, (mR.top+mR.bottom)/2, 'fire', 24);
+    if(pA===pB){
+      // tiebreak on raw ATK before falling back to a true double-loss
+      if(myCard.atk!==foeCard.atk){ if(myCard.atk>foeCard.atk) pA+=0.01; else pB+=0.01; }
+    }
     if(pA>pB){
       const dmg = Math.round(pA-pB); B2.foeHp -= dmg;
-      B2.foeGrave.push(B2.foeField[B2.foeDuelist].card); B2.foeField[B2.foeDuelist]=null;
+      B2.foeGrave.push({card: B2.foeField[B2.foeDuelist].card, turn: B2.turn, lostTo: myCard.name});
+      B2.foeField[B2.foeDuelist]=null;
       resultEl.innerHTML = `<b>${myCard.name}</b> wins! (roll ${rA} vs ${rB}) — ${dmg} damage.`;
       b2Log(`⚔️ <b>${myCard.name}</b> defeats <b>${foeCard.name}</b> — ${dmg} damage.`);
     }else if(pB>pA){
       const dmg = Math.round(pB-pA); B2.myHp -= dmg;
-      B2.myGrave.push(B2.myField[B2.myDuelist].card); B2.myField[B2.myDuelist]=null;
+      B2.myGrave.push({card: B2.myField[B2.myDuelist].card, turn: B2.turn, lostTo: foeCard.name});
+      B2.myField[B2.myDuelist]=null;
       resultEl.innerHTML = `<b>${foeCard.name}</b> wins! (roll ${rB} vs ${rA}) — ${dmg} damage.`;
       b2Log(`⚔️ Their <b>${foeCard.name}</b> defeats <b>${myCard.name}</b> — ${dmg} damage.`);
     }else{
-      B2.myGrave.push(B2.myField[B2.myDuelist].card); B2.myField[B2.myDuelist]=null;
-      B2.foeGrave.push(B2.foeField[B2.foeDuelist].card); B2.foeField[B2.foeDuelist]=null;
-      resultEl.textContent = `Tied roll — both champions fall.`;
-      b2Log(`⚔️ Tied roll — both <b>${myCard.name}</b> and <b>${foeCard.name}</b> fall.`);
+      B2.myGrave.push({card: B2.myField[B2.myDuelist].card, turn: B2.turn, lostTo: foeCard.name+' (tie)'});
+      B2.foeGrave.push({card: B2.foeField[B2.foeDuelist].card, turn: B2.turn, lostTo: myCard.name+' (tie)'});
+      B2.myField[B2.myDuelist]=null; B2.foeField[B2.foeDuelist]=null;
+      resultEl.textContent = `Perfectly tied — both champions fall.`;
+      b2Log(`⚔️ Perfectly tied — both <b>${myCard.name}</b> and <b>${foeCard.name}</b> fall.`);
     }
   }else if(myCard && !foeCard){
     const dmg = Math.round(myCard.atk*rollPower(rA).mult);
@@ -2436,20 +2479,48 @@ function b2UpdateHpBars(){
   if(foeNum) foeNum.textContent = Math.max(0,Math.round(B2.foeHp));
 }
 
+function b2Rewards(riskTier){
+  const tiers = { 0:{coins:100,shards:0}, 1:{coins:200,shards:1}, 2:{coins:300,shards:2}, 3:{coins:400,shards:3} };
+  return tiers[riskTier] || tiers[0];
+}
+
 function b2FinishMatch(won){
   document.body.classList.add(won?'b2win':'b2lose');
+  setTimeout(() => document.body.classList.remove('b2win','b2lose'), 900);
   if(B2.online && window.DuckNet && DuckNet.match){
     const winnerId = won ? DuckNet.me.id : (DuckNet.side==='p1' ? DuckNet.match.p2 : DuckNet.match.p1);
     DuckNet.finish(winnerId).catch(()=>{});
   }
+  if(typeof logMatchLocal === 'function') logMatchLocal(B2.mode.k, won);
+
+  const reward = b2Rewards(B2.mode.riskTier||0);
+  let rewardText = 'No reward this run.';
   if(won){
-    S.wins++; S.coins+=250; S.shards+=2; if(typeof SND!=='undefined') SND.win?.();
+    S.wins++;
+    S.coins += reward.coins; S.shards += reward.shards;
+    if(typeof SND!=='undefined') SND.win?.();
     fxBurst(window.innerWidth/2, window.innerHeight/2, 'fire', 30);
     setTimeout(() => fxBurst(window.innerWidth/2, window.innerHeight/2, 'spark', 30), 150);
-  } else { S.losses++; if(typeof SND!=='undefined') SND.lose?.(); }
-  if(typeof save==='function') save();
-  b2Log(`<span class="win">${won?'🏆 Victory! +250 💩 +2 💎':'Defeat.'}</span>`);
-  setTimeout(()=>{ document.body.classList.remove('b2win','b2lose'); b2Exit(); },3000);
+    rewardText = `+${reward.coins} 💩${reward.shards>0?' +'+reward.shards+' 💎':''}`;
+  } else {
+    S.losses++;
+    if(typeof SND!=='undefined') SND.lose?.();
+  }
+  if(typeof save==='function') save(true);
+  b2Log(`<span class="win">${won?'🏆 Victory!':'Defeat.'}</span>`);
+
+  const lastMode = B2.mode, lastOnline = B2.online;
+  document.getElementById('b2EndTitle').textContent = won ? '🏆 Victory' : 'Defeat';
+  document.getElementById('b2EndTitle').className = 'b2endtitle ' + (won?'win':'lose');
+  document.getElementById('b2EndRewards').textContent = rewardText;
+  document.getElementById('b2EndPanel').style.display = 'flex';
+
+  document.getElementById('b2EndExit').onclick = () => { document.getElementById('b2EndPanel').style.display='none'; b2Exit(); };
+  document.getElementById('b2EndRematch').onclick = () => {
+    document.getElementById('b2EndPanel').style.display='none';
+    if(lastOnline){ toast('Rematch needs a fresh match — searching again…'); b2Exit(); startOnline(lastMode); }
+    else { b2Exit(); b2Start(lastMode); }
+  };
 }
 
 function b2CardArt(card){
@@ -2632,8 +2703,19 @@ function b2UpdatePiles(){
 
 function b2ShowGrave(pile, title){
   if(!pile || !pile.length){ toast('Nothing in the graveyard yet'); return; }
-  if(typeof showPile === 'function'){ showPile(pile, title); }
-  else toast(`${title}: ${pile.map(c=>c.name).join(', ')}`);
+  const s = $('#viewSlot');
+  s.innerHTML = `<div class="panel" style="max-height:70vh;overflow-y:auto;width:min(90vw,420px)">`+
+    `<h3>${title} (${pile.length})</h3><div class="grid">`+
+    pile.slice().reverse().map(entry => {
+      const c = entry.card;
+      return `<div class="slot">`+
+        (c.isItem ? `<div style="aspect-ratio:5/7;display:flex;align-items:center;justify-content:center;font-size:2rem">${c.icon||'🧪'}</div>`
+                  : `<img src="cards/ducks/${c.hero}" alt="">`)+
+        `<div class="cap"><span>${c.name}</span><b>${'★'.repeat(c.rarity||1)}</b></div>`+
+        `<div class="muted" style="font-size:.62rem;padding:2px 6px 6px">Turn ${entry.turn} — lost to ${entry.lostTo}</div></div>`;
+    }).join('')+
+    `</div></div>`;
+  $('#viewer').classList.add('on');
 }
 
 function b2Render(){
@@ -2649,7 +2731,11 @@ function b2Render(){
 
 document.addEventListener('DOMContentLoaded', () => {
   $('#b2ReadyBtn')?.addEventListener('click', () => b2Ready());
-  $('#b2Leave')?.addEventListener('click', b2Exit);
+  $('#b2Concede')?.addEventListener('click', () => {
+    if(!B2) return;
+    if(!confirm('Concede this match? It will count as a loss.')) return;
+    b2FinishMatch(false);
+  });
   $('#b2CardClose')?.addEventListener('click', () => { B2.selected = null; b2Render(); $('#b2Card').style.display='none'; });
   $('#b2MyGravePile')?.addEventListener('click', () => { if(B2) b2ShowGrave(B2.myGrave, 'Your graveyard'); });
   $('#b2FoeGravePile')?.addEventListener('click', () => { if(B2) b2ShowGrave(B2.foeGrave, "Opponent's graveyard"); });
@@ -4078,7 +4164,7 @@ function renderModes(){
         `<div class="price">${RISK_LABEL[m.riskTier||0]}</div><button>Enter</button>`;
       el.querySelector('button').onclick=()=>{
         if(m.group==='live') return startOnline(m);
-        startArena(m);
+        b2Start(m);
       };
       g.appendChild(el);
     });
