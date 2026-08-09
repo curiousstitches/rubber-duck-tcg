@@ -143,7 +143,6 @@ function timeAgo(iso){
   $('#gate').style.display = 'none';
   $('#app').style.display = 'block';
 
-  loadPlayers();
   loadSuggestions();
   if(PERMS.key_links) loadKeyLinks();
 })();
@@ -260,6 +259,7 @@ async function loadSuggestions(){
     <div class="list-item">
       <div class="top">
         <span class="name">${esc(s.players?.handle || 'unknown')}</span>
+        <span class="muted">${timeAgo(s.created_at)}</span>
         <span class="badge ${s.status === 'replied' ? 'replied' : 'new'}">${s.status}</span>
       </div>
       <div class="muted" style="margin:6px 0">${esc(s.message)}</div>
