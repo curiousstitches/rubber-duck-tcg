@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="222f91e32787">
+<meta name="game-version" content="db600a2f44bf">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1146,6 +1146,12 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2duelvs{font-size:2rem;opacity:0;transition:opacity .8s ease .4s}
 .b2duelstage.clash .b2duelvs{opacity:1}
 .b2diceRow{display:flex;justify-content:space-between;width:100%;padding:0 6px;margin-bottom:6px}
+.b2diecol{display:flex;flex-direction:column;align-items:center;gap:4px}
+.b2dietag{font:800 .6rem 'Chakra Petch';letter-spacing:.04em;min-height:14px;opacity:0;transition:opacity .3s}
+.b2dietag.show{opacity:1}
+.b2dietag.crit{color:#ffd83d;text-shadow:0 0 8px rgba(255,216,61,.6)}
+.b2dietag.fumble{color:#ff5a5a}
+.b2dietag.normal{color:#63f7ff}
 .b2die{width:54px;height:54px;border-radius:12px;background:linear-gradient(155deg,#1a2242,#0c1020);
   border:2px solid var(--edge);display:flex;align-items:center;justify-content:center;
   font:900 1.5rem 'Chakra Petch';color:#63f7ff;box-shadow:0 6px 16px rgba(0,0,0,.5);
@@ -1381,7 +1387,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "222f91e32787";
+  var myVersion = "db600a2f44bf";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1641,8 +1647,14 @@ input.search:focus{border-color:var(--cyan)}
 
     <div id="b2DuelStage" class="b2duelstage">
       <div class="b2diceRow">
-        <div class="b2die mine" id="b2DieMine">?</div>
-        <div class="b2die foe" id="b2DieFoe">?</div>
+        <div class="b2diecol">
+          <div class="b2die mine" id="b2DieMine">?</div>
+          <div class="b2dietag" id="b2DieTagMine"></div>
+        </div>
+        <div class="b2diecol">
+          <div class="b2die foe" id="b2DieFoe">?</div>
+          <div class="b2dietag" id="b2DieTagFoe"></div>
+        </div>
       </div>
       <div class="b2duelcard mine" id="b2DuelMine"></div>
       <div class="b2duelvs">⚔️</div>
@@ -2306,11 +2318,11 @@ async function b2OnlineSubmitAndWait(myRoll){
   }, 1200);
 }
 
-function b2CardImgFor(card){ return card ? b2CardArt(card) : ''; }
-
 function b2RollDiceVisual(rA, rB, onDone){
   const dMine = $('#b2DieMine'), dFoe = $('#b2DieFoe');
   dMine.classList.remove('rolling'); dFoe.classList.remove('rolling');
+  document.getElementById('b2DieTagMine').className = 'b2dietag';
+  document.getElementById('b2DieTagFoe').className = 'b2dietag';
   void dMine.offsetWidth; void dFoe.offsetWidth; // restart animation
   dMine.classList.add('rolling'); dFoe.classList.add('rolling');
   let ticks = 0;
@@ -2322,6 +2334,13 @@ function b2RollDiceVisual(rA, rB, onDone){
       clearInterval(spin);
       dMine.textContent = rA;
       dFoe.textContent = rB;
+      const showTag = (el, roll) => {
+        const p = rollPower(roll);
+        el.textContent = p.tag ? p.tag : Math.round(p.mult*100)+'%';
+        el.className = 'b2dietag show ' + (roll===100?'crit':roll===1?'fumble':'normal');
+      };
+      showTag(document.getElementById('b2DieTagMine'), rA);
+      showTag(document.getElementById('b2DieTagFoe'), rB);
       onDone && onDone();
     }
   }, 65);
@@ -2335,8 +2354,8 @@ function b2StartDuel(presetMyRoll, presetFoeRoll){
 
   $('#b2Field').style.display = 'none';
   $('#b2Hand').parentElement.style.display = 'none';
-  $('#b2DuelMine').innerHTML = myCard ? `<img src="${b2CardImgFor(myCard)}"><b>${myCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
-  $('#b2DuelFoe').innerHTML = foeCard ? `<img src="${b2CardImgFor(foeCard)}"><b>${foeCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
+  $('#b2DuelMine').innerHTML = myCard ? `<img src="${b2CardArt(myCard)}"><b>${myCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
+  $('#b2DuelFoe').innerHTML = foeCard ? `<img src="${b2CardArt(foeCard)}"><b>${foeCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
   $('#b2DuelResult').textContent = '';
   $('#b2DuelStage').classList.add('clash');
 
