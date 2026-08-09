@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="d5b5fecef848">
+<meta name="game-version" content="7f5be53e121c">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -482,16 +482,21 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 /* ============ THE PACK ============ */
 .packrow{display:flex;gap:9px;overflow-x:auto;padding:2px 2px 12px;scroll-snap-type:x mandatory}
 .packrow::-webkit-scrollbar{display:none}
-.ptile{flex:0 0 auto;scroll-snap-align:center;width:96px;border-radius:15px;padding:11px 9px;
+.ptile{flex:0 0 auto;scroll-snap-align:center;width:104px;border-radius:15px;padding:11px 9px;
  background:var(--panel);border:1px solid var(--edge);text-align:center;transition:.16s;
  position:relative;overflow:hidden}
 .ptile:active{transform:scale(.95)}
+.ptileswatch{width:100%;height:26px;border-radius:8px;margin-bottom:7px;
+ background:var(--ptilebg);background-size:220% 220%;animation:foilFlow 6s linear infinite;
+ filter:saturate(1.4) brightness(1.05)}
 .ptile .pf{font:900 1.5rem/1 'Chakra Petch',system-ui;letter-spacing:-.02em;
  background:linear-gradient(120deg,#00fff2,#ff43e0 52%,#ffd83d);
  -webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:4px;
  display:block;white-space:nowrap}
 .ptile .pn{font:800 .6rem 'Chakra Petch',system-ui;letter-spacing:.06em;color:#eaeeff}
 .ptile .pc{font:700 .66rem 'Outfit',system-ui;color:var(--gold);margin-top:4px}
+.ptile .pguar{font:700 .56rem 'Chakra Petch',system-ui;color:#a8ffd4;margin-top:3px;
+ letter-spacing:.03em}
 .ptile.on{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,255,242,.3)}
 .ptile.on::after{content:"";position:absolute;inset:0;pointer-events:none;
  background:linear-gradient(120deg,transparent 30%,rgba(0,255,242,.16),transparent 70%)}
@@ -507,8 +512,8 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
  50%{transform:translateY(-12px) rotate(1.5deg)}}
 /* full-surface holographic foil */
 .pack .foil{position:absolute;inset:0;
- background:linear-gradient(128deg,#00fff2,#7850ff 22%,#ff43e0 44%,#ffd83d 64%,
-  #3dff9e 82%,#00c3ff);
+ background:var(--packbg,linear-gradient(128deg,#00fff2,#7850ff 22%,#ff43e0 44%,#ffd83d 64%,
+  #3dff9e 82%,#00c3ff));
  background-size:300% 300%;animation:foilFlow 7s linear infinite;
  filter:saturate(1.5) brightness(1.12)}
 @keyframes foilFlow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
@@ -579,6 +584,18 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
  animation:legendPulse 1.6s ease-in-out infinite}
 @keyframes legendPulse{0%,100%{box-shadow:inset 0 0 120px rgba(255,216,61,.22)}
  50%{box-shadow:inset 0 0 200px rgba(255,216,61,.42)}}
+.packSummary{display:flex;flex-direction:column;align-items:center;gap:16px;
+  width:100%;max-width:420px;animation:panelIn2 .4s cubic-bezier(.2,.9,.3,1)}
+@keyframes panelIn2{0%{opacity:0;transform:translateY(14px) scale(.97)}100%{opacity:1;transform:none}}
+.packSummary h3{font:800 1.1rem 'Chakra Petch',system-ui;text-transform:uppercase;
+  letter-spacing:.05em;margin:0;background:linear-gradient(120deg,#00fff2,#ff43e0 52%,#ffd83d);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.psgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;width:100%}
+.psgrid .psitem{aspect-ratio:5/7;border-radius:9px;overflow:hidden;position:relative;
+  border:1.5px solid var(--edge)}
+.psgrid .psitem img{width:100%;height:100%;object-fit:cover}
+.psgrid .psitem.r5{border-color:#ffd83d;box-shadow:0 0 12px rgba(255,216,61,.5)}
+.psgrid .psitem.r4{border-color:#ff43e0;box-shadow:0 0 8px rgba(255,67,224,.35)}
 #revealSlot{display:flex;align-items:center;justify-content:center;min-height:60vh}
 .rvcount{color:var(--dim);font:700 .78rem/1 'Chakra Petch';letter-spacing:.2em}
 .rvhit{font:800 1.06rem/1 'Chakra Petch';letter-spacing:.12em;
@@ -1355,7 +1372,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "d5b5fecef848";
+  var myVersion = "7f5be53e121c";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1815,6 +1832,11 @@ input.search:focus{border-color:var(--cyan)}
   <div id="revealSlot"></div>
   <div class="rvhit" id="rvHit"></div>
   <button class="btn" id="rvNext" style="max-width:300px">Next</button>
+  <div id="packSummary" class="packSummary" style="display:none">
+    <h3>Pack Complete</h3>
+    <div id="packSummaryGrid" class="psgrid"></div>
+    <button class="btn" id="psContinue" style="max-width:300px">Continue</button>
+  </div>
 </div>
 <div id="viewer">
   <div id="viewSlot"></div>
@@ -1979,17 +2001,30 @@ const SELL = {1:25, 2:60, 3:150, 4:400, 5:1200};
 
 /* ---------------- pack types ---------------- */
 const PACKS = [
-  { id:'single', name:'SINGLE',   face:'1', cards:1, cost:100,
+  { id:'single', name:'COMMON CRATE', face:'1', cards:1, cost:100, colorway:'silver',
     blurb:'One card. Quick flutter.',           floor:1, guarantee:0 },
-  { id:'triple', name:'TRIPLE',   face:'3', cards:3, cost:250,
+  { id:'triple', name:'TRIPLE STASH', face:'3', cards:3, cost:250, colorway:'violet',
     blurb:'Three cards. Better odds.',          floor:1, guarantee:0 },
-  { id:'five',   name:'FIVE',     face:'5', cards:5, cost:500,
+  { id:'five',   name:'CLASSIC FIVE', face:'5', cards:5, cost:500, colorway:'rainbow',
     blurb:'Five cards. The classic rip.',       floor:1, guarantee:3 },
-  { id:'rare',   name:'RARE PULL',face:'★★★', cards:3, cost:1200,
+  { id:'rare',   name:'RARE PULL',face:'★★★', cards:3, cost:1200, colorway:'gold',
     blurb:'Three cards, one guaranteed 3★ or better.', floor:2, guarantee:3 },
-  { id:'legend', name:'LEGENDARY',face:'★★★★★', cards:3, cost:3000,
+  { id:'legend', name:'LEGENDARY',face:'★★★★★', cards:3, cost:3000, colorway:'void',
     blurb:'Three cards, one guaranteed 5★.',    floor:3, guarantee:5 },
+  { id:'mega',   name:'MEGA BURST', face:'10', cards:10, cost:900, colorway:'ember',
+    blurb:'Ten cards. Bulk value, big reveal.',  floor:1, guarantee:4 },
+  { id:'cache',  name:'ELEMENTAL CACHE', face:'✦', cards:4, cost:1600, colorway:'aurora',
+    blurb:'Four cards, floor raised — no junk.', floor:2, guarantee:4 },
 ];
+const PACK_COLORWAYS = {
+  silver:  'linear-gradient(128deg,#c8ccd8,#8b95bd 30%,#e8ecff 55%,#6b7399 78%,#c8ccd8)',
+  violet:  'linear-gradient(128deg,#7850ff,#2a1f6e 30%,#a78bff 55%,#4a2ec9 78%,#7850ff)',
+  rainbow: 'linear-gradient(128deg,#00fff2,#7850ff 22%,#ff43e0 44%,#ffd83d 64%,#3dff9e 82%,#00c3ff)',
+  gold:    'linear-gradient(128deg,#ffd83d,#a8760a 28%,#fff3b0 52%,#c98a12 76%,#ffd83d)',
+  void:    'linear-gradient(128deg,#3a1f6e,#0a0612 30%,#ff43e0 52%,#12081f 74%,#3a1f6e)',
+  ember:   'linear-gradient(128deg,#ff8c3d,#ff3d55 30%,#ffd83d 55%,#c9271f 78%,#ff8c3d)',
+  aurora:  'linear-gradient(128deg,#00fff2,#3dff9e 26%,#7850ff 50%,#00c3ff 74%,#3dff9e)',
+};
 let CHOSEN = PACKS[2];
 
 async function loadLivePrices(){
@@ -3024,7 +3059,13 @@ async function loadDex(){
     const r=await fetch('cards/ducks/manifest.json?t='+Date.now());
     const j=await r.json();
     S.dex=(j.ducks||[]).filter(d=>d.hero);
-  }catch(e){ S.dex=[]; }
+  }catch(e){
+    try{
+      const r2=await fetch('cards/ducks/manifest.json?t='+Date.now());
+      const j2=await r2.json();
+      S.dex=(j2.ducks||[]).filter(d=>d.hero);
+    }catch(e2){ S.dex=[]; }
+  }
   try{
     const ri=await fetch('cards/items/items.json?t='+Date.now());
     const ji=await ri.json();
@@ -3071,15 +3112,14 @@ const PTEX = [
 ];
 function paintPacks(){
   const row=$('#packRow'); row.innerHTML='';
-  PACKS.forEach((p,i)=>{
+  PACKS.forEach((p)=>{
     const el=document.createElement('div');
     el.className='ptile'+(p.id===CHOSEN.id?' on':'');
-    el.innerHTML=`<span class="pf">${p.face}</span><div class="pn">${p.name}</div>`+
-                 `<div class="pc">${p.cost} 💩</div>`;
-    el.onclick=()=>{ SND.tap(); CHOSEN=p; paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad();
-$('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
-$('#pfBuild').onclick=()=>{ grabProfile(); toast('Player card updated'); SND.coin(); };
-$('#acctBtn').addEventListener('click',()=>{},{once:true}); };
+    el.style.setProperty('--ptilebg', PACK_COLORWAYS[p.colorway] || PACK_COLORWAYS.rainbow);
+    const badge = p.guarantee>0 ? `<div class="pguar">${p.guarantee}★+ guaranteed</div>` : '';
+    el.innerHTML=`<div class="ptileswatch"></div><span class="pf">${p.face}</span><div class="pn">${p.name}</div>`+
+                 `<div class="pc">${p.cost} 💩</div>${badge}`;
+    el.onclick=()=>{ SND.tap(); CHOSEN=p; paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad(); };
     row.appendChild(el);
   });
 }
@@ -3088,6 +3128,7 @@ function dressPack(){
   const t=PTEX[PACKS.indexOf(p)%PTEX.length];
   pk.style.setProperty('--ptex', t[0]);
   pk.style.setProperty('--ptexsize', t[1]+'px');
+  pk.style.setProperty('--packbg', PACK_COLORWAYS[p.colorway] || PACK_COLORWAYS.rainbow);
   const face=$('#packFace');
   face.textContent=p.face;
   face.className='face'+(p.face.indexOf('★')>=0?' stars':'');
@@ -3101,6 +3142,7 @@ function dressPack(){
   if((S.inventory&&S.inventory.reroll)>0) extras.push('🎲 '+S.inventory.reroll+' rerolls');
   $('#ripHint').textContent = extras.length ? extras.join(' · ') : p.blurb;
   pk.style.setProperty('--tear','0');
+  pk.classList.remove('torn');
 }
 
 /* --- finger tear --- */
@@ -3259,6 +3301,11 @@ function ripPack(alreadyTorn, free){
     pk.classList.remove('torn');
     pk.style.setProperty('--tear','0');
     $('#flashbang').classList.remove('go');
+    document.getElementById('rvCount').style.display='';
+    document.getElementById('revealSlot').style.display='';
+    document.getElementById('rvHit').style.display='';
+    document.getElementById('rvNext').style.display='';
+    document.getElementById('packSummary').style.display='none';
     $('#reveal').classList.add('on');
     showNext();
   },880);
@@ -3266,10 +3313,17 @@ function ripPack(alreadyTorn, free){
 
 function showNext(){
   if(qi>=queue.length){
-    $('#reveal').classList.remove('on');
-    document.body.classList.remove('in-rip');
+    document.getElementById('rvCount').style.display='none';
+    document.getElementById('revealSlot').style.display='none';
+    document.getElementById('rvHit').style.display='none';
+    document.getElementById('rvNext').style.display='none';
+    const grid = document.getElementById('packSummaryGrid');
+    grid.innerHTML = queue.map(d => {
+      const rClass = d.rarity>=5 ? ' r5' : d.rarity>=4 ? ' r4' : '';
+      return `<div class="psitem${rClass}"><img src="cards/ducks/${d.hero}" alt=""></div>`;
+    }).join('');
+    document.getElementById('packSummary').style.display='flex';
     renderAll(); save(true);
-    toast(`${queue.length} card${queue.length>1?'s':''} added`);
     return;
   }
   const d=queue[qi];
@@ -3380,10 +3434,7 @@ function paintDiff(){
     const b = document.createElement('button');
     b.className = k === DIFF ? 'on' : '';
     b.textContent = DIFFS[k].label;
-    b.onclick = e => { e.stopPropagation(); SND.tap(); DIFF = k; paintDiff(); paintPacks(); dressPack(); paintDiff(); profLoad(); paintProfileForm(); deckLoad();
-$('#pfSave').onclick=()=>{ grabProfile(); toast('Profile saved'); SND.coin(); };
-
-$('#acctBtn').addEventListener('click',()=>{},{once:true}); save(); };
+    b.onclick = e => { e.stopPropagation(); SND.tap(); DIFF = k; paintDiff(); paintPacks(); dressPack(); profLoad(); paintProfileForm(); deckLoad(); save(); };
     pick.appendChild(b);
   });
   const bar = $('#oddsBar'); bar.innerHTML = '';
@@ -4765,6 +4816,12 @@ $('#packsChip')?.addEventListener('click', () => {
 $('#freePackOpen')?.addEventListener('click', () => ripPack(false, true));
 
 $('#rvNext').onclick=()=>{SND.tap();showNext();};
+$('#psContinue').onclick=()=>{
+  SND.tap();
+  $('#reveal').classList.remove('on');
+  document.body.classList.remove('in-rip');
+  toast(`${queue.length} card${queue.length>1?'s':''} added`);
+};
 $('#acctBtn').onclick=async function(){
   const who = window.DuckSave && window.DuckSave.who ? window.DuckSave.who() : null;
   if(!who){ location.href='auth.html'; return; }
