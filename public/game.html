@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="7cdd3ab80141">
+<meta name="game-version" content="3a5eb4dc2d5a">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -261,10 +261,6 @@ h1,h2,h3,.disp{font-family:'Chakra Petch','Outfit',system-ui,sans-serif;
 @keyframes floatUp{0%{opacity:0;transform:translateY(0) translateX(0)}
  12%{opacity:.7}88%{opacity:.5}
  100%{opacity:0;transform:translateY(-115vh) translateX(var(--sway,20px))}}
-/* legacy stars still twinkle */
-#sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;
-  animation:tw 3.4s ease-in-out infinite;z-index:2}
-@keyframes tw{0%,100%{opacity:.15}50%{opacity:.95}}
 
 /* ============ GLASS + POLISH ============ */
 header{backdrop-filter:blur(18px) saturate(1.4);
@@ -355,8 +351,9 @@ body.bigshake{animation:bigshake .8s cubic-bezier(.36,.07,.19,.97)}
    radial-gradient(900px 500px at 92% 8%,rgba(0,255,242,.14),transparent 60%),
    radial-gradient(800px 700px at 50% 110%,rgba(255,67,224,.16),transparent 60%)}
 #sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;
-  animation:tw 3.4s ease-in-out infinite}
-@keyframes tw{0%,100%{opacity:.15}50%{opacity:.95}}
+  box-shadow:0 0 3px 1px rgba(255,255,255,.5);
+  animation:tw 6.5s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.45}50%{opacity:.85}}
 
 /* header */
 header{position:relative;z-index:2;padding:14px 16px 10px;display:flex;
@@ -1394,7 +1391,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "7cdd3ab80141";
+  var myVersion = "3a5eb4dc2d5a";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
