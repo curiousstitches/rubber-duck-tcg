@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="816dee24b492">
+<meta name="game-version" content="e4b8afd5a425">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1353,7 +1353,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "816dee24b492";
+  var myVersion = "e4b8afd5a425";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -2474,7 +2474,7 @@ function b2RenderFields(){
     el.className = 'b2slot' + (slot ? ' filled'+rarityClass : '') +
       (canTarget ? ' target' : '') + (canPickDuelist ? ' can-attack' : '') +
       (isDuelist ? ' attacker' : '');
-    if(slot) el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">`;
+    if(slot) el.appendChild(buildCard(slot.card, false));
     if(canTarget) el.onclick = () => b2PlaceCard(i);
     else if(canPickDuelist) el.onclick = () => b2SelectDuelist(i);
     myRow.appendChild(el);
@@ -2487,7 +2487,7 @@ function b2RenderFields(){
     B2.foeField.forEach(slot => {
       const el = document.createElement('div');
       el.className = 'b2slot' + (slot ? ' filled' : '');
-      if(slot) el.innerHTML = `<img src="${b2CardArt(slot.card)}" alt="">`;
+      if(slot) el.appendChild(buildCard(slot.card, false));
       foeRow.appendChild(el);
     });
   }else{
@@ -2495,7 +2495,7 @@ function b2RenderFields(){
     B2.foeKnownField.forEach(known => {
       const el = document.createElement('div');
       el.className = 'b2slot' + (known ? ' filled' : '');
-      el.innerHTML = known ? `<img src="${b2CardArt(known.card)}" alt="">` : '';
+      if(known) el.appendChild(buildCard(known.card, false));
       foeRow.appendChild(el);
     });
   }
@@ -2881,8 +2881,8 @@ function applyState(r){
   S.wins=r.wins||0; S.losses=r.losses||0;
   S.level=r.level||1; S.xp=r.xp||0; S.tier=r.tier||'bronze';
 }
-function save(){
-  if(window.DuckSave && window.DuckSave.ready){ window.DuckSave.save(snapshot()); }
+function save(immediate){
+  if(window.DuckSave && window.DuckSave.ready){ window.DuckSave.save(snapshot(), immediate); }
   else { try{ localStorage.setItem(SAVE, JSON.stringify(snapshot())); }catch(e){} }
 }
 async function load(){
@@ -3202,10 +3202,10 @@ function ripPack(alreadyTorn, free){
   const p=CHOSEN;
   if(free){
     if((S.packs||0) <= 0){ toast('No free packs to open'); return; }
-    S.packs--; purse(); save();
+    S.packs--; purse(); save(true);
   }else{
     if(S.coins < p.cost){ toast(`Need ${p.cost} droppings for that pack`); return; }
-    S.coins -= p.cost; purse(); save();
+    S.coins -= p.cost; purse(); save(true);
   }
   document.body.classList.add('in-rip');
   SND.rip();
@@ -3266,7 +3266,7 @@ function showNext(){
   if(qi>=queue.length){
     $('#reveal').classList.remove('on');
     document.body.classList.remove('in-rip');
-    renderAll(); save();
+    renderAll(); save(true);
     toast(`${queue.length} card${queue.length>1?'s':''} added`);
     return;
   }

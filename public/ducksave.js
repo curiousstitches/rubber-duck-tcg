@@ -136,6 +136,7 @@
                             DS._saveTimer = setTimeout(() => res(DS.save(state, true)), 1200);
                   });
           }
+          clearTimeout(DS._saveTimer);              // an immediate save always wins -- never let an older, stale debounced save fire later and overwrite this
 
           let signupNumber = null, founderBonusClaimed = !!state.founderBonusClaimed;
           try {
