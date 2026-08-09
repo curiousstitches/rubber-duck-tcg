@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="871535d3709d">
+<meta name="game-version" content="7ee8d04bc7f9">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1094,8 +1094,11 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2hidden{grid-column:1/-1;text-align:center;color:var(--dim);font-size:.78rem;padding:16px 0}
 
 /* ---- duel stage: everything else disappears, two cards take over ---- */
-.b2duelstage{display:flex;align-items:center;justify-content:center;gap:18px;
-  min-height:280px;padding:20px 10px;position:relative;flex-wrap:wrap}
+.b2duelstage{position:fixed;inset:0;z-index:75;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;padding:20px 14px;
+  background:radial-gradient(circle at 50% 45%,#141b38,#05070f 78%);
+  opacity:0;pointer-events:none;transition:opacity .45s ease}
+.b2duelstage.clash{opacity:1;pointer-events:auto}
 .b2duelcard{width:38vw;max-width:150px;aspect-ratio:5/7;border-radius:14px;overflow:hidden;
   border:2px solid #3a4570;box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;
   transform:scale(.6) translateY(20px);transition:all .8s cubic-bezier(.2,1,.3,1);
@@ -1337,7 +1340,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "871535d3709d";
+  var myVersion = "7ee8d04bc7f9";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1644,7 +1647,7 @@ input.search:focus{border-color:var(--cyan)}
       </div>
     </div>
 
-    <div id="b2DuelStage" class="b2duelstage" style="display:none">
+    <div id="b2DuelStage" class="b2duelstage">
       <div class="b2diceRow">
         <div class="b2die mine" id="b2DieMine">?</div>
         <div class="b2die foe" id="b2DieFoe">?</div>
@@ -2086,13 +2089,15 @@ function b2DrawOne(fromMy){
   return true;
 }
 
-function b2Start(mode){
+function b2Start(mode, foeDeck, foeName){
+  const online = !!foeDeck;
   B2 = {
-    mode, myDeck: myPool(), foeDeck: foePool(mode),
+    mode, myDeck: myPool(), foeDeck: online ? foeDeck.slice() : foePool(mode),
+    online, foeName: foeName || 'Opponent',
     myHand: [], foeHand: [],
     myField: [null,null,null,null,null], foeField: [null,null,null,null,null],
     myGrave: [], foeGrave: [],
-    turn: 1, placementsThisTurn: 0, maxPlacements: 3,
+    turn: 1, placementsThisTurn: 0, maxPlacements: 3, placedThisTurn: [],
     myReady: false, foeReady: false, selected: null,
     myDuelist: null, foeDuelist: null,
     myHp: maxHp(), foeHp: maxHp(),
@@ -2106,12 +2111,13 @@ function b2Start(mode){
   $('#b2Field').classList.add('placing');
   $('#b2Log').innerHTML = '';
   b2UpdateHpBars();
-  b2Log(`<b>${mode.n}</b> begins. You drew 7 cards.`);
+  b2Log(`<b>${mode.n}</b> begins${online?' against '+B2.foeName:''}. You drew 7 cards.`);
   b2InitScene();
   b2Render();
 }
 
 function b2Exit(){
+  if(B2 && B2.online && window.DuckNet && DuckNet.match){ DuckNet.leave().catch(()=>{}); NET=false; }
   $('#v-battle2').classList.remove('on');
   $('#battleSetup').style.display = 'block';
   document.body.classList.remove('in-battle');
@@ -2232,8 +2238,35 @@ function b2Ready(){
   if(!B2 || B2.myReady) return;
   B2.myReady = true;
   $('#b2Status').textContent = 'Waiting for opponent...';
-  if(!B2.foeReady){ b2AIPlace(); b2AIPickDuelist(); }
-  setTimeout(b2StartDuel, 500);
+  const myRoll = rollD100('me');
+  if(B2.online){
+    b2OnlineSubmitAndWait(myRoll);
+  } else {
+    if(!B2.foeReady){ b2AIPlace(); b2AIPickDuelist(); }
+    setTimeout(() => b2StartDuel(myRoll), 500);
+  }
+}
+
+async function b2OnlineSubmitAndWait(myRoll){
+  if(!window.DuckNet || !DuckNet.match) return;
+  const myCard = B2.myDuelist!==null ? B2.myField[B2.myDuelist].card : null;
+  await DuckNet.move(B2.turn, { duelist: myCard, placements: B2.placedThisTurn }, 'ready', myRoll);
+
+  const poll = setInterval(async () => {
+    const moves = await DuckNet.movesFor(B2.turn);
+    if(moves.length < 2) return;
+    clearInterval(poll);
+    const foeMove = moves.find(m => m.player_id !== DuckNet.me.id);
+    if(!foeMove) return;
+    (foeMove.card.placements||[]).forEach(p => { B2.foeField[p.slot] = { card: p.card, attacked:false }; });
+    B2.foeDuelist = null;
+    if(foeMove.card.duelist){
+      const idx = B2.foeField.findIndex(s => s && s.card && s.card.name === foeMove.card.duelist.name);
+      B2.foeDuelist = idx>=0 ? idx : null;
+    }
+    B2.foeReady = true;
+    setTimeout(() => b2StartDuel(myRoll, foeMove.roll), 500);
+  }, 1200);
 }
 
 function b2CardImgFor(card){ return card ? b2CardArt(card) : ''; }
@@ -2257,15 +2290,14 @@ function b2RollDiceVisual(rA, rB, onDone){
   }, 65);
 }
 
-function b2StartDuel(){
+function b2StartDuel(presetMyRoll, presetFoeRoll){
   const myCard = B2.myDuelist!==null ? B2.myField[B2.myDuelist].card : null;
   const foeCard = B2.foeDuelist!==null ? B2.foeField[B2.foeDuelist].card : null;
-  const rA = rollD100('me'), rB = rollD100('foe');
+  const rA = presetMyRoll!==undefined ? presetMyRoll : rollD100('me');
+  const rB = presetFoeRoll!==undefined ? presetFoeRoll : rollD100('foe');
 
   $('#b2Field').style.display = 'none';
   $('#b2Hand').parentElement.style.display = 'none';
-  const stage = $('#b2DuelStage');
-  stage.style.display = 'flex';
   $('#b2DuelMine').innerHTML = myCard ? `<img src="${b2CardImgFor(myCard)}"><b>${myCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
   $('#b2DuelFoe').innerHTML = foeCard ? `<img src="${b2CardImgFor(foeCard)}"><b>${foeCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
   $('#b2DuelResult').textContent = '';
@@ -2286,7 +2318,8 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
   if(myCard && foeCard){
     const eb = ELB(myCard.theme, foeCard.theme);
     const pA = myCard.atk*(1+eb)*rollPower(rA).mult, pB = foeCard.atk*rollPower(rB).mult;
-    fxBurst(window.innerWidth/2, window.innerHeight/2, 'fire', 24);
+    const mR = mineEl.getBoundingClientRect(), fR = foeEl.getBoundingClientRect();
+    fxBurst((mR.right+fR.left)/2, (mR.top+mR.bottom)/2, 'fire', 24);
     if(pA>pB){
       const dmg = Math.round(pA-pB); B2.foeHp -= dmg;
       B2.foeGrave.push(B2.foeField[B2.foeDuelist].card); B2.foeField[B2.foeDuelist]=null;
@@ -2317,6 +2350,11 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
     resultEl.textContent = `Neither side had a champion this turn.`;
   }
   b2UpdateHpBars();
+  if(B2.online && window.DuckNet && DuckNet.match){
+    const p1hp = DuckNet.side==='p1' ? B2.myHp : B2.foeHp;
+    const p2hp = DuckNet.side==='p1' ? B2.foeHp : B2.myHp;
+    DuckNet.setHp(p1hp, p2hp, B2.turn+1).catch(()=>{});
+  }
   const over = B2.myHp<=0 || B2.foeHp<=0;
   if(over){ setTimeout(() => b2FinishMatch(B2.foeHp<=0), 1800); return; }
   setTimeout(b2EndDuel, 2200);
@@ -2324,10 +2362,11 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
 
 function b2EndDuel(){
   $('#b2DuelStage').classList.remove('clash');
-  $('#b2DuelStage').style.display = 'none';
-  $('#b2Field').style.display = '';
-  $('#b2Hand').parentElement.style.display = '';
-  b2NextTurn();
+  setTimeout(() => {
+    $('#b2Field').style.display = '';
+    $('#b2Hand').parentElement.style.display = '';
+    b2NextTurn();
+  }, 450);
 }
 
 function b2UpdateHpBars(){
@@ -2344,6 +2383,10 @@ function b2UpdateHpBars(){
 
 function b2FinishMatch(won){
   document.body.classList.add(won?'b2win':'b2lose');
+  if(B2.online && window.DuckNet && DuckNet.match){
+    const winnerId = won ? DuckNet.me.id : (DuckNet.side==='p1' ? DuckNet.match.p2 : DuckNet.match.p1);
+    DuckNet.finish(winnerId).catch(()=>{});
+  }
   if(won){
     S.wins++; S.coins+=250; S.shards+=2; if(typeof SND!=='undefined') SND.win?.();
     fxBurst(window.innerWidth/2, window.innerHeight/2, 'fire', 30);
@@ -2444,6 +2487,7 @@ function b2PlaceCard(slotIdx){
   B2.myHand.splice(B2.selected, 1);
   B2.selected = null;
   B2.placementsThisTurn++;
+  B2.placedThisTurn.push({slot: slotIdx, card});
   b2Log(`Placed <b>${card.name}</b> on the field.`);
 
   if(card.isItem && card.behaviour === 'draw'){
@@ -2483,6 +2527,7 @@ function b2NextTurn(){
   B2.turn++;
   B2.placementsThisTurn = 0;
   B2.maxPlacements = 3;
+  B2.placedThisTurn = [];
   B2.myReady = false;
   B2.foeReady = false;
   B2.myDuelist = null;
@@ -3881,13 +3926,18 @@ async function startOnline(mode){
     const foeName = side==='p1' ? (m.p2_handle||'Opponent') : (m.p1_handle||'Opponent');
     const foeDeck = (side==='p1' ? m.p2_deck : m.p1_deck)||[];
     toast('Matched with '+foeName);
-    startArena(mode, foeDeck, foeName);
+    b2Start(mode, foeDeck, foeName);
   };
   DuckNet.onEnd=(m)=>{
     NET=false;
     const won = m.winner===DuckNet.me.id;
-    logLine(won?'<span class="win">🏆 You win the online match.</span>'
+    if(typeof B2!=='undefined' && B2 && B2.online){
+      b2Log(won?'<span class="win">🏆 You win the online match.</span>'
                :'<span class="win">Your opponent won.</span>');
+    }else{
+      logLine(won?'<span class="win">🏆 You win the online match.</span>'
+                 :'<span class="win">Your opponent won.</span>');
+    }
   };
   const r=await DuckNet.find(deckPower(), (PROF.name||'duck'), deck);
   if(r.error) toast(r.error);
