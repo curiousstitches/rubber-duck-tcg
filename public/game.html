@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="db600a2f44bf">
+<meta name="game-version" content="7cdd3ab80141">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -890,6 +890,13 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
  font:800 .46rem 'Chakra Petch';color:#dfe6ff;text-align:center;padding:3px 0 2px;
  letter-spacing:.03em}
 /* health bars */
+.b2arena{font:700 .68rem 'Chakra Petch';color:var(--dim);text-align:center;
+  margin-bottom:6px;letter-spacing:.03em}
+.b2arena b{color:var(--gold)}
+.b2stance{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
+.b2stancebtn{flex:1;max-width:140px;padding:8px 0;border-radius:10px;border:1px solid var(--edge);
+  background:var(--panel);color:var(--dim);font:700 .74rem 'Chakra Petch';cursor:pointer}
+.b2stancebtn.on{border-color:var(--cyan);color:var(--ink);box-shadow:0 0 10px rgba(0,255,242,.25)}
 .hpwrap{display:flex;align-items:center;gap:8px;padding:2px 2px 6px}
 .hpwrap.foe{flex-direction:row-reverse}
 .hpname{font:800 .68rem 'Chakra Petch',system-ui;letter-spacing:.06em;white-space:nowrap}
@@ -1387,7 +1394,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "db600a2f44bf";
+  var myVersion = "7cdd3ab80141";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1614,8 +1621,9 @@ input.search:focus{border-color:var(--cyan)}
 
   <!-- ============ BATTLE 2 (test mode -- new mechanic) ============ -->
   <section class="view" id="v-battle2">
-    <div class="hd"><h2>⚔️ New Battle <span style="font-size:.6em;color:#ffd83d">TEST</span></h2>
+    <div class="hd"><h2>⚔️ Battle</h2>
       <span id="b2TurnLabel">Turn 1</span></div>
+    <div class="b2arena" id="b2ArenaBanner"></div>
 
     <div class="hpwrap"><span class="hpname">FOE</span><span class="hpbig"><i id="b2FoeHp" style="width:100%"></i></span><b id="b2FoeHpNum">800</b></div>
     <div class="hpwrap"><span class="hpname">YOU</span><span class="hpbig"><i id="b2MyHp" style="width:100%"></i></span><b id="b2MyHpNum">800</b></div>
@@ -1671,6 +1679,10 @@ input.search:focus{border-color:var(--cyan)}
       </div>
     </div>
 
+    <div class="b2stance" id="b2StanceRow" style="display:none">
+      <button class="b2stancebtn on" id="b2StanceAttack" data-s="attack">⚔️ Attack</button>
+      <button class="b2stancebtn" id="b2StanceDefend" data-s="defend">🛡️ Defend</button>
+    </div>
     <div class="b2status" id="b2Status"></div>
 
     <div class="handhead">
@@ -1680,6 +1692,7 @@ input.search:focus{border-color:var(--cyan)}
     <div class="hand" id="b2Hand"></div>
 
     <div class="adBtns" style="grid-template-columns:1fr">
+      <button class="btn ghost" id="b2ScoutBtn" style="display:none;margin-bottom:8px">🔭 Scout (50 💩) — reveal one enemy card</button>
       <button class="btn" id="b2ReadyBtn">✅ Ready</button>
     </div>
 
@@ -2120,6 +2133,42 @@ function b2DrawOne(fromMy){
   return true;
 }
 
+const B2_ABILITY_CATEGORY = {
+  burn:'empower', poison:'empower', bleed:'empower', flare:'empower', crush:'empower',
+  sharpen:'empower', overload:'empower', melt:'empower', hack:'empower', shatter:'empower',
+  erase:'empower', chain:'empower', split:'empower', swarm:'empower', jolt:'empower', gust:'empower',
+  freeze:'weaken', stun:'weaken', blind:'weaken', confuse:'weaken', curse:'weaken',
+  hex:'weaken', pressure:'weaken', lull:'weaken', wash:'weaken', smother:'weaken',
+  shield:'shield', armor:'shield', warp:'shield', phase:'shield', reflect:'shield',
+  refract:'shield', dazzle:'shield', rewind:'shield', clash:'shield', spectrum:'shield',
+  regen:'heal', drain:'heal', siphon:'heal', soothe:'heal',
+};
+function b2AbilityEffect(card){
+  if(!card || !card.ability) return null;
+  const cat = B2_ABILITY_CATEGORY[card.ability];
+  if(!cat) return null;
+  return { category: cat, name: card.abilityName || card.ability };
+}
+
+const B2_ARENAS = [
+  { id:'tidal',  name:'Tidal Shallows',  theme:'tidal',  desc:'Tidal ducks hit 12% harder here.' },
+  { id:'ember',  name:'Ember Fields',    theme:'ember',  desc:'Ember ducks hit 12% harder here.' },
+  { id:'frost',  name:'Frostbound Wastes', theme:'frost', desc:'Frost ducks hit 12% harder here.' },
+  { id:'verdant',name:'Verdant Grove',   theme:'verdant',desc:'Verdant ducks hit 12% harder here.' },
+  { id:'void',   name:'The Void Between',theme:'void',   desc:'Void ducks hit 12% harder here.' },
+  { id:'radiant',name:'Radiant Spire',   theme:'radiant',desc:'Radiant ducks hit 12% harder here.' },
+  { id:'neutral',name:'Open Plains',     theme:null,     desc:'No terrain advantage. A fair fight.' },
+];
+function b2PickArena(matchId){
+  if(matchId){
+    const str = String(matchId);
+    let hash = 0;
+    for(let i=0;i<str.length;i++) hash = (hash*31 + str.charCodeAt(i)) >>> 0;
+    return B2_ARENAS[hash % B2_ARENAS.length];
+  }
+  return B2_ARENAS[Math.floor(Math.random()*B2_ARENAS.length)];
+}
+
 function b2Start(mode, foeDeck, foeName){
   const online = !!foeDeck;
   B2 = {
@@ -2131,8 +2180,9 @@ function b2Start(mode, foeDeck, foeName){
     foeKnownField: [null,null,null,null,null],
     turn: 1, placementsThisTurn: 0, maxPlacements: 3, placedThisTurn: [],
     myReady: false, foeReady: false, selected: null,
-    myDuelist: null, foeDuelist: null,
+    myDuelist: null, foeDuelist: null, myStance: 'attack', foeStance: 'attack',
     myHp: maxHp(), foeHp: maxHp(),
+    arena: b2PickArena(online ? (window.DuckNet && DuckNet.match ? DuckNet.match.id : null) : null),
   };
   for(let i=0;i<7;i++) b2DrawOne(true);
   for(let i=0;i<7;i++) b2DrawOne(false);
@@ -2142,8 +2192,13 @@ function b2Start(mode, foeDeck, foeName){
   document.body.classList.add('in-battle');
   $('#b2Field').classList.add('placing');
   $('#b2Log').innerHTML = '';
+  const arenaBanner = document.getElementById('b2ArenaBanner');
+  if(arenaBanner) arenaBanner.innerHTML = `📍 <b>${B2.arena.name}</b> — ${B2.arena.desc}`;
+  const scoutBtn = document.getElementById('b2ScoutBtn');
+  if(scoutBtn) scoutBtn.style.display = online ? 'none' : 'block';
   b2UpdateHpBars();
   b2Log(`<b>${mode.n}</b> begins${online?' against '+B2.foeName:''}. You drew 7 cards.`);
+  b2Log(`📍 Arena: <b>${B2.arena.name}</b> — ${B2.arena.desc}`);
   b2InitScene();
   b2Render();
 }
@@ -2253,6 +2308,13 @@ function b2CameraTo(x,y,z, lx,ly,lz, ms){
 }
 
 
+function b2SetStance(s){
+  if(!B2 || B2.myReady) return;
+  B2.myStance = s;
+  document.getElementById('b2StanceAttack').classList.toggle('on', s==='attack');
+  document.getElementById('b2StanceDefend').classList.toggle('on', s==='defend');
+}
+
 function b2SelectDuelist(i){
   if(B2.myReady) return;
   const slot = B2.myField[i];
@@ -2277,6 +2339,9 @@ function b2AIPickDuelist(){
     if(score > bestScore){ bestScore = score; best = i; }
   });
   B2.foeDuelist = best;
+  const foeCard = B2.foeField[best].card;
+  const strongestKnown = knownFoes.length ? Math.max(...knownFoes.map(f=>f.atk||0)) : 0;
+  B2.foeStance = (foeCard.atk||0) < strongestKnown ? 'defend' : 'attack';
   B2.foeReady = true; b2SyncKnownField();
 }
 
@@ -2299,7 +2364,7 @@ function b2Ready(){
 async function b2OnlineSubmitAndWait(myRoll){
   if(!window.DuckNet || !DuckNet.match) return;
   const myCard = B2.myDuelist!==null ? B2.myField[B2.myDuelist].card : null;
-  await DuckNet.move(B2.turn, { duelist: myCard, placements: B2.placedThisTurn }, 'ready', myRoll);
+  await DuckNet.move(B2.turn, { duelist: myCard, placements: B2.placedThisTurn }, B2.myStance, myRoll);
 
   const poll = setInterval(async () => {
     const moves = await DuckNet.movesFor(B2.turn);
@@ -2309,6 +2374,7 @@ async function b2OnlineSubmitAndWait(myRoll){
     if(!foeMove) return;
     (foeMove.card.placements||[]).forEach(p => { B2.foeField[p.slot] = { card: p.card, attacked:false }; });
     B2.foeDuelist = null;
+    B2.foeStance = foeMove.stance === 'defend' ? 'defend' : 'attack';
     if(foeMove.card.duelist){
       const idx = B2.foeField.findIndex(s => s && s.card && s.card.name === foeMove.card.duelist.name);
       B2.foeDuelist = idx>=0 ? idx : null;
@@ -2364,6 +2430,27 @@ function b2StartDuel(presetMyRoll, presetFoeRoll){
   });
 }
 
+function b2ThemeSynergy(card, field, duelistIdx){
+  if(!card || !card.theme) return 0;
+  let matches = 0;
+  field.forEach((s,i) => { if(i!==duelistIdx && s && s.card && s.card.theme===card.theme) matches++; });
+  return matches * 0.05; // +5% per other same-theme card on your own field
+}
+
+function b2ArenaBonus(card, arena){
+  if(!card || !arena || !arena.theme) return 0;
+  return card.theme === arena.theme ? 0.12 : 0;
+}
+
+function b2CalcPower(card, field, duelistIdx, roll, arena){
+  let power = card.atk * rollPower(roll).mult;
+  power *= (1 + b2ThemeSynergy(card, field, duelistIdx));
+  power *= (1 + b2ArenaBonus(card, arena));
+  const ability = b2AbilityEffect(card);
+  if(ability && ability.category==='empower') power *= 1.15;
+  return { power, ability };
+}
+
 function b2ResolveDuel(myCard, foeCard, rA, rB){
   const resultEl = $('#b2DuelResult');
   const mineEl = $('#b2DuelMine'), foeEl = $('#b2DuelFoe');
@@ -2371,23 +2458,37 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
   if(foeEl) foeEl.style.setProperty('--lunge','-24px');
   if(mineEl) mineEl.classList.add('strike');
   if(foeEl) foeEl.classList.add('strike');
+  const arena = B2.arena;
+  const abilityNotes = [];
+
   if(myCard && foeCard){
     const ebA = ELB(myCard.theme, foeCard.theme), ebB = ELB(foeCard.theme, myCard.theme);
-    let pA = myCard.atk*(1+ebA)*rollPower(rA).mult, pB = foeCard.atk*(1+ebB)*rollPower(rB).mult;
+    const calcA = b2CalcPower(myCard, B2.myField, B2.myDuelist, rA, arena);
+    const calcB = b2CalcPower(foeCard, B2.foeField, B2.foeDuelist, rB, arena);
+    let pA = calcA.power * (1+ebA), pB = calcB.power * (1+ebB);
+    if(calcA.ability && calcA.ability.category==='weaken'){ pB *= 0.85; abilityNotes.push(`${myCard.name}'s ${calcA.ability.name} weakens their foe.`); }
+    if(calcB.ability && calcB.ability.category==='weaken'){ pA *= 0.85; abilityNotes.push(`${foeCard.name}'s ${calcB.ability.name} weakens their foe.`); }
     const mR = mineEl.getBoundingClientRect(), fR = foeEl.getBoundingClientRect();
     fxBurst((mR.right+fR.left)/2, (mR.top+mR.bottom)/2, 'fire', 24);
     if(pA===pB){
-      // tiebreak on raw ATK before falling back to a true double-loss
       if(myCard.atk!==foeCard.atk){ if(myCard.atk>foeCard.atk) pA+=0.01; else pB+=0.01; }
     }
     if(pA>pB){
-      const dmg = Math.round(pA-pB); B2.foeHp -= dmg;
+      let dmg = Math.round(pA-pB);
+      if(B2.myStance==='defend') dmg = Math.round(dmg*0.5);   // I'm the winner defending -> I deal less
+      if(B2.foeStance==='defend') dmg = Math.round(dmg*0.5);  // foe is the loser defending -> they take less
+      if(calcB.ability && calcB.ability.category==='shield'){ dmg = Math.round(dmg*0.7); abilityNotes.push(`${foeCard.name}'s ${calcB.ability.name} softens the blow.`); }
+      B2.foeHp -= dmg;
       B2.foeGrave.push({card: B2.foeField[B2.foeDuelist].card, turn: B2.turn, lostTo: myCard.name});
       B2.foeField[B2.foeDuelist]=null;
       resultEl.innerHTML = `<b>${myCard.name}</b> wins! (roll ${rA} vs ${rB}) — ${dmg} damage.`;
       b2Log(`⚔️ <b>${myCard.name}</b> defeats <b>${foeCard.name}</b> — ${dmg} damage.`);
     }else if(pB>pA){
-      const dmg = Math.round(pB-pA); B2.myHp -= dmg;
+      let dmg = Math.round(pB-pA);
+      if(B2.foeStance==='defend') dmg = Math.round(dmg*0.5);  // foe is the winner defending -> they deal less
+      if(B2.myStance==='defend') dmg = Math.round(dmg*0.5);   // I'm the loser defending -> I take less
+      if(calcA.ability && calcA.ability.category==='shield'){ dmg = Math.round(dmg*0.7); abilityNotes.push(`${myCard.name}'s ${calcA.ability.name} softens the blow.`); }
+      B2.myHp -= dmg;
       B2.myGrave.push({card: B2.myField[B2.myDuelist].card, turn: B2.turn, lostTo: foeCard.name});
       B2.myField[B2.myDuelist]=null;
       resultEl.innerHTML = `<b>${foeCard.name}</b> wins! (roll ${rB} vs ${rA}) — ${dmg} damage.`;
@@ -2399,19 +2500,28 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
       resultEl.textContent = `Perfectly tied — both champions fall.`;
       b2Log(`⚔️ Perfectly tied — both <b>${myCard.name}</b> and <b>${foeCard.name}</b> fall.`);
     }
+    if(calcA.ability && calcA.ability.category==='heal'){ const h=Math.round(myCard.atk*0.15); B2.myHp=Math.min(maxHp(),B2.myHp+h); abilityNotes.push(`${myCard.name}'s ${calcA.ability.name} heals you for ${h}.`); }
+    if(calcB.ability && calcB.ability.category==='heal'){ const h=Math.round(foeCard.atk*0.15); B2.foeHp=Math.min(maxHp(),B2.foeHp+h); abilityNotes.push(`${foeCard.name}'s ${calcB.ability.name} heals them for ${h}.`); }
   }else if(myCard && !foeCard){
-    const dmg = Math.round(myCard.atk*rollPower(rA).mult);
+    const calcA = b2CalcPower(myCard, B2.myField, B2.myDuelist, rA, arena);
+    let dmg = Math.round(calcA.power);
+    if(B2.myStance==='defend') dmg = Math.round(dmg*0.5);
     B2.foeHp -= dmg;
     resultEl.innerHTML = `No opponent champion — <b>${myCard.name}</b> strikes their health for ${dmg}.`;
     b2Log(`💥 <b>${myCard.name}</b> strikes unopposed for ${dmg}.`);
+    if(calcA.ability && calcA.ability.category==='heal'){ const h=Math.round(myCard.atk*0.15); B2.myHp=Math.min(maxHp(),B2.myHp+h); abilityNotes.push(`${myCard.name}'s ${calcA.ability.name} heals you for ${h}.`); }
   }else if(foeCard && !myCard){
-    const dmg = Math.round(foeCard.atk*rollPower(rB).mult);
+    const calcB = b2CalcPower(foeCard, B2.foeField, B2.foeDuelist, rB, arena);
+    let dmg = Math.round(calcB.power);
+    if(B2.foeStance==='defend') dmg = Math.round(dmg*0.5);
     B2.myHp -= dmg;
     resultEl.innerHTML = `No champion to defend — their <b>${foeCard.name}</b> strikes for ${dmg}.`;
     b2Log(`💥 Their <b>${foeCard.name}</b> strikes unopposed for ${dmg}.`);
+    if(calcB.ability && calcB.ability.category==='heal'){ const h=Math.round(foeCard.atk*0.15); B2.foeHp=Math.min(maxHp(),B2.foeHp+h); abilityNotes.push(`${foeCard.name}'s ${calcB.ability.name} heals them for ${h}.`); }
   }else{
     resultEl.textContent = `Neither side had a champion this turn.`;
   }
+  if(abilityNotes.length) abilityNotes.forEach(n => b2Log(`✨ ${n}`));
   b2UpdateHpBars();
   if(B2.online && window.DuckNet && DuckNet.match){
     const p1hp = DuckNet.side==='p1' ? B2.myHp : B2.foeHp;
@@ -2573,8 +2683,31 @@ function b2RenderFields(){
     });
   }
 
-  $('#b2Status').textContent = B2.myReady ? '' :
-    (B2.myDuelist===null ? 'Tap a card on your field to send it to the duel (or Ready with none).' : 'Champion selected — tap Ready to lock it in.');
+  const stanceRow = document.getElementById('b2StanceRow');
+  if(B2.myReady || B2.myDuelist===null){
+    if(stanceRow) stanceRow.style.display = 'none';
+  }else{
+    if(stanceRow) stanceRow.style.display = 'flex';
+  }
+
+  if(B2.myReady){
+    $('#b2Status').textContent = '';
+  }else if(B2.myDuelist===null){
+    $('#b2Status').textContent = 'Tap a card on your field to send it to the duel (or Ready with none).';
+  }else{
+    const myCard = B2.myField[B2.myDuelist].card;
+    const known = (B2.foeKnownField||[]).filter(k=>k).map(k=>k.card);
+    if(!known.length){
+      $('#b2Status').innerHTML = `<b>${myCard.name}</b> selected (ATK ${myCard.atk}) — no opponent cards seen yet. Tap Ready to lock it in.`;
+    }else{
+      const lines = known.map(foe => {
+        const eb = ELB(myCard.theme, foe.theme);
+        const tag = eb>=0.20 ? '✅ favorable' : eb<=-0.20 ? '⚠️ unfavorable' : '➖ even';
+        return `${foe.name} ${tag}`;
+      });
+      $('#b2Status').innerHTML = `<b>${myCard.name}</b> (ATK ${myCard.atk}) vs known board: ${lines.join(', ')}`;
+    }
+  }
 }
 
 function b2PlaceCard(slotIdx){
@@ -2623,6 +2756,20 @@ function b2AIPlace(){
   B2.foeReady = true; b2SyncKnownField();
 }
 
+function b2Scout(){
+  if(!B2 || B2.online || B2.myReady) return;
+  if(S.coins < 50){ toast('Need 50 💩 to scout'); return; }
+  const beforeCount = B2.foeField.filter(s=>s).length;
+  if(!B2.foeReady) b2AIPlace();
+  B2.foeReady = false; // undo the side-effect: AI still needs to pick a duelist for real once player readies
+  const afterCount = B2.foeField.filter(s=>s).length;
+  if(afterCount === beforeCount){ toast('Nothing new to scout this turn'); return; }
+  S.coins -= 50; purse(); save();
+  b2SyncKnownField();
+  b2Log('🔭 You scout the opponent\'s newly placed cards.');
+  b2Render();
+}
+
 function b2NextTurn(){
   if(!B2) return;
   B2.turn++;
@@ -2633,6 +2780,9 @@ function b2NextTurn(){
   B2.foeReady = false;
   B2.myDuelist = null;
   B2.foeDuelist = null;
+  B2.myStance = 'attack'; B2.foeStance = 'attack';
+  const sa = document.getElementById('b2StanceAttack'), sd = document.getElementById('b2StanceDefend');
+  if(sa) sa.classList.add('on'); if(sd) sd.classList.remove('on');
   $('#b2TurnLabel').textContent = 'Turn ' + B2.turn;
   $('#b2Status').textContent = '';
   $('#b2Field').classList.remove('resolving');
@@ -2664,6 +2814,25 @@ function b2UpdatePiles(){
   set('#b2FoeDeckNum', (B2.foeDeck||[]).length);
   set('#b2MyGraveNum', (B2.myGrave||[]).length);
   set('#b2FoeGraveNum', (B2.foeGrave||[]).length);
+}
+
+function b2ShowDeckPeek(){
+  if(!B2 || !B2.myDeck.length){ toast('Your deck is empty'); return; }
+  const byRarity = {};
+  const byTheme = {};
+  B2.myDeck.forEach(c => {
+    byRarity[c.rarity||1] = (byRarity[c.rarity||1]||0)+1;
+    byTheme[c.theme||'unknown'] = (byTheme[c.theme||'unknown']||0)+1;
+  });
+  const rarityRows = [5,4,3,2,1].filter(r=>byRarity[r]).map(r=>`<div class="muted">${'★'.repeat(r)} — ${byRarity[r]}</div>`).join('');
+  const themeRows = Object.keys(byTheme).sort((a,b)=>byTheme[b]-byTheme[a])
+    .map(t=>`<div class="muted">${t} — ${byTheme[t]}</div>`).join('');
+  $('#viewSlot').innerHTML = `<div class="panel" style="width:min(88vw,360px)">`+
+    `<h3>Your Deck (${B2.myDeck.length} left)</h3>`+
+    `<div style="margin-bottom:10px"><b style="font-size:.78rem">By rarity</b>${rarityRows}</div>`+
+    `<div><b style="font-size:.78rem">By theme</b>${themeRows}</div>`+
+    `</div>`;
+  $('#viewer').classList.add('on');
 }
 
 function b2ShowGrave(pile, title){
@@ -2703,6 +2872,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('#b2CardClose')?.addEventListener('click', () => { B2.selected = null; b2Render(); $('#b2Card').style.display='none'; });
   $('#b2MyGravePile')?.addEventListener('click', () => { if(B2) b2ShowGrave(B2.myGrave, 'Your graveyard'); });
+  $('#b2MyDeckPile')?.addEventListener('click', () => { if(B2) b2ShowDeckPeek(); });
+  $('#b2StanceAttack')?.addEventListener('click', () => b2SetStance('attack'));
+  $('#b2StanceDefend')?.addEventListener('click', () => b2SetStance('defend'));
+  $('#b2ScoutBtn')?.addEventListener('click', b2Scout);
   $('#b2FoeGravePile')?.addEventListener('click', () => { if(B2) b2ShowGrave(B2.foeGrave, "Opponent's graveyard"); });
   $('#b2StaffLink')?.addEventListener('click', () => b2Start({k:'test', n:'TEST', riskTier:0}));
 });
