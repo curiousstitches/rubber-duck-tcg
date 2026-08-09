@@ -15,6 +15,11 @@ body{margin:0;min-height:100vh;background:#070a14;color:#eaeeff;
   radial-gradient(900px 520px at 18% -8%,rgba(120,80,255,.22),transparent 60%),
   radial-gradient(760px 430px at 88% 6%,rgba(0,255,242,.12),transparent 60%)}
 a{color:inherit}
+#sky{position:fixed;inset:0;z-index:0;pointer-events:none}
+#sky i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;
+  animation:tw 3.4s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.15}50%{opacity:.95}}
+.topbar,.wrap{position:relative;z-index:2}
 .topbar{position:sticky;top:0;z-index:10;background:rgba(7,10,20,.92);backdrop-filter:blur(10px);
  border-bottom:1px solid #26305a;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
 .brand{font-family:'Chakra Petch',system-ui;font-weight:800;text-transform:uppercase;
@@ -32,14 +37,20 @@ a{color:inherit}
 .tab.active{color:#06070d;background:linear-gradient(96deg,#00fff2,#ff85ea 60%,#ffd83d);border-color:transparent}
 
 .panel{display:none;padding:18px 0}
-.panel.on{display:block}
+.panel.on{display:block;animation:panelIn .35s cubic-bezier(.2,.9,.3,1)}
+@keyframes panelIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
 .card{background:rgba(20,27,51,.82);border:1px solid #26305a;border-radius:18px;
- padding:18px;margin-bottom:14px}
+ padding:18px;margin-bottom:14px;transition:border-color .2s}
 .card h2{font-family:'Chakra Petch',system-ui;font-size:.92rem;text-transform:uppercase;
  letter-spacing:.05em;margin:0 0 14px;color:#eaeeff}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stat{background:#0c1020;border:1px solid #26305a;border-radius:14px;padding:14px}
-.stat .n{font-family:'Chakra Petch',system-ui;font-size:1.5rem;font-weight:800;color:#00fff2}
+.stat .n{font-family:'Chakra Petch',system-ui;font-size:1.5rem;font-weight:800;color:#00fff2;
+  text-shadow:0 0 14px rgba(0,255,242,.45)}
+.livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3dff9e;
+  box-shadow:0 0 8px #3dff9e;margin-right:7px;vertical-align:middle;
+  animation:livepulse 1.6s ease-in-out infinite}
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.35}}
 .stat .l{color:#8b95bd;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 
 label{display:block;font:700 .72rem 'Chakra Petch',system-ui;text-transform:uppercase;
@@ -59,7 +70,8 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
 .row .btn{flex:0 0 auto}
 
 .list-item{background:#0c1020;border:1px solid #26305a;border-radius:14px;padding:13px 15px;
- margin-bottom:8px}
+  margin-bottom:8px;transition:border-color .15s,transform .1s}
+.list-item:active{transform:scale(.98)}
 .list-item .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .list-item .name{font:700 .88rem 'Outfit',system-ui}
 .badge{font:800 .62rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
@@ -77,10 +89,18 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
 .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(6,7,13,.3);
  border-top-color:#06070d;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
-.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;color:#8b95bd}
+.gate{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#8b95bd;gap:14px;position:relative;z-index:2}
+.gate .g-duck{font-size:2.2rem;animation:gbob 1.6s ease-in-out infinite}
+@keyframes gbob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-10px) rotate(4deg)}}
+.gate .g-text{font:700 .8rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.08em}
 </style></head><body>
+<div id="sky"></div>
 
-<div id="gate" class="gate">Checking access…</div>
+<div id="gate" class="gate">
+  <div class="g-duck">🦆</div>
+  <div class="g-text">Checking access…</div>
+</div>
 
 <div id="app" style="display:none">
   <div class="topbar">
@@ -107,7 +127,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
     <!-- DASHBOARD -->
     <div class="panel on" id="p-dash">
       <div class="card">
-        <h2>Live Pulse</h2>
+        <h2><span class="livedot"></span>Live Pulse</h2>
         <div class="stat-grid" id="statGrid">
           <div class="stat"><div class="n">–</div><div class="l">Players</div></div>
           <div class="stat"><div class="n">–</div><div class="l">Staff</div></div>
@@ -116,7 +136,7 @@ input:focus,select:focus,textarea:focus{border-color:#00fff2}
         </div>
       </div>
       <div class="card">
-        <h2>🟢 Online Now</h2>
+        <h2><span class="livedot"></span>Online Now</h2>
         <div class="stat" style="max-width:140px;margin-bottom:12px">
           <div class="n" id="onlineCount">–</div><div class="l">Players</div>
         </div>
@@ -1197,5 +1217,13 @@ async function loadLog(){
   `).join('');
 }
 $('#logFilter').addEventListener('change', loadLog);
+
+(function(){
+  const sky = document.getElementById('sky'); let h = '';
+  for(let i=0;i<48;i++){
+    h += `<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${(Math.random()*3.4).toFixed(2)}s"></i>`;
+  }
+  sky.insertAdjacentHTML('beforeend', h);
+})();
 </script>
 </body></html>
