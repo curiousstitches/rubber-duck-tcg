@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="086f7cc36444">
+<meta name="game-version" content="222f91e32787">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1266,7 +1266,6 @@ body.in-battle #v-battle{min-height:100vh;padding-top:env(safe-area-inset-top,10
   #log{max-height:44px;overflow-y:auto}
 }
 @media (min-width:700px){
-  #battleLive{max-width:640px;margin:0 auto}
   .arenaWrap{padding:16px}
 }
 
@@ -1382,7 +1381,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "086f7cc36444";
+  var myVersion = "222f91e32787";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
