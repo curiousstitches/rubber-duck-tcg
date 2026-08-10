@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="2079b37d1522">
+<meta name="game-version" content="e26bb4e08055">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -629,6 +629,13 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .lbLiveDot{width:8px;height:8px;border-radius:50%;background:#3dff9e;
   box-shadow:0 0 8px #3dff9e;animation:lbPulse 1.6s ease-in-out infinite}
 @keyframes lbPulse{0%,100%{opacity:1}50%{opacity:.4}}
+#battleOnlinePanel h3{display:flex;align-items:center;gap:7px}
+.battleOnlineList{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.battleOnlineList .boChip{background:rgba(61,255,158,.12);border:1px solid rgba(61,255,158,.35);
+  border-radius:20px;padding:4px 11px;font:700 .72rem 'Outfit';color:var(--ink);
+  display:flex;align-items:center;gap:5px}
+.battleOnlineList .boChip i{width:6px;height:6px;border-radius:50%;background:#3dff9e;flex:0 0 auto}
+.battleOnlineList .boEmpty{color:var(--dim);font-size:.78rem}
 .lbrow.podium1{border-color:#ffd83d;box-shadow:0 0 16px rgba(255,216,61,.25)}
 .lbrow.podium2{border-color:#cfd8ff;box-shadow:0 0 14px rgba(207,216,255,.2)}
 .lbrow.podium3{border-color:#ffb46b;box-shadow:0 0 14px rgba(255,180,107,.2)}
@@ -1396,7 +1403,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "2079b37d1522";
+  var myVersion = "e26bb4e08055";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1615,6 +1622,10 @@ input.search:focus{border-color:var(--cyan)}
         <p>Five duck slots each, face down. Pick one and declare <b>attack</b> or
            <b>defend</b> — neither of you sees the other's choice until you both commit.
            A beaten duck goes to the graveyard and its own value comes off your health.</p>
+      </div>
+      <div class="panel" id="battleOnlinePanel">
+        <h3><span class="lbLiveDot"></span>Online Now</h3>
+        <div id="battleOnlineList" class="battleOnlineList">Connecting…</div>
       </div>
       <div class="grid" id="modeGrid"></div>
       <button class="btn ghost" id="b2StaffLink" style="display:none;margin-top:14px">🧪 Test the new battle system (staff only)</button>
@@ -3975,6 +3986,26 @@ function lbStartLive(){
   refresh();
 }
 
+let battleLiveWired = false;
+function renderBattleOnline(){
+  const el = $('#battleOnlineList');
+  if(!el) return;
+  if(!presenceChannel){ el.innerHTML = '<span class="boEmpty">Connecting…</span>'; return; }
+  const myHandle = window.DuckSave && window.DuckSave.who ? window.DuckSave.who() : null;
+  const refresh = () => {
+    try{
+      const state = presenceChannel.presenceState();
+      const handles = [...new Set(Object.values(state).flat().filter(p=>p.handle).map(p=>p.handle))]
+        .filter(h => h !== myHandle);
+      el.innerHTML = handles.length
+        ? handles.map(h => `<span class="boChip"><i></i>${chatEsc(h)}</span>`).join('')
+        : '<span class="boEmpty">No one else online right now — try a practice mode, or check back soon.</span>';
+    }catch(e){}
+  };
+  if(!battleLiveWired){ battleLiveWired = true; presenceChannel.on('presence', {event:'sync'}, refresh); }
+  refresh();
+}
+
 async function renderBoard(){
   const list=$('#lbList');
   if(!(window.DuckSave && window.DuckSave.sb)){
@@ -4247,6 +4278,7 @@ const MODES=[
 const RISK_LABEL = {0:'safe', 1:'⚠️ light stakes', 2:'⚠️ real stakes', 3:'⚠️⚠️ cards at risk'};
 let B=null;
 function renderModes(){
+  try{ renderBattleOnline(); }catch(e){}
   const g=$('#modeGrid'); g.innerHTML='';
   const groups = [
     {key:'bot',  title:'🤖 PRACTICE — vs AI'},
@@ -4366,6 +4398,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{
   document.querySelector('main').scrollTop=0;
   if(b.dataset.v==='ranks'){ renderBoard(); renderHistory(); lbStartLive(); }
   if(b.dataset.v==='rip'){ try{ dressPack(); }catch(e){} }
+  if(b.dataset.v==='battle'){ try{ renderBattleOnline(); }catch(e){} }
 });
 $('#ripBtn').onclick=()=>ripPack();
 $('#packsChip')?.addEventListener('click', () => {
