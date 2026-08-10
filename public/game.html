@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="23e6b84f468a">
+<meta name="game-version" content="e801d87698a0">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,9 +24,7 @@
 .dart{position:absolute;left:5.5%;right:5.5%;top:9%;height:62%;border-radius:10px;
  overflow:hidden;border:2px solid #28325a}
 .dart img{position:relative;z-index:5;width:calc(100% - 6px);height:calc(100% - 6px);
- margin:3px;object-fit:cover;display:block;border-radius:7px;
- transform:scale(1.06) translate(calc(var(--tx,0)*-1.6%),calc(var(--ty,0)*-1.6%));
- will-change:transform}
+ margin:3px;object-fit:cover;display:block;border-radius:7px}
 .foilzone{position:relative;isolation:isolate;overflow:hidden;
  box-shadow:0 0 calc(7px + var(--neon,6px)) var(--gcol,#00fff2),
             0 0 calc(18px + var(--neon,6px)) rgba(255,67,224,.35)}
@@ -1394,7 +1392,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "23e6b84f468a";
+  var myVersion = "e801d87698a0";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -4280,7 +4278,11 @@ async function startOnline(mode){
   $('#battleSetup').innerHTML=`<div class="panel"><h3>🌐 Searching…</h3>`+
     `<p>Waiting for another player. This stays open — leave it running.</p>`+
     `<button class="btn ghost" id="cancelNet">Cancel</button></div>`;
-  $('#cancelNet').onclick=async()=>{ await DuckNet.leave(); renderModes(); location.reload(); };
+  $('#cancelNet').onclick=async()=>{
+    const btn = $('#cancelNet'); if(btn){ btn.disabled = true; btn.textContent = 'Cancelling…'; }
+    try{ await DuckNet.leave(); }catch(e){}
+    location.reload();
+  };
 
   DuckNet.onMatch=(m,side)=>{
     NET=true;

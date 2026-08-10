@@ -63,7 +63,7 @@
     N.cancel = async function(){
           N.searching = false;
           if(N.qchan) { try{ N.qchan.unsubscribe(); }catch(e){} }
-          if(N.me) await N.sb.from('match_queue').delete().eq('player_id', N.me.id);
+          if(N.me) { try{ await N.sb.from('match_queue').delete().eq('player_id', N.me.id); }catch(e){} }
     };
 
     N.join = async function(id){
@@ -115,7 +115,7 @@
     };
 
     N.leave = async function(){
-          await N.cancel();
+          try{ await N.cancel(); }catch(e){}
           if(N.chan) { try{ N.chan.unsubscribe(); }catch(e){} }
           N.match = null;
     };
