@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="0d8bb8bad333">
+<meta name="game-version" content="dc94642a1068">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1391,7 +1391,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "0d8bb8bad333";
+  var myVersion = "dc94642a1068";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -3373,7 +3373,6 @@ function dressPack(){
   const pk=()=>$('#pack');
   wrap.addEventListener('pointerdown',e=>{
     dragging=true; startX=e.clientX; startY=e.clientY; prog=0;
-    document.body.classList.add('in-rip');
     try{wrap.setPointerCapture(e.pointerId);}catch(_){}
   });
   wrap.addEventListener('pointermove',e=>{
@@ -3481,55 +3480,82 @@ function ripPack(alreadyTorn, free){
   sparkBurst(46, ['#00fff2','#ff43e0','#ffd83d','#3dff9e','#ffffff']);
   shake(false);
 
-  queue=[];
-  for(let i=0;i<p.cards;i++){
-    const d = pull(p.floor);
-    const v = rollVariant(d.name);
-    queue.push(v ? Object.assign({}, d, {variant:v, hero:heroFor(d.name,v)}) : d);
-  }
-  if(p.guarantee>0 && !queue.some(d=>d.rarity>=p.guarantee)){
-    const good=S.dex.filter(d=>d.rarity>=p.guarantee);
-    if(good.length) queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
-  }
-  // pity kicks in
-  if((S.pity||0) >= PITY_AT && !queue.some(d=>d.rarity>=4)){
-    const good=S.dex.filter(d=>d.rarity>=4);
-    if(good.length){
-      queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
-      S.pity=0;
-      setTimeout(()=>toast('Pity bonus — a rare was owed to you'),1200);
-    }
-  }
-  // spend any pack-luck charms
-  if(S.luckExtra>0){ queue.push(pull(p.floor)); S.luckExtra--; toast('Bonus card from your charm'); }
-  if(S.luckFloor){ 
-    const band=S.dex.filter(d=>d.rarity>=S.luckFloor);
-    if(band.length) queue[0]=band[Math.floor(Math.random()*band.length)];
-    S.luckFloor=0; toast('Golden Touch delivered');
-  }
-  if(S.luckTier>0){ S.luckTier--; }
-  if(S.luckBoost>0){ S.luckBoost=0; }
-  queue.forEach(d=>bumpPity(d.rarity>=4));
-  if(window.DuckSave && window.DuckSave.sb){
-    queue.forEach(d => {
-      window.DuckSave.sb.rpc('log_pull', {
-        card_name_in: d.name, card_kind_in: 'duck', rarity_in: d.rarity
-      }).catch(()=>{});
-    });
-  }
-  qi=0;
-  setTimeout(()=>{
+  // a hard safety net: no matter what happens below, if the reveal hasn't shown
+  // within 4s the pack recovers to a clean, re-openable state rather than staying stuck
+  let recovered = false;
+  const recover = (reason) => {
+    if(recovered) return; recovered = true;
     pk.classList.remove('torn');
     pk.style.setProperty('--tear','0');
     $('#flashbang').classList.remove('go');
-    document.getElementById('rvCount').style.display='';
-    document.getElementById('revealSlot').style.display='';
-    document.getElementById('rvHit').style.display='';
-    document.getElementById('rvNext').style.display='';
-    document.getElementById('packSummary').style.display='none';
-    $('#reveal').classList.add('on');
-    showNext();
-  },880);
+    document.body.classList.remove('in-rip');
+    if(reason) toast('Something interrupted that pack — try again');
+  };
+  const safetyTimer = setTimeout(() => recover('timeout'), 4000);
+
+  try{
+    queue=[];
+    for(let i=0;i<p.cards;i++){
+      const d = pull(p.floor);
+      if(!d) continue;
+      const v = rollVariant(d.name);
+      queue.push(v ? Object.assign({}, d, {variant:v, hero:heroFor(d.name,v)}) : d);
+    }
+    if(!queue.length) throw new Error('empty queue after pull');
+
+    if(p.guarantee>0 && !queue.some(d=>d.rarity>=p.guarantee)){
+      const good=S.dex.filter(d=>d.rarity>=p.guarantee);
+      if(good.length) queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
+    }
+    if((S.pity||0) >= PITY_AT && !queue.some(d=>d.rarity>=4)){
+      const good=S.dex.filter(d=>d.rarity>=4);
+      if(good.length){
+        queue[queue.length-1]=good[Math.floor(Math.random()*good.length)];
+        S.pity=0;
+        setTimeout(()=>toast('Pity bonus — a rare was owed to you'),1200);
+      }
+    }
+    if(S.luckExtra>0){ queue.push(pull(p.floor)); S.luckExtra--; toast('Bonus card from your charm'); }
+    if(S.luckFloor){
+      const band=S.dex.filter(d=>d.rarity>=S.luckFloor);
+      if(band.length) queue[0]=band[Math.floor(Math.random()*band.length)];
+      S.luckFloor=0; toast('Golden Touch delivered');
+    }
+    if(S.luckTier>0){ S.luckTier--; }
+    if(S.luckBoost>0){ S.luckBoost=0; }
+    queue.forEach(d=>bumpPity(d.rarity>=4));
+    if(window.DuckSave && window.DuckSave.sb){
+      queue.forEach(d => {
+        try{
+          window.DuckSave.sb.rpc('log_pull', {
+            card_name_in: d.name, card_kind_in: 'duck', rarity_in: d.rarity
+          }).catch(()=>{});
+        }catch(e){ /* logging a pull should never be able to break the pull itself */ }
+      });
+    }
+    qi=0;
+    setTimeout(()=>{
+      try{
+        clearTimeout(safetyTimer);
+        if(recovered) return; // safety net already fired, don't double-handle
+        pk.classList.remove('torn');
+        pk.style.setProperty('--tear','0');
+        $('#flashbang').classList.remove('go');
+        document.getElementById('rvCount').style.display='';
+        document.getElementById('revealSlot').style.display='';
+        document.getElementById('rvHit').style.display='';
+        document.getElementById('rvNext').style.display='';
+        document.getElementById('packSummary').style.display='none';
+        $('#reveal').classList.add('on');
+        showNext();
+      }catch(e){
+        recover('reveal-setup-failed');
+      }
+    },880);
+  }catch(e){
+    clearTimeout(safetyTimer);
+    recover('pull-failed');
+  }
 }
 
 function showNext(){
@@ -4388,6 +4414,7 @@ $$('nav button').forEach(b=>b.onclick=()=>{
   $('#v-'+b.dataset.v).classList.add('on');
   document.querySelector('main').scrollTop=0;
   if(b.dataset.v==='ranks'){ renderBoard(); renderHistory(); lbStartLive(); }
+  if(b.dataset.v==='rip'){ try{ dressPack(); }catch(e){} }
 });
 $('#ripBtn').onclick=()=>ripPack();
 $('#packsChip')?.addEventListener('click', () => {
