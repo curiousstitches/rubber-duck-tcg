@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="0c53ed66d877">
+<meta name="game-version" content="2deaf9c98cd2">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,11 +54,8 @@
 .dframe::after{content:"";position:absolute;inset:0;border-radius:13px;pointer-events:none;
  mix-blend-mode:color-dodge;opacity:calc(var(--foil,.6)*1.18);
  border:var(--fw,8px) solid transparent;
- background:var(--wash) border-box;
- background-size:340% 340%;filter:saturate(2.0) brightness(1.6);
- background-position:calc(50% + var(--tx,0)*54%) calc(50% + var(--ty,0)*54%);
- -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
- -webkit-mask-composite:xor;mask-composite:exclude}
+ border-image:var(--wash) 1;
+ filter:saturate(2.0) brightness(1.6)}
 .dframe::before{content:"";position:absolute;inset:0;border-radius:20px;pointer-events:none;
  box-shadow:0 0 calc(11px + var(--neon,6px)) var(--gcol,#00fff2),
             0 0 calc(28px + var(--neon,6px)*2) rgba(255,67,224,.35),
@@ -73,10 +70,9 @@
 
 /* travelling light around the art window */
 .ringmask{position:absolute;inset:0;border-radius:10px;pointer-events:none;
- border:2px solid transparent;overflow:hidden;
- -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
- -webkit-mask-composite:xor;mask-composite:exclude;
- opacity:var(--edge,.85)}
+ overflow:hidden;opacity:var(--edge,.85)}
+.ringmask::before{content:"";position:absolute;inset:2px;border-radius:8px;
+ background:#0c0f1b;z-index:1}
 .ringmask .tracer{position:absolute;inset:-60%;
  background:conic-gradient(from 0deg,transparent 0 62%,var(--o3) 72%,
   var(--o1) 80%,#ffffff 85%,var(--o1) 90%,var(--o2) 95%,transparent 100%);
@@ -85,7 +81,8 @@
 @keyframes traceSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 
 /* second, slower counter-tracer for depth */
-.ringmask.slow{border-width:1px;opacity:calc(var(--edge,.85)*.55)}
+.ringmask.slow{opacity:calc(var(--edge,.85)*.55)}
+.ringmask.slow::before{inset:1px}
 .ringmask.slow .tracer{animation-duration:calc(var(--ocyc,4s)*2.1);
  animation-direction:reverse}
 
@@ -274,10 +271,9 @@ header{backdrop-filter:blur(18px) saturate(1.4);
 .panel{background:rgba(20,27,51,.62)!important;
  box-shadow:0 10px 34px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.07)}
 .panel::before{content:"";position:absolute;inset:0;border-radius:17px;pointer-events:none;
- padding:1px;background:linear-gradient(130deg,rgba(0,255,242,.5),transparent 38%,
-  transparent 62%,rgba(255,67,224,.45));
- -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
- -webkit-mask-composite:xor;mask-composite:exclude}
+ border:1px solid transparent;
+ border-image:linear-gradient(130deg,rgba(0,255,242,.5),transparent 38%,
+  transparent 62%,rgba(255,67,224,.45)) 1}
 .panel{position:relative}
 /* buttons get a light sweep */
 .btn{position:relative;overflow:hidden}
@@ -1400,7 +1396,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "0c53ed66d877";
+  var myVersion = "2deaf9c98cd2";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
