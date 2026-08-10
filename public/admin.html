@@ -401,7 +401,8 @@ function timeAgo(iso){
   if(typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL || SUPABASE_URL.includes('PASTE')){
     location.href = 'auth.html'; return;
   }
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb = getDuckClient();
+  if(!sb){ location.href = 'auth.html'; return; }
   const { data: { user } } = await sb.auth.getUser();
   if(!user){ location.href = 'auth.html'; return; }
 

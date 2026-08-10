@@ -200,7 +200,7 @@ function busy(btn, on, label){
     document.querySelectorAll('.btn').forEach(b => b.disabled = true);
     return;
   }
-  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  sb = getDuckClient();
   $('#foot').innerHTML = '<a href="game.html">Play without an account →</a>';
 
   // already signed in? go straight through (staff get routed to the chooser)
