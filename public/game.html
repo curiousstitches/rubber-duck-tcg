@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="2deaf9c98cd2">
+<meta name="game-version" content="23e6b84f468a">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,8 @@
  box-shadow:0 16px 46px rgba(0,0,0,.7)}
 .dart{position:absolute;left:5.5%;right:5.5%;top:9%;height:62%;border-radius:10px;
  overflow:hidden;border:2px solid #28325a}
-.dart img{width:100%;height:100%;object-fit:cover;display:block;
+.dart img{position:relative;z-index:5;width:calc(100% - 6px);height:calc(100% - 6px);
+ margin:3px;object-fit:cover;display:block;border-radius:7px;
  transform:scale(1.06) translate(calc(var(--tx,0)*-1.6%),calc(var(--ty,0)*-1.6%));
  will-change:transform}
 .foilzone{position:relative;isolation:isolate;overflow:hidden;
@@ -71,8 +72,6 @@
 /* travelling light around the art window */
 .ringmask{position:absolute;inset:0;border-radius:10px;pointer-events:none;
  overflow:hidden;opacity:var(--edge,.85)}
-.ringmask::before{content:"";position:absolute;inset:2px;border-radius:8px;
- background:#0c0f1b;z-index:1}
 .ringmask .tracer{position:absolute;inset:-60%;
  background:conic-gradient(from 0deg,transparent 0 62%,var(--o3) 72%,
   var(--o1) 80%,#ffffff 85%,var(--o1) 90%,var(--o2) 95%,transparent 100%);
@@ -82,7 +81,6 @@
 
 /* second, slower counter-tracer for depth */
 .ringmask.slow{opacity:calc(var(--edge,.85)*.55)}
-.ringmask.slow::before{inset:1px}
 .ringmask.slow .tracer{animation-duration:calc(var(--ocyc,4s)*2.1);
  animation-direction:reverse}
 
@@ -1396,7 +1394,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "2deaf9c98cd2";
+  var myVersion = "23e6b84f468a";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
