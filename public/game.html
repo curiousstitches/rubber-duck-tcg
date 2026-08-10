@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="e801d87698a0">
+<meta name="game-version" content="2079b37d1522">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1069,7 +1069,6 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .hand::-webkit-scrollbar{display:none}
 .hcard{flex:0 0 auto;width:84px;min-height:118px;aspect-ratio:5/7;border-radius:8px;overflow:hidden;
  border:1px solid #2a3560;position:relative;transition:.15s;background:#0b0f1e}
-.hcard .dwrap{width:100%!important}
 .hcard:active{transform:translateY(-4px) scale(1.05)}
 .hcard img{width:100%;height:100%;object-fit:cover}
 .hcard.sel{outline:2px solid var(--gold);outline-offset:1px}
@@ -1084,15 +1083,15 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 @keyframes dieRoll{0%{transform:rotate(0) scale(.6)}100%{transform:rotate(360deg) scale(1)}}
 .adBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 
-/* ---- 3D battle scene ---- */
-.b2scene{width:100%;height:230px;border-radius:14px;overflow:hidden;margin-bottom:8px;
-  background:radial-gradient(ellipse at 50% 30%,#1a2240,#070a14 75%);position:relative}
-.b2scene canvas{display:block;width:100%!important;height:100%!important}
-.b2field{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;transition:transform .5s cubic-bezier(.3,.8,.3,1)}
-.b2field.placing .b2side.mine{transform:scale(1.04)}
-.b2field.placing .b2side.foe{opacity:.5;transform:scale(.94)}
-.b2field.resolving{transform:scale(1)}
-.b2field.resolving .b2side{opacity:1;transform:scale(1)}
+/* ---- unified battle scene: field rows + duel stage, one reliable display ---- */
+.b2scene{width:100%;border-radius:14px;overflow:hidden;margin-bottom:8px;
+  background:radial-gradient(ellipse at 50% 30%,#1a2240,#070a14 75%);position:relative;
+  display:flex;flex-direction:column;gap:10px;padding:10px;
+  transition:transform .5s cubic-bezier(.3,.8,.3,1)}
+.b2scene.placing .b2side.mine{transform:scale(1.03)}
+.b2scene.placing .b2side.foe{opacity:.5;transform:scale(.95)}
+.b2scene.resolving{transform:scale(1)}
+.b2scene.resolving .b2side{opacity:1;transform:scale(1)}
 .b2side{background:rgba(20,27,51,.6);border:1px solid var(--edge);border-radius:14px;padding:10px}
 .b2label{font:700 .68rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
   color:var(--dim);margin-bottom:8px}
@@ -1100,13 +1099,18 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2slot{aspect-ratio:5/7;border-radius:8px;border:1.5px dashed var(--edge);
   display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
   background:rgba(0,0,0,.2)}
-.b2slot .dwrap{width:100%!important}
 .b2slot.filled{border-style:solid;border-color:#3a4570}
 .b2slot.filled.r5{border-color:#ff43e0;box-shadow:0 0 16px rgba(255,67,224,.5)}
 .b2slot.filled.r4{border-color:#ffd83d;box-shadow:0 0 12px rgba(255,216,61,.4)}
 .b2slot.filled{animation:b2Snap .35s cubic-bezier(.2,1.4,.4,1)}
 @keyframes b2Snap{0%{transform:scale(.7) rotate(-8deg);opacity:0}60%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0);opacity:1}}
-.b2slot img{width:100%;height:100%;object-fit:cover}
+/* deliberately simple card display - plain image + text, no layered effects to distort it */
+.b2simplecard{position:absolute;inset:0;display:flex;flex-direction:column}
+.b2simplecard img{width:100%;flex:1;object-fit:cover;display:block;min-height:0}
+.b2simplecard .b2simplename{font:700 .56rem 'Chakra Petch';padding:2px 4px;
+  background:rgba(0,0,0,.75);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b2simplecard .b2simplemeta{display:flex;justify-content:space-between;padding:1px 4px 2px;
+  font:700 .5rem 'Chakra Petch';background:rgba(0,0,0,.75);color:var(--gold)}
 .b2slot .b2mode{position:absolute;bottom:2px;left:0;right:0;text-align:center;
   font:800 .52rem 'Chakra Petch';padding:1px 0;background:rgba(0,0,0,.6)}
 .b2slot .b2mode.atk{color:#ff5a5a}
@@ -1392,7 +1396,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "e801d87698a0";
+  var myVersion = "2079b37d1522";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1638,6 +1642,16 @@ input.search:focus{border-color:var(--cyan)}
       <div class="pile grave" id="b2MyGravePile"><em>⚰️</em><b id="b2MyGraveNum">0</b>GRAVE</div>
     </div>
     <div id="b2Scene" class="b2scene">
+      <div class="b2side foe" id="b2FoeSide">
+        <div class="b2label">Opponent's Field</div>
+        <div class="b2row" id="b2FoeRow">
+          <div class="b2hidden">🔒 Hidden until both players are ready</div>
+        </div>
+      </div>
+      <div class="b2side mine">
+        <div class="b2label">Your Field</div>
+        <div class="b2row" id="b2MyRow"></div>
+      </div>
       <div id="b2DuelStage" class="b2duelstage">
         <div class="b2diceRow">
           <div class="b2diecol">
@@ -1653,18 +1667,6 @@ input.search:focus{border-color:var(--cyan)}
         <div class="b2duelvs">⚔️</div>
         <div class="b2duelcard foe" id="b2DuelFoe"></div>
         <div class="b2duelresult" id="b2DuelResult"></div>
-      </div>
-    </div>
-    <div id="b2Field" class="b2field">
-      <div class="b2side foe" id="b2FoeSide">
-        <div class="b2label">Opponent's Field</div>
-        <div class="b2row" id="b2FoeRow">
-          <div class="b2hidden">🔒 Hidden until both players are ready</div>
-        </div>
-      </div>
-      <div class="b2side mine">
-        <div class="b2label">Your Field</div>
-        <div class="b2row" id="b2MyRow"></div>
       </div>
     </div>
 
@@ -1834,7 +1836,6 @@ input.search:focus{border-color:var(--cyan)}
 <div id="dice"></div>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="ducksave.js"></script>
@@ -2188,7 +2189,7 @@ function b2Start(mode, foeDeck, foeName){
   $('#battleSetup').style.display = 'none';
   $('#v-battle2').classList.add('on');
   document.body.classList.add('in-battle');
-  $('#b2Field').classList.add('placing');
+  $('#b2Scene').classList.add('placing');
   $('#b2Log').innerHTML = '';
   const arenaBanner = document.getElementById('b2ArenaBanner');
   if(arenaBanner) arenaBanner.innerHTML = `📍 <b>${B2.arena.name}</b> — ${B2.arena.desc}`;
@@ -2197,7 +2198,6 @@ function b2Start(mode, foeDeck, foeName){
   b2UpdateHpBars();
   b2Log(`<b>${mode.n}</b> begins${online?' against '+B2.foeName:''}. You drew 7 cards.`);
   b2Log(`📍 Arena: <b>${B2.arena.name}</b> — ${B2.arena.desc}`);
-  b2InitScene();
   b2Render();
 }
 
@@ -2220,90 +2220,7 @@ function b2Log(html){
 }
 
 /* ============ 3D BATTLE SCENE (Three.js, free/open-source) ============ */
-let b2Scene=null, b2Camera=null, b2Renderer=null, b2CardMeshes={}, b2Loader=null, b2Anim=null;
-
-function b2InitScene(){
-  const container = document.getElementById('b2Scene');
-  if(!container || typeof THREE === 'undefined') return;
-  const w = container.clientWidth || 320, h = container.clientHeight || 180;
-
-  b2Scene = new THREE.Scene();
-  b2Camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
-  b2Camera.position.set(0, 3.4, 4.8);
-  b2Camera.lookAt(0, 0, 0);
-
-  b2Renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-  b2Renderer.setSize(w, h);
-  b2Renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
-  container.innerHTML = '';
-  container.appendChild(b2Renderer.domElement);
-
-  b2Scene.add(new THREE.AmbientLight(0x8899ff, 0.65));
-  const key = new THREE.DirectionalLight(0x00fff2, 1.1); key.position.set(2,4,3); b2Scene.add(key);
-  const rim = new THREE.DirectionalLight(0xff43e0, 0.5); rim.position.set(-2,2,-3); b2Scene.add(rim);
-
-  const table = new THREE.Mesh(
-    new THREE.PlaneGeometry(9,5),
-    new THREE.MeshStandardMaterial({ color:0x141b33, roughness:0.85, metalness:0.1 })
-  );
-  table.rotation.x = -Math.PI/2.3;
-  table.position.y = -0.7;
-  b2Scene.add(table);
-
-  b2Loader = new THREE.TextureLoader();
-  if(!b2Anim) b2AnimateScene();
-}
-
-function b2AnimateScene(){
-  b2Anim = requestAnimationFrame(b2AnimateScene);
-  if(b2Renderer && b2Scene && b2Camera) b2Renderer.render(b2Scene, b2Camera);
-}
-
-function b2MakeCardMesh(imgUrl){
-  const tex = b2Loader.load(imgUrl);
-  const geo = new THREE.PlaneGeometry(0.95, 1.33);
-  const mat = new THREE.MeshStandardMaterial({ map:tex, side:THREE.DoubleSide, roughness:0.35, metalness:0.2 });
-  return new THREE.Mesh(geo, mat);
-}
-
-function b2SyncScene(){
-  if(!b2Scene) return;
-  Object.values(b2CardMeshes).forEach(m => b2Scene.remove(m));
-  b2CardMeshes = {};
-  const laneX = i => (i-2)*1.15;
-
-  (B2.myField||[]).forEach((slot,i) => {
-    if(!slot) return;
-    const mesh = b2MakeCardMesh(b2CardArt(slot.card));
-    mesh.position.set(laneX(i), 0, 1.35);
-    mesh.rotation.x = -0.18;
-    b2Scene.add(mesh);
-    b2CardMeshes['my'+i] = mesh;
-  });
-  (B2.foeField||[]).forEach((slot,i) => {
-    if(!slot) return;
-    const mesh = b2MakeCardMesh(b2CardArt(slot.card));
-    mesh.position.set(laneX(i), 0, -1.35);
-    mesh.rotation.x = 0.18;
-    mesh.rotation.y = Math.PI;
-    b2Scene.add(mesh);
-    b2CardMeshes['foe'+i] = mesh;
-  });
-}
-
-function b2CameraTo(x,y,z, lx,ly,lz, ms){
-  if(!b2Camera) return;
-  const sx=b2Camera.position.x, sy=b2Camera.position.y, sz=b2Camera.position.z;
-  const start = performance.now();
-  function step(now){
-    const t = Math.min(1, (now-start)/ms);
-    const k = 1-Math.pow(1-t, 3);
-    b2Camera.position.set(sx+(x-sx)*k, sy+(y-sy)*k, sz+(z-sz)*k);
-    b2Camera.lookAt(lx,ly,lz);
-    if(t<1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
+function b2CameraTo(){ /* no-op: 3D camera system removed */ }
 
 
 function b2SetStance(s){
@@ -2416,7 +2333,8 @@ function b2StartDuel(presetMyRoll, presetFoeRoll){
   const rA = presetMyRoll!==undefined ? presetMyRoll : rollD100('me');
   const rB = presetFoeRoll!==undefined ? presetFoeRoll : rollD100('foe');
 
-  $('#b2Field').style.display = 'none';
+  $('#b2FoeSide').style.display = 'none';
+  $('#b2Scene').querySelector('.b2side.mine').style.display = 'none';
   $('#b2Hand').parentElement.style.display = 'none';
   $('#b2DuelMine').innerHTML = myCard ? `<img src="${b2CardArt(myCard)}"><b>${myCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
   $('#b2DuelFoe').innerHTML = foeCard ? `<img src="${b2CardArt(foeCard)}"><b>${foeCard.name}</b>` : `<div class="b2duelempty">No champion</div>`;
@@ -2534,7 +2452,8 @@ function b2ResolveDuel(myCard, foeCard, rA, rB){
 function b2EndDuel(){
   $('#b2DuelStage').classList.remove('clash');
   setTimeout(() => {
-    $('#b2Field').style.display = '';
+    $('#b2FoeSide').style.display = '';
+    $('#b2Scene').querySelector('.b2side.mine').style.display = '';
     $('#b2Hand').parentElement.style.display = '';
     b2NextTurn();
   }, 450);
@@ -2609,7 +2528,7 @@ function b2RenderHand(){
   B2.myHand.forEach((card, i) => {
     const el = document.createElement('div');
     el.className = 'hcard' + (B2.selected === i ? ' selected' : '');
-    el.appendChild(buildCard(card, false));
+    el.appendChild(b2SimpleCard(card));
     el.onclick = () => b2SelectCard(i);
     box.appendChild(el);
   });
@@ -2643,6 +2562,18 @@ function b2ShowCardInfo(card){
   }
 }
 
+function b2SimpleCard(card){
+  const el = document.createElement('div');
+  el.className = 'b2simplecard';
+  const src = card.isItem ? ('cards/items/' + (card.art || (card.name.toLowerCase().replace(/\s+/g,'_')+'_item.png')))
+                           : ('cards/ducks/' + card.hero);
+  const stars = '★'.repeat(card.rarity||1);
+  el.innerHTML = `<img src="${src}" alt="${card.name}" loading="lazy">`+
+    `<div class="b2simplename">${card.name}</div>`+
+    `<div class="b2simplemeta"><span>${stars}</span>${card.isItem?'':`<span>${card.atk} ATK</span>`}</div>`;
+  return el;
+}
+
 function b2RenderFields(){
   const myRow = $('#b2MyRow');
   myRow.innerHTML = '';
@@ -2655,7 +2586,7 @@ function b2RenderFields(){
     el.className = 'b2slot' + (slot ? ' filled'+rarityClass : '') +
       (canTarget ? ' target' : '') + (canPickDuelist ? ' can-attack' : '') +
       (isDuelist ? ' attacker' : '');
-    if(slot) el.appendChild(buildCard(slot.card, false));
+    if(slot) el.appendChild(b2SimpleCard(slot.card));
     if(canTarget) el.onclick = () => b2PlaceCard(i);
     else if(canPickDuelist) el.onclick = () => b2SelectDuelist(i);
     myRow.appendChild(el);
@@ -2668,7 +2599,7 @@ function b2RenderFields(){
     B2.foeField.forEach(slot => {
       const el = document.createElement('div');
       el.className = 'b2slot' + (slot ? ' filled' : '');
-      if(slot) el.appendChild(buildCard(slot.card, false));
+      if(slot) el.appendChild(b2SimpleCard(slot.card));
       foeRow.appendChild(el);
     });
   }else{
@@ -2676,7 +2607,7 @@ function b2RenderFields(){
     B2.foeKnownField.forEach(known => {
       const el = document.createElement('div');
       el.className = 'b2slot' + (known ? ' filled' : '');
-      if(known) el.appendChild(buildCard(known.card, false));
+      if(known) el.appendChild(b2SimpleCard(known.card));
       foeRow.appendChild(el);
     });
   }
@@ -2783,8 +2714,8 @@ function b2NextTurn(){
   if(sa) sa.classList.add('on'); if(sd) sd.classList.remove('on');
   $('#b2TurnLabel').textContent = 'Turn ' + B2.turn;
   $('#b2Status').textContent = '';
-  $('#b2Field').classList.remove('resolving');
-  $('#b2Field').classList.add('placing');
+  $('#b2Scene').classList.remove('resolving');
+  $('#b2Scene').classList.add('placing');
   b2CameraTo(0, 3.4, 4.8, 0,0,0.5, 800);
   const drewMe = b2DrawOne(true);
   b2DrawOne(false);
@@ -2793,7 +2724,7 @@ function b2NextTurn(){
 }
 
 function b2UpdateFieldGradient(){
-  const el = $('#b2Field');
+  const el = $('#b2Scene');
   if(!el) return;
   const cards = (B2.myField||[]).filter(s=>s).map(s=>s.card);
   if(!cards.length){ el.style.background = ''; return; }
@@ -2853,7 +2784,6 @@ function b2ShowGrave(pile, title){
 function b2Render(){
   b2RenderHand();
   b2RenderFields();
-  b2SyncScene();
   b2UpdateFieldGradient();
   b2UpdatePiles();
   const readyBtn = $('#b2ReadyBtn');
