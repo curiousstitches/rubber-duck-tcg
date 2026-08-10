@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="dc94642a1068">
+<meta name="game-version" content="0c53ed66d877">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -447,7 +447,7 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
  font:700 .74rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.05em}
 .stabs button.on{background:var(--cyan);color:#06070d;border-color:var(--cyan)}
 .stpane{display:none}.stpane.on{display:block}
-.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+.shopgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px}
 .shopCardSlot{position:relative}
 .shopCardSlot .dwrap{width:100%!important}
 .shopCardSlot .price{margin-top:4px;text-align:center;font:800 .68rem 'Chakra Petch';color:var(--gold)}
@@ -1093,7 +1093,7 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .adBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 
 /* ---- 3D battle scene ---- */
-.b2scene{width:100%;height:180px;border-radius:14px;overflow:hidden;margin-bottom:10px;
+.b2scene{width:100%;height:230px;border-radius:14px;overflow:hidden;margin-bottom:8px;
   background:radial-gradient(ellipse at 50% 30%,#1a2240,#070a14 75%);position:relative}
 .b2scene canvas{display:block;width:100%!important;height:100%!important}
 .b2field{display:flex;flex-direction:column;gap:10px;margin-bottom:10px;transition:transform .5s cubic-bezier(.3,.8,.3,1)}
@@ -1128,13 +1128,22 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 @keyframes attackerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .b2slot.spent{opacity:.45}
 .b2hidden{grid-column:1/-1;text-align:center;color:var(--dim);font-size:.78rem;padding:16px 0}
+#b2FoeRow:has(.b2hidden){grid-auto-rows:auto;display:block}
 
 /* ---- duel stage: everything else disappears, two cards take over ---- */
-.b2duelstage{position:fixed;inset:0;z-index:75;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:18px;padding:20px 14px;
+.b2duelstage{position:absolute;inset:0;z-index:5;overflow:hidden;
   background:radial-gradient(circle at 50% 45%,#141b38,#05070f 78%);
-  opacity:0;pointer-events:none;transition:opacity .45s ease}
+  opacity:0;pointer-events:none;transition:opacity .4s ease}
 .b2duelstage.clash{opacity:1;pointer-events:auto}
+.b2duelstage .b2duelcard{position:absolute;top:8px;width:68px;min-height:95px}
+.b2duelstage .b2duelcard.mine{left:10px}
+.b2duelstage .b2duelcard.foe{right:10px}
+.b2duelstage .b2duelvs{position:absolute;top:38px;left:50%;transform:translateX(-50%);font-size:1.1rem}
+.b2duelstage .b2diceRow{position:absolute;top:112px;left:10px;right:10px;padding:0;margin-bottom:0}
+.b2duelstage .b2die{width:32px;height:32px;font-size:.85rem}
+.b2duelstage .b2dietag{font-size:.5rem;min-height:11px}
+.b2duelstage .b2duelresult{position:absolute;top:158px;bottom:6px;left:8px;right:8px;
+  font-size:.6rem;line-height:1.25;margin-top:0;overflow-y:auto}
 .b2duelcard{width:38vw;max-width:150px;min-height:min(53vw,210px);aspect-ratio:5/7;border-radius:14px;overflow:hidden;
   border:2px solid #3a4570;box-shadow:0 10px 30px rgba(0,0,0,.6);opacity:0;
   transform:scale(.6) translateY(20px);transition:all .8s cubic-bezier(.2,1,.3,1);
@@ -1391,7 +1400,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "dc94642a1068";
+  var myVersion = "0c53ed66d877";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1636,7 +1645,24 @@ input.search:focus{border-color:var(--cyan)}
       <div class="pile" id="b2MyDeckPile"><em>🂠</em><b id="b2MyDeckNum">0</b>DECK</div>
       <div class="pile grave" id="b2MyGravePile"><em>⚰️</em><b id="b2MyGraveNum">0</b>GRAVE</div>
     </div>
-    <div id="b2Scene" class="b2scene"></div>
+    <div id="b2Scene" class="b2scene">
+      <div id="b2DuelStage" class="b2duelstage">
+        <div class="b2diceRow">
+          <div class="b2diecol">
+            <div class="b2die mine" id="b2DieMine">?</div>
+            <div class="b2dietag" id="b2DieTagMine"></div>
+          </div>
+          <div class="b2diecol">
+            <div class="b2die foe" id="b2DieFoe">?</div>
+            <div class="b2dietag" id="b2DieTagFoe"></div>
+          </div>
+        </div>
+        <div class="b2duelcard mine" id="b2DuelMine"></div>
+        <div class="b2duelvs">⚔️</div>
+        <div class="b2duelcard foe" id="b2DuelFoe"></div>
+        <div class="b2duelresult" id="b2DuelResult"></div>
+      </div>
+    </div>
     <div id="b2Field" class="b2field">
       <div class="b2side foe" id="b2FoeSide">
         <div class="b2label">Opponent's Field</div>
@@ -1648,23 +1674,6 @@ input.search:focus{border-color:var(--cyan)}
         <div class="b2label">Your Field</div>
         <div class="b2row" id="b2MyRow"></div>
       </div>
-    </div>
-
-    <div id="b2DuelStage" class="b2duelstage">
-      <div class="b2diceRow">
-        <div class="b2diecol">
-          <div class="b2die mine" id="b2DieMine">?</div>
-          <div class="b2dietag" id="b2DieTagMine"></div>
-        </div>
-        <div class="b2diecol">
-          <div class="b2die foe" id="b2DieFoe">?</div>
-          <div class="b2dietag" id="b2DieTagFoe"></div>
-        </div>
-      </div>
-      <div class="b2duelcard mine" id="b2DuelMine"></div>
-      <div class="b2duelvs">⚔️</div>
-      <div class="b2duelcard foe" id="b2DuelFoe"></div>
-      <div class="b2duelresult" id="b2DuelResult"></div>
     </div>
 
     <div id="b2EndPanel" class="b2endpanel" style="display:none">
@@ -1827,7 +1836,7 @@ input.search:focus{border-color:var(--cyan)}
 </div>
 <div id="viewer">
   <div id="viewSlot"></div>
-  <div class="vrow"><button class="mini ghost" id="closeView">Close</button></div>
+  <div class="vrow"><button class="mini ghost" id="closeView">Close</button><button class="mini" id="viewBuyBtn" style="display:none"></button></div>
 </div>
 <div id="clash"><div class="clashRow"><div class="clashCard" id="clashMine"></div><div class="clashVs">VS</div><div class="clashCard" id="clashFoe"></div></div></div>
 <div id="dice"></div>
@@ -3763,20 +3772,26 @@ function renderStore(){
     priceEl.textContent = p.price.toLocaleString() + ' 💩';
     el.appendChild(priceEl);
     const btn = document.createElement('button');
-    btn.textContent = 'Buy';
-    if(S.coins<p.price) btn.disabled = true;
+    btn.textContent = sold ? 'SOLD' : 'View & Buy';
+    if(sold) btn.disabled = true;
     el.appendChild(btn);
+    const openPreview = () => {
+      openViewer(p, {
+        price: p.price, sold,
+        onBuy: () => {
+          buyCoins(p.price, `${p.name} is yours`, () => {
+            S.owned[p.name] = (S.owned[p.name]||0)+1;
+            const cur = shopState(); cur.sold = (cur.sold||[]).concat([i]); shopSave(cur);
+          });
+        }
+      });
+    };
+    if(!sold){ el.onclick = openPreview; btn.onclick = (ev) => { ev.stopPropagation(); openPreview(); }; }
     if(sold){
       const soldEl = document.createElement('div');
       soldEl.className = 'sold'; soldEl.textContent = 'SOLD';
       el.appendChild(soldEl);
     }
-    if(!sold) btn.onclick = () => {
-      buyCoins(p.price, `${p.name} is yours`, () => {
-        S.owned[p.name] = (S.owned[p.name]||0)+1;
-        const cur = shopState(); cur.sold = (cur.sold||[]).concat([i]); shopSave(cur);
-      });
-    };
     fg.appendChild(el);
   });
 
@@ -3878,9 +3893,19 @@ function renderCol(){
   if(!shown) grid.innerHTML='<div class="empty"><b>Nothing here yet</b>'+
     (names.length?'Try another filter.':'Rip a pack to start your collection.')+'</div>';
 }
-function openViewer(d){
+function openViewer(d, buyInfo){
   const s=$('#viewSlot'); s.innerHTML='';
   s.appendChild(buildCard(d,true));
+  const buyBtn = $('#viewBuyBtn');
+  if(buyInfo){
+    buyBtn.style.display = 'block';
+    buyBtn.textContent = buyInfo.sold ? 'SOLD' : `Buy · ${buyInfo.price.toLocaleString()} 💩`;
+    buyBtn.disabled = buyInfo.sold || S.coins < buyInfo.price;
+    buyBtn.onclick = () => { buyInfo.onBuy(); $('#viewer').classList.remove('on'); };
+  }else{
+    buyBtn.style.display = 'none';
+    buyBtn.onclick = null;
+  }
   $('#viewer').classList.add('on');
 }
 
