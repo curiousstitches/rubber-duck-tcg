@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="0213f0e5eb03">
+<meta name="game-version" content="ce9a2abe9a8c">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1112,7 +1112,9 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .b2scene.placing .b2side.foe{opacity:.5;transform:scale(.95)}
 .b2scene.resolving{transform:scale(1)}
 .b2scene.resolving .b2side{opacity:1;transform:scale(1)}
-.b2side{background:rgba(20,27,51,.6);border:1px solid var(--edge);border-radius:14px;padding:10px}
+.b2side{background:rgba(20,27,51,.6);border:1px solid var(--edge);border-radius:14px;padding:10px;
+  transition:opacity .35s ease,transform .35s ease}
+.b2side.fadeout{opacity:0;transform:scale(.96);pointer-events:none}
 .b2label{font:700 .68rem 'Chakra Petch',system-ui;text-transform:uppercase;letter-spacing:.06em;
   color:var(--dim);margin-bottom:8px}
 .b2row{display:grid;grid-template-columns:repeat(5,1fr);grid-auto-rows:minmax(min(15vw,60px),auto);gap:6px}
@@ -1139,10 +1141,11 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
   animation:targetPulse 1s ease-in-out infinite}
 @keyframes targetPulse{0%,100%{opacity:1}50%{opacity:.6}}
 .b2slot.can-attack{border-color:#ffd83d;box-shadow:0 0 0 2px #ffd83d;cursor:pointer}
-.b2slot.attacker{border-color:#00fff2;box-shadow:0 0 0 3px #00fff2,0 0 18px rgba(0,255,242,.6);
-  animation:attackerPulse .8s ease-in-out infinite}
-@keyframes attackerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-.b2slot.supporter{border-color:#ffd83d;box-shadow:0 0 0 3px #ffd83d,0 0 14px rgba(255,216,61,.5)}
+.b2slot.attacker{border-color:#00fff2;box-shadow:0 0 0 3px #00fff2,0 0 22px rgba(0,255,242,.7);
+  z-index:3;animation:attackerPulse .8s ease-in-out infinite}
+@keyframes attackerPulse{0%,100%{transform:scale(1.08) translateY(-2px)}50%{transform:scale(1.14) translateY(-4px)}}
+.b2slot.supporter{border-color:#ffd83d;box-shadow:0 0 0 3px #ffd83d,0 0 16px rgba(255,216,61,.6);
+  z-index:2;transform:scale(1.05) translateY(-1px)}
 .b2slot.spent{opacity:.45}
 .b2hidden{grid-column:1/-1;text-align:center;color:var(--dim);font-size:.78rem;padding:16px 0}
 #b2FoeRow:has(.b2hidden){grid-auto-rows:auto;display:block}
@@ -1418,7 +1421,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "0213f0e5eb03";
+  var myVersion = "ce9a2abe9a8c";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
@@ -1717,16 +1720,16 @@ input.search:focus{border-color:var(--cyan)}
     </div>
     <div class="b2status" id="b2Status"></div>
 
+    <div class="adBtns" style="grid-template-columns:1fr">
+      <button class="btn ghost" id="b2ScoutBtn" style="display:none;margin-bottom:8px">🔭 Scout (50 💩) — reveal one enemy card</button>
+      <button class="btn" id="b2ReadyBtn">✅ Ready</button>
+    </div>
+
     <div class="handhead">
       <span>YOUR HAND · <b id="b2HandCount">0</b></span>
       <span id="b2PlacementsLeft">3 placements left</span>
     </div>
     <div class="hand" id="b2Hand"></div>
-
-    <div class="adBtns" style="grid-template-columns:1fr">
-      <button class="btn ghost" id="b2ScoutBtn" style="display:none;margin-bottom:8px">🔭 Scout (50 💩) — reveal one enemy card</button>
-      <button class="btn" id="b2ReadyBtn">✅ Ready</button>
-    </div>
 
     <div id="b2Log" style="margin-top:10px"></div>
   </section>
@@ -2408,8 +2411,8 @@ function b2StartDuel(presetMyRoll, presetFoeRoll){
   const rA = presetMyRoll!==undefined ? presetMyRoll : rollD100('me');
   const rB = presetFoeRoll!==undefined ? presetFoeRoll : rollD100('foe');
 
-  $('#b2FoeSide').style.display = 'none';
-  $('#b2Scene').querySelector('.b2side.mine').style.display = 'none';
+  $('#b2FoeSide').classList.add('fadeout');
+  $('#b2Scene').querySelector('.b2side.mine').classList.add('fadeout');
   $('#b2Hand').parentElement.style.display = 'none';
   const supportTag = c => c ? `<div class="b2support">+ ${c.name}</div>` : '';
   $('#b2DuelMine').innerHTML = myCard
@@ -2554,8 +2557,8 @@ function b2ResolveDuel(myRoles, foeRoles, rA, rB){
 function b2EndDuel(){
   $('#b2DuelStage').classList.remove('clash');
   setTimeout(() => {
-    $('#b2FoeSide').style.display = '';
-    $('#b2Scene').querySelector('.b2side.mine').style.display = '';
+    $('#b2FoeSide').classList.remove('fadeout');
+    $('#b2Scene').querySelector('.b2side.mine').classList.remove('fadeout');
     $('#b2Hand').parentElement.style.display = '';
     b2NextTurn();
   }, 450);
