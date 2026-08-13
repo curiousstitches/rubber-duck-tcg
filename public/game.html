@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="game-version" content="eaf7bd797e7f">
+<meta name="game-version" content="b5ed84d078df">
 <title>Getting Ducked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1091,7 +1091,7 @@ nav button.on em{filter:none;transform:translateY(-2px) scale(1.13)}
 .adBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 
 /* ---- unified battle scene: field rows + duel stage, one reliable display ---- */
-.b2scene{width:100%;border-radius:14px;overflow:hidden;margin-bottom:8px;
+.b2scene{width:100%;min-height:300px;border-radius:14px;overflow:hidden;margin-bottom:8px;
   background:radial-gradient(ellipse at 50% 30%,#1a2240,#070a14 75%);position:relative;
   display:flex;flex-direction:column;gap:10px;padding:10px;
   transition:transform .5s cubic-bezier(.3,.8,.3,1)}
@@ -1403,7 +1403,7 @@ input.search:focus{border-color:var(--cyan)}
 <script>
 // ---- cache-busting: if this page is stale, force a real reload ----
 (function(){
-  var myVersion = "eaf7bd797e7f";
+  var myVersion = "b5ed84d078df";
   fetch('version.txt?t=' + Date.now(), { cache: 'no-store' })
     .then(function(r){ return r.text(); })
     .then(function(latest){
