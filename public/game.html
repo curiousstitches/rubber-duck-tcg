@@ -2405,6 +2405,8 @@ function b2RollDiceVisual(rA, rB, onDone){
 }
 
 function b2StartDuel(presetMyRoll, presetFoeRoll){
+  const sceneEl = document.getElementById('b2Scene');
+  if(sceneEl) sceneEl.scrollIntoView({behavior:'smooth', block:'start'});
   const myRoles = b2DuelistRoles(B2.myField, B2.myDuelist);
   const foeRoles = b2DuelistRoles(B2.foeField, B2.foeDuelist);
   const myCard = myRoles.primary, foeCard = foeRoles.primary;
@@ -2560,6 +2562,8 @@ function b2EndDuel(){
     $('#b2FoeSide').classList.remove('fadeout');
     $('#b2Scene').querySelector('.b2side.mine').classList.remove('fadeout');
     $('#b2Hand').parentElement.style.display = '';
+    const topbar = document.querySelector('.b2topbar');
+    if(topbar) topbar.scrollIntoView({behavior:'smooth', block:'start'});
     b2NextTurn();
   }, 450);
 }
